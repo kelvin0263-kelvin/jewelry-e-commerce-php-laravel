@@ -9,7 +9,7 @@ class ProductController extends Controller
     // 显示产品列表
     public function index()
     {
-        $products = Product::all(); // 从数据库获取所有产品数据，这是一个 Eloquent 集合
+        $products = Product::all();  //Eloquent will execute  SELECT * FROM products SQL 
 
         // 返回一个视图，将 $products 变量传递给视图 'products' 是数组的 键（key）$products 是数组的 值（value）
         return view('products.index', ['products' => $products]);

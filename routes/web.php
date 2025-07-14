@@ -18,8 +18,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// need to login first(auth) and then check if the user is admin (is_admin)
+// ->prefix('admin') mean add a prefix to the route example /producsts become /admin/products
+// ->name('admin.'): 这个方法用于为这个路由组内的所有命名路由添加名称前缀 so when use Route::resource which create products.index it will become admin.products.index
 Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
     // 例如: admin.products.index, admin.products.create
+    // Route::resource mean also create somethings like route::get('products',[ProductController::class,'index']) but follow the 7 restful routes which have index,create,store,show,edit,update,destroy
+    // which map to each method in the product controller 
     Route::resource('products', ProductController::class);
 });
 
