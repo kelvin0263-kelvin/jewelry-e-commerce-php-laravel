@@ -3,6 +3,9 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Api\CustomerController;
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -26,8 +29,12 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
     // Route::resource mean also create somethings like route::get('products',[ProductController::class,'index']) but follow the 7 restful routes which have index,create,store,show,edit,update,destroy
     // which map to each method in the product controller 
     Route::resource('products', ProductController::class);
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('customers/segmentation', [CustomerController::class, 'segmentation'])->name('api.customers.segmentation');
+
 });
 
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 
-require __DIR__.'/auth.php';
+
+require __DIR__ . '/auth.php';

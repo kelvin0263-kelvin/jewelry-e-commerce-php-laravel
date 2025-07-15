@@ -19,11 +19,15 @@ class Product extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 
+        'name',
         'description',
         'price',
         'quantity',
         'image_path',
         'is_visible',
     ];
+    public function orders()
+    {
+        return $this->belongsToMany(Order::class)->withPivot('quantity', 'price');
+    }
 }

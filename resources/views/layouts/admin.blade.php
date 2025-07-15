@@ -1,13 +1,19 @@
 {{-- In resources/views/layouts/admin.blade.php --}}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jewelry Admin - @yield('title')</title>
     {{-- 未来可以在这里添加 CSS 样式 --}}
 </head>
+
 <body>
+    <nav>
+        <a href="{{ route('admin.dashboard') }}">Dashboard</a>
+        <a href="{{ route('admin.products.index') }}">Products</a>
+    </nav>
     <header>
         <h1>Jewelry E-Commerce Admin Panel</h1>
         <nav>
@@ -35,5 +41,8 @@
     <footer>
         <p>&copy; {{ date('Y') }} Jewelry E-Commerce. All rights reserved.</p>
     </footer>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    @yield('scripts') {{-- Add a spot for page-specific scripts --}}
 </body>
+
 </html>

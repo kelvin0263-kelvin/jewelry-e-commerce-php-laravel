@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\Storage;
 class ProductController extends Controller
 {
     // 显示产品列表
@@ -25,18 +26,25 @@ class ProductController extends Controller
     // 储存新创建的产品
     public function store(Request $request)
     {
-        // 验证请求数据
-        $request->validate([
+        // 增加对图片文件的验证规则
+        $data = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048', // 可选|必须是图片|格式限制|大小限制2MB
         ]);
 
-        // 创建产品
-        Product::create($request->all());
+        // 如果有图片上传
+        if ($request->hasFile('image')) {
+            // 将图片存储在 storage/app/public/products 目录下，并返回路径
+            $path = $request->file('image')->store('products', 'public');
+            $data['image_path'] = $path;
+        }
 
-        // 重定向到后台产品列表页，并附带成功消息
+        // 创建产品
+        Product::create($data);
+
         return redirect()->route('admin.products.index')->with('success', 'Product created successfully.');
     }
 
@@ -50,14 +58,28 @@ class ProductController extends Controller
     // 更新产品信息
     public function update(Request $request, Product $product)
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
-        $product->update($request->all());
+        // 如果有新的图片上传
+        if ($request->hasFile('image')) {
+            // 1. 删除旧图片 (如果存在)
+            if ($product->image_path) {
+                Storage::disk('public')->delete($product->image_path);
+            }
+
+            // 2. 存储新图片并获取路径
+            $path = $request->file('image')->store('products', 'public');
+            $data['image_path'] = $path;
+        }
+
+        // 更新产品信息
+        $product->update($data);
 
         return redirect()->route('admin.products.index')->with('success', 'Product updated successfully.');
     }

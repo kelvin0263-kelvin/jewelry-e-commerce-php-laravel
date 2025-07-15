@@ -11,6 +11,7 @@
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Image</th>
                 <th>Name</th>
                 <th>Price (RM)</th>
                 <th>Quantity</th>
@@ -21,6 +22,13 @@
             @forelse ($products as $product)
                 <tr>
                     <td>{{ $product->id }}</td>
+                    <td>
+                        @if ($product->image_path)
+                            <img src="{{ asset('storage/' . $product->image_path) }}" alt="{{ $product->name }}" width="100">
+                        @else
+                            No Image
+                        @endif
+                    </td>
                     <td>{{ $product->name }}</td>
                     <td>{{ $product->price }}</td>
                     <td>{{ $product->quantity }}</td>
@@ -28,10 +36,13 @@
                         <a href="{{ route('admin.products.edit', $product->id) }}">Edit</a>
 
                         {{-- 删除按钮需要用表单来提交，以保证安全 --}}
-                        <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this product?');">
+                        <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST"
+                            style="display: inline;"
+                            onsubmit="return confirm('Are you sure you want to delete this product?');">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" style="color: red; background: none; border: none; padding: 0; cursor: pointer;">Delete</button>
+                            <button type="submit"
+                                style="color: red; background: none; border: none; padding: 0; cursor: pointer;">Delete</button>
                         </form>
                     </td>
                 </tr>
