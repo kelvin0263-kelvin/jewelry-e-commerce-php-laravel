@@ -12,7 +12,7 @@ class ProductController extends Controller
         $products = Product::all();  //Eloquent will execute  SELECT * FROM products SQL 
 
         // 返回一个视图，将 $products 变量传递给视图 'products' 是数组的 键（key）$products 是数组的 值（value）
-        return view('products.index', ['products' => $products]);
+        return view('admin.products.index', ['products' => $products]);
     }
 
 
