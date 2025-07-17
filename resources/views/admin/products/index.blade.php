@@ -4,6 +4,7 @@
 @section('title', 'Product Management')
 
 @section('content')
+
     <h1>Product List</h1>
     <a href="{{ route('admin.products.create') }}" style="margin-bottom: 15px; display: inline-block;">+ Add New Product</a>
 
@@ -53,4 +54,5 @@
             @endforelse
         </tbody>
     </table>
+
 @endsection

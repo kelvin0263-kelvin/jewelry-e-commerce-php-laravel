@@ -8,8 +8,8 @@
         @csrf
         @method('PUT')
         <div>
-                    <label>Name:</label>
-                    <input type=" text" name="name" value="{{ $product->name }}" required>
+            <label>Name:</label>
+            <input type=" text" name="name" value="{{ $product->name }}" required>
         </div>
         <div>
             <label>Description:</label>
@@ -34,6 +34,12 @@
         <div>
             <label>Upload New Image (optional):</label>
             <input type="file" name="image">
+        </div>
+        <div>
+            <label>
+                <input type="checkbox" name="is_visible" value="1">
+                Visible to public
+            </label>
         </div>
         <button type="submit">Update Product</button>
 

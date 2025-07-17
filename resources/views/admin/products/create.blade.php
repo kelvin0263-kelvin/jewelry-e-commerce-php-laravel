@@ -36,5 +36,11 @@
             <label>Image:</label>
             <input type="file" name="image">
         </div>
+        <div>
+            <label>
+                <input type="checkbox" name="is_visible" value="1">
+                Visible to public
+            </label>
+        </div>
         <button type="submit">Save Product</button>
 @endsection

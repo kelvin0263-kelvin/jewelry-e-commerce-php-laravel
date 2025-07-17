@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@import './argon/nucleo-icons.css';
+@import './argon/nucleo-svg.css';
+@import './argon/perfect-scrollbar.css';
+@import './argon/tooltips.css';
+@import './argon/argon-dashboard-tailwind.min.css';
+@import './argon/argon-dashboard-tailwind.css'; /* Main theme file usually goes last */
