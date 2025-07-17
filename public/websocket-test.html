@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Direct WebSocket Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        #log { background: #000; color: #00ff00; padding: 10px; height: 300px; overflow-y: auto; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>Direct WebSocket Connection Test</h1>
+    
+    <div id="status" class="status info">Testing connection...</div>
+    
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="clearLog()">Clear Log</button>
+    
+    <h3>Connection Log:</h3>
+    <div id="log"></div>
+
+    <script>
+        let ws = null;
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        function testConnection() {
+            log('🔄 Starting WebSocket connection test...');
+            
+            // Close existing connection if any
+            if (ws) {
+                ws.close();
+            }
+            
+            try {
+                log('📡 Attempting to connect to ws://localhost:8081...');
+                ws = new WebSocket('ws://localhost:8081');
+                
+                ws.onopen = function(event) {
+                    log('✅ WebSocket connection opened successfully!');
+                    updateStatus('✅ Connected to WebSocket server', 'success');
+                    
+                    // Send a test message
+                    const testMessage = {
+                        event: 'test',
+                        data: { message: 'Hello from direct WebSocket test' }
+                    };
+                    ws.send(JSON.stringify(testMessage));
+                    log('📤 Sent test message: ' + JSON.stringify(testMessage));
+                };
+                
+                ws.onmessage = function(event) {
+                    log('📨 Received message: ' + event.data);
+                };
+                
+                ws.onerror = function(error) {
+                    log('❌ WebSocket error occurred');
+                    log('Error details: ' + JSON.stringify(error));
+                    updateStatus('❌ WebSocket connection error', 'error');
+                };
+                
+                ws.onclose = function(event) {
+                    log(`🔌 WebSocket connection closed`);
+                    log(`Close code: ${event.code}, Reason: ${event.reason || 'No reason provided'}`);
+                    log(`Was clean: ${event.wasClean}`);
+                    updateStatus('🔌 WebSocket connection closed', 'info');
+                };
+                
+                // Set a timeout to check connection status
+                setTimeout(() => {
+                    if (ws.readyState === WebSocket.CONNECTING) {
+                        log('⏳ Still connecting after 5 seconds...');
+                        updateStatus('⏳ Connection taking too long', 'error');
+                    } else if (ws.readyState === WebSocket.CLOSED) {
+                        log('❌ Connection failed to establish');
+                        updateStatus('❌ Connection failed', 'error');
+                    }
+                }, 5000);
+                
+            } catch (error) {
+                log('❌ Exception creating WebSocket: ' + error.message);
+                updateStatus('❌ Failed to create WebSocket connection', 'error');
+            }
+        }
+        
+        // Test different connection methods
+        function testAlternativeConnections() {
+            log('🔄 Testing alternative connection methods...');
+            
+            // Test different URLs
+            const testUrls = [
+                'ws://localhost:8081',
+                'ws://127.0.0.1:8081',
+                'ws://0.0.0.0:8081'
+            ];
+            
+            testUrls.forEach((url, index) => {
+                setTimeout(() => {
+                    log(`📡 Testing connection to: ${url}`);
+                    const testWs = new WebSocket(url);
+                    
+                    testWs.onopen = function() {
+                        log(`✅ Successfully connected to: ${url}`);
+                        testWs.close();
+                    };
+                    
+                    testWs.onerror = function() {
+                        log(`❌ Failed to connect to: ${url}`);
+                    };
+                    
+                    testWs.onclose = function() {
+                        log(`🔌 Connection to ${url} closed`);
+                    };
+                }, index * 1000);
+            });
+        }
+        
+        // Auto-start test when page loads
+        window.onload = function() {
+            log('🚀 WebSocket test page loaded');
+            log('Click "Test Connection" to start the test');
+            testConnection();
+        };
+    </script>
+</body>
+</html> 
