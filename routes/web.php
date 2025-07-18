@@ -328,6 +328,19 @@ Route::get('/debug-logs', function () {
     }
 });
 
+// Debug route to check conversation IDs
+Route::get('/debug-conversations', function () {
+    $conversations = \App\Models\Conversation::with('user')->get();
+    $messages = \App\Models\Message::with('user')->latest()->take(10)->get();
+    
+    return response()->json([
+        'current_user' => Auth::user(),
+        'conversations' => $conversations,
+        'recent_messages' => $messages,
+        'conversation_for_current_user' => \App\Models\Conversation::where('user_id', Auth::id())->first(),
+    ]);
+})->middleware('auth');
+
 // Test basic channel authorization manually
 Route::post('/test-channel-auth', function (Request $request) {
     Log::info('=== TESTING CHANNEL AUTH MANUALLY ===');

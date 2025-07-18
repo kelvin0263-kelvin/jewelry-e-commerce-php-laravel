@@ -34,6 +34,9 @@
     <script src="https://unpkg.com/@popperjs/core@2"></script>
     <!-- Main Styling path= public/css/argon-dashboard-tailwind.css -->
     <link href="{{ asset('css/argon-dashboard-tailwind.css') }}" rel="stylesheet" />
+    
+    <!-- Vite Assets for Echo and real-time functionality -->
+    @vite(['resources/js/app.js', 'resources/css/app.css'])
 </head>
 
 <body
@@ -213,6 +216,13 @@
 <script src="{{ asset('js/plugins/perfect-scrollbar.min.js') }}" async></script>
 <!-- main script file  -->
 <script src="{{ asset('js/argon-dashboard-tailwind.js') }}" async></script>
+
+<!-- Echo configuration for real-time functionality -->
+<script src="{{ asset('js/echo.js') }}"></script>
+
+<!-- Polling fallback for real-time -->
+<script src="{{ asset('js/polling-realtime.js') }}"></script>
+
     @yield('scripts')
 
 </html>

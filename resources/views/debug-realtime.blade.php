@@ -46,6 +46,7 @@
                 <button onclick="testRealTimeConnection()" class="bg-teal-500 text-white px-4 py-2 rounded">Test Real-Time Connection</button>
                 <button onclick="testLaravelBroadcast()" class="bg-emerald-500 text-white px-4 py-2 rounded">Test Working Broadcast</button>
                 <button onclick="testConnectionStability()" class="bg-cyan-500 text-white px-4 py-2 rounded">Test Connection Stability</button>
+                <button onclick="checkConversations()" class="bg-lime-500 text-white px-4 py-2 rounded">Check Conversations</button>
                 <button onclick="checkLogs()" class="bg-orange-500 text-white px-4 py-2 rounded">Check Logs</button>
                 <button onclick="clearLogs()" class="bg-gray-500 text-white px-4 py-2 rounded">Clear Logs</button>
             </div>
@@ -547,6 +548,52 @@
             };
             
             checkConnection();
+        }
+
+        // Check conversations and debug channel issues
+        async function checkConversations() {
+            log('Checking conversations and channel setup...', 'info');
+            
+            try {
+                const response = await fetch('/debug-conversations', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Conversations data retrieved', 'success');
+                    log('Current user: ' + data.current_user.email + ' (ID: ' + data.current_user.id + ')', 'info');
+                    log('Total conversations: ' + data.conversations.length, 'info');
+                    
+                    // Show conversation details
+                    data.conversations.forEach((conv, index) => {
+                        log(`Conversation ${index + 1}: ID=${conv.id}, User=${conv.user.email}, Admin=${conv.admin_id || 'None'}`, 'info');
+                    });
+                    
+                    // Show user's conversation
+                    if (data.conversation_for_current_user) {
+                        log('✅ Current user\'s conversation ID: ' + data.conversation_for_current_user.id, 'success');
+                        log('Admin should subscribe to channel: chat.' + data.conversation_for_current_user.id, 'info');
+                        log('Client subscribes to channel: chat.' + data.conversation_for_current_user.id, 'info');
+                    } else {
+                        log('❌ No conversation found for current user', 'error');
+                    }
+                    
+                    // Show recent messages
+                    log('Recent messages:', 'info');
+                    data.recent_messages.forEach((msg, index) => {
+                        log(`Message ${index + 1}: User=${msg.user.email}, Content="${msg.body}", Conversation=${msg.conversation_id}`, 'info');
+                    });
+                    
+                } else {
+                    log('❌ Failed to retrieve conversations', 'error');
+                }
+            } catch (error) {
+                log('❌ Error checking conversations: ' + error.message, 'error');
+            }
         }
 
         // Test authentication status

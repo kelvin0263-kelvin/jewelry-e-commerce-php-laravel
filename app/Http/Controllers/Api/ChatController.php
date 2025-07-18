@@ -48,8 +48,8 @@ class ChatController extends Controller
             'body' => $request->body,
         ]);
 
-        // 广播新消息事件
-        broadcast(new MessageSent($message->load('user')))->toOthers();
+        // 广播新消息事件 - broadcast to all users in the channel
+        broadcast(new MessageSent($message->load('user')));
 
         return response()->json($message->load('user'));
     }
@@ -83,8 +83,8 @@ class ChatController extends Controller
         // Load user relationship
         $message->load('user');
 
-        // Broadcast the message for real-time updates
-        broadcast(new MessageSent($message))->toOthers();
+        // Broadcast the message for real-time updates - broadcast to all users in the channel
+        broadcast(new MessageSent($message));
 
         // Return the message with user relationship
         return response()->json($message, 201);
