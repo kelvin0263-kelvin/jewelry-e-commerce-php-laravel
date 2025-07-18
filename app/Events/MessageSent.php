@@ -7,14 +7,21 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+// --- THE CHANGE IS HERE ---
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow; // Use this instead of ShouldBroadcast
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class MessageSent implements ShouldBroadcast
+// The class now implements ShouldBroadcastNow to force synchronous broadcasting
+class MessageSent implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    /**
+     * The message instance.
+     *
+     * @var \App\Models\Message
+     */
     public $message;
 
     /**
@@ -32,7 +39,7 @@ class MessageSent implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
-        // 我们将消息广播到与它所属会话相关联的私有频道
+        // Broadcast on a private channel for the specific conversation
         return [
             new PrivateChannel('chat.'.$this->message->conversation_id),
         ];

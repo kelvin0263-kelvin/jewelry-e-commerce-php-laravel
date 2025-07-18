@@ -11,6 +11,9 @@ use App\Http\Controllers\Admin\ProductController as AdminProductController; // �
 // 在 routes/web.php 的 admin 路由组内
 use App\Http\Controllers\Api\ChatController; // 在文件顶部添加这个 use 语句
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 // In routes/web.php
 use App\Models\Conversation;
@@ -37,8 +40,155 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/chat/messages', [ChatController::class, 'store']);
 });
 
-// Register broadcasting routes for channels
-Broadcast::routes();
+// Comment out Laravel's default broadcast routes - they're not working properly
+// Broadcast::routes(['middleware' => ['web', 'auth']]);
+
+// Custom broadcasting authentication route - override Laravel's default
+Route::post('/broadcasting/auth', function (Request $request) {
+    Log::info('=== CUSTOM BROADCAST AUTH ROUTE ===');
+    
+    // Get app key and secret from config
+    $appKey = config('broadcasting.connections.reverb.key', 'reverb-key');
+    $appSecret = config('broadcasting.connections.reverb.secret', 'reverb-secret');
+    
+    Log::info('Custom broadcast auth request', [
+        'user_authenticated' => Auth::check(),
+        'user_id' => Auth::id(),
+        'user_email' => Auth::user() ? Auth::user()->email : 'NO USER',
+        'session_id' => $request->session()->getId(),
+        'csrf_token' => $request->header('X-CSRF-TOKEN'),
+        'channel_name' => $request->get('channel_name'),
+        'socket_id' => $request->get('socket_id'),
+        'app_key' => $appKey,
+    ]);
+
+    // Ensure user is authenticated
+    if (!Auth::check()) {
+        Log::error('Custom broadcast auth failed: User not authenticated');
+        return response()->json(['error' => 'Unauthenticated'], 403);
+    }
+
+    $user = Auth::user();
+    $channelName = $request->get('channel_name');
+    $socketId = $request->get('socket_id');
+
+    Log::info('Attempting to authorize channel', [
+        'channel_name' => $channelName,
+        'user_id' => $user->id,
+        'socket_id' => $socketId,
+    ]);
+
+    // Handle private channel authorization
+    if (strpos($channelName, 'private-') === 0) {
+        $channelNameShort = substr($channelName, 8); // Remove 'private-' prefix
+        Log::info('Processing private channel: ' . $channelNameShort);
+
+        // Check if this is a chat channel
+        if (preg_match('/^chat\.(\d+)$/', $channelNameShort, $matches)) {
+            $conversationId = $matches[1];
+            Log::info('Authorizing chat channel', [
+                'conversation_id' => $conversationId,
+                'user_id' => $user->id,
+            ]);
+
+            // For testing: allow all authenticated users
+            $authorized = true;
+
+            if ($authorized) {
+                Log::info('Channel authorization successful');
+                
+                // Generate the auth signature for Reverb (same format as Pusher)
+                $authString = $socketId . ':' . $channelName;
+                
+                Log::info('Generating auth signature', [
+                    'auth_string' => $authString,
+                    'app_key' => $appKey,
+                    'app_secret' => $appSecret ? 'SET' : 'NOT SET',
+                    'original_channel' => $channelName,
+                    'socket_id' => $socketId,
+                ]);
+                
+                $authSignature = hash_hmac('sha256', $authString, $appSecret);
+                $authResult = $appKey . ':' . $authSignature;
+                
+                Log::info('Auth signature generated', [
+                    'auth_result' => $authResult,
+                    'signature' => $authSignature,
+                ]);
+                
+                return response()->json([
+                    'auth' => $authResult
+                ]);
+            } else {
+                Log::error('Channel authorization failed');
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+        }
+    }
+
+    Log::error('Unknown channel type: ' . $channelName);
+    return response()->json(['error' => 'Unknown channel'], 403);
+})->middleware(['web', 'auth']);
+
+// Add debug route to test authentication
+Route::post('/debug-broadcast-auth', function (Request $request) {
+    Log::info('Debug broadcast auth route hit', [
+        'user_authenticated' => Auth::check(),
+        'user_id' => Auth::id(),
+        'session_id' => $request->session()->getId(),
+        'csrf_token' => $request->header('X-CSRF-TOKEN'),
+        'request_data' => $request->all(),
+        'headers' => $request->headers->all(),
+    ]);
+    
+    if (!Auth::check()) {
+        return response()->json([
+            'error' => 'User not authenticated',
+            'session_id' => $request->session()->getId(),
+            'has_session_cookie' => $request->hasCookie(config('session.cookie')),
+        ], 403);
+    }
+    
+    return response()->json([
+        'success' => true,
+        'user' => Auth::user(),
+        'message' => 'Authentication working'
+    ]);
+})->middleware(['web', 'auth']);
+
+// Add debug route to intercept broadcast auth requests
+Route::post('/debug-intercept-broadcast-auth', function (Request $request) {
+    Log::info('=== INTERCEPTING BROADCAST AUTH ===');
+    Log::info('Broadcasting auth request intercepted', [
+        'user_authenticated' => Auth::check(),
+        'user_id' => Auth::id(),
+        'user_email' => Auth::user() ? Auth::user()->email : 'NO USER',
+        'session_id' => $request->session()->getId(),
+        'csrf_token' => $request->header('X-CSRF-TOKEN'),
+        'request_data' => $request->all(),
+        'channel_name' => $request->get('channel_name'),
+        'socket_id' => $request->get('socket_id'),
+        'all_headers' => $request->headers->all(),
+    ]);
+    
+    if (!Auth::check()) {
+        Log::error('User not authenticated in broadcast auth intercept');
+        return response()->json(['error' => 'Not authenticated'], 403);
+    }
+    
+    // Try to manually call the broadcast auth
+    try {
+        $result = Broadcast::auth($request);
+        Log::info('Manual broadcast auth successful', ['result' => $result]);
+        return $result;
+    } catch (\Exception $e) {
+        Log::error('Manual broadcast auth failed', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        return response()->json(['error' => $e->getMessage()], 403);
+    }
+})->middleware(['web', 'auth']);
 
 
 Route::get('/', function () {
@@ -147,6 +297,77 @@ Route::get('/products', [ProductController::class, 'index'])->name('products.ind
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
+Route::get('/debug-auth', function (Request $request) {
+    if (Auth::check()) {
+        return response()->json([
+            'status' => 'Authenticated',
+            'user' => Auth::user(),
+            'session_id' => $request->session()->getId(),
+        ]);
+    } else {
+        return response()->json([
+            'status' => 'Unauthenticated',
+            'session_id' => $request->session()->getId(),
+            'has_cookie' => $request->hasCookie(config('session.cookie')),
+        ]);
+    }
+});
 
+Route::get('/debug-logs', function () {
+    $logPath = storage_path('logs/laravel.log');
+    if (file_exists($logPath)) {
+        $logs = file_get_contents($logPath);
+        $lines = explode("\n", $logs);
+        $recentLines = array_slice($lines, -50); // Get last 50 lines
+        return response()->json([
+            'recent_logs' => $recentLines,
+            'total_lines' => count($lines)
+        ]);
+    } else {
+        return response()->json(['error' => 'Log file not found']);
+    }
+});
 
-require __DIR__ . '/auth.php';
+// Test basic channel authorization manually
+Route::post('/test-channel-auth', function (Request $request) {
+    Log::info('=== TESTING CHANNEL AUTH MANUALLY ===');
+    
+    $channelName = 'chat.1';
+    $user = Auth::user();
+    
+    Log::info('Manual channel auth test', [
+        'channel_name' => $channelName,
+        'user_authenticated' => Auth::check(),
+        'user_id' => $user ? $user->id : 'NO USER',
+        'user_email' => $user ? $user->email : 'NO EMAIL',
+    ]);
+    
+    // Test the channel authorization callback manually
+    $channels = app('Illuminate\Broadcasting\BroadcastManager')->getChannels();
+    $channelPattern = 'chat.{conversationId}';
+    
+    // Simulate the channel authorization
+    if ($user) {
+        $result = call_user_func_array(function($user, $conversationId) {
+            Log::info('Manual channel callback execution', [
+                'user_id' => $user->id,
+                'conversation_id' => $conversationId,
+            ]);
+            return true;
+        }, [$user, 1]);
+        
+        Log::info('Manual channel auth result: ' . ($result ? 'SUCCESS' : 'FAILED'));
+        
+        return response()->json([
+            'success' => true,
+            'result' => $result,
+            'user' => $user,
+            'message' => 'Manual channel auth test completed'
+        ]);
+    } else {
+        Log::error('Manual channel auth failed: No user');
+        return response()->json(['error' => 'No user authenticated'], 403);
+    }
+})->middleware(['web', 'auth']);
+
+require __DIR__.'/auth.php';

@@ -16,13 +16,21 @@ window.Echo = new Echo({
     // Add error handling
     auth: {
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            'X-Requested-With': 'XMLHttpRequest'
         }
     },
     // Add connection timeout
     activityTimeout: 30000,
     pongTimeout: 10000,
-    unavailableTimeout: 10000
+    unavailableTimeout: 10000,
+    // Add more detailed error handling
+    authEndpoint: '/broadcasting/auth',
+    enableLogging: true,
+    logToConsole: true,
+    // Add cluster and other options for compatibility
+    cluster: 'mt1',
+    encrypted: false
 });
 
 // Add connection event listeners for debugging
@@ -36,9 +44,23 @@ window.Echo.connector.pusher.connection.bind('disconnected', function() {
 
 window.Echo.connector.pusher.connection.bind('error', function(error) {
     console.error('Echo connection error:', error);
+    console.error('Error type:', error.type);
+    console.error('Error data:', error.data);
+    console.error('Error error:', error.error);
 });
 
 // Global error handler
 window.Echo.connector.pusher.connection.bind('unavailable', function() {
     console.error('✗ Reverb server is unavailable. Make sure it\'s running on port 8081');
+});
+
+// Add authentication error handler
+window.Echo.connector.pusher.connection.bind('auth_error', function(error) {
+    console.error('✗ Echo authentication error:', error);
+    console.error('Make sure user is logged in and CSRF token is valid');
+});
+
+// Add state change handler for better debugging
+window.Echo.connector.pusher.connection.bind('state_change', function(states) {
+    console.log('Echo state changed from', states.previous, 'to', states.current);
 });
