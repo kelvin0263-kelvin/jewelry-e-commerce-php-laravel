@@ -1,3 +1,0 @@
-@echo off
-echo Starting Laravel Reverb Server...
-php artisan reverb:start --host=0.0.0.0 --port=8080 --hostname=localhost 

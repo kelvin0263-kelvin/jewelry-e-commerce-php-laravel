@@ -847,7 +847,6 @@
 
     // Use an async function to fetch the data
     async function fetchCustomerSegments() {
-      console.log('hello')
     try {
       const response = await fetch('/admin/customers/segmentation');
 

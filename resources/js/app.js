@@ -5,7 +5,7 @@
  */
 
 import './echo';
-import './polling-realtime';
+
 import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;

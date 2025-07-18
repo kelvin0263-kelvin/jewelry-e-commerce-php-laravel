@@ -8,11 +8,6 @@
         <div class="p-6 border-b border-gray-200">
             <h1 class="text-2xl font-bold text-gray-800">Chat Management</h1>
             <p class="text-gray-600 mt-2">Manage customer conversations and messages</p>
-            <div class="mt-4">
-                <button onclick="debugAdminRealTime()" class="bg-blue-500 text-white px-4 py-2 rounded mr-2">Debug Real-Time</button>
-                <button onclick="testAdminEcho()" class="bg-green-500 text-white px-4 py-2 rounded mr-2">Test Echo</button>
-                <button onclick="testChannelSubscription()" class="bg-purple-500 text-white px-4 py-2 rounded">Test Channel Sub</button>
-            </div>
         </div>
 
         <div class="flex h-96">
@@ -58,19 +53,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     let currentConversationId = null;
 
-    // Debug: Check if Echo is available when page loads
-    console.log('=== ADMIN CHAT PAGE LOADED ===');
-    console.log('Echo available on page load:', !!window.Echo);
-    
-    // Wait a moment for scripts to load, then check again
-    setTimeout(() => {
-        console.log('Echo available after timeout:', !!window.Echo);
-        if (window.Echo) {
-            console.log('✅ Echo loaded successfully on admin page');
-        } else {
-            console.error('❌ Echo still not available on admin page');
-        }
-    }, 1000);
+
 
     // Load conversations on page load
     loadConversations();
@@ -103,9 +86,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Auto-subscribe admin to all conversation channels for real-time notifications
             subscribeToAllConversations(conversations);
-            
-            // Debug real-time setup
-            debugAdminRealTime();
         } catch (error) {
             console.error('Failed to load conversations:', error);
             document.getElementById('conversations-list').innerHTML = '<div class="p-4 text-center text-red-500">Failed to load conversations</div>';
@@ -153,22 +133,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // Subscribe admin to all conversation channels for real-time notifications
     function subscribeToAllConversations(conversations) {
         if (!window.Echo) {
-            console.log('Echo not available, cannot subscribe to conversations');
             return;
         }
         
-        console.log('Admin subscribing to all conversation channels...');
-        
         conversations.forEach(conversation => {
             const channelName = 'chat.' + conversation.id;
-            console.log('Admin subscribing to channel:', channelName);
             
             try {
                 window.Echo.private(channelName)
                     .listen('MessageSent', (e) => {
-                        console.log('New message received in admin via WebSocket:', e.message);
-                        console.log('Message from user:', e.message.user.id, 'Content:', e.message.body);
-                        console.log('Message conversation ID:', e.message.conversation_id);
+                        // Check if this message was sent by the current admin user
+                        const currentUserId = {{ auth()->id() }};
+                        if (e.message.user.id === currentUserId) {
+                            return;
+                        }
                         
                         // Only add to UI if this is the currently selected conversation
                         if (currentConversationId == e.message.conversation_id) {
@@ -177,13 +155,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Scroll to bottom
                             const messagesContainer = document.getElementById('messages-container');
                             messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                        } else {
-                            console.log('Message for different conversation, not adding to UI');
-                            // Could add notification badge here in the future
                         }
                     });
             } catch (error) {
-                console.log('Failed to subscribe to channel:', channelName, error);
+                // Silent error handling
             }
         });
     }
@@ -191,80 +166,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Listen for real-time messages (for specific conversation when clicked)
     function listenForRealTimeMessages(conversationId) {
         // Just update the current conversation ID - channels are already subscribed
-        console.log('Admin now viewing conversation:', conversationId);
         // Note: We don't need to subscribe here anymore since we're already subscribed to all channels
     }
 
-    // Debug: Add logging for admin real-time status  
-    window.debugAdminRealTime = function() {
-        console.log('=== ADMIN REAL-TIME DEBUG ===');
-        console.log('Echo available:', !!window.Echo);
-        console.log('Current conversation ID:', currentConversationId);
-        console.log('All conversations loaded, admin subscribed to all channels');
-        
-        if (window.Echo && window.Echo.connector && window.Echo.connector.pusher) {
-            console.log('Echo connection state:', window.Echo.connector.pusher.connection.state);
-            console.log('Echo socket ID:', window.Echo.connector.pusher.connection.socket_id);
-        }
-    }
-    
-    // Test Echo connection
-    window.testAdminEcho = function() {
-        console.log('=== TESTING ADMIN ECHO ===');
-        
-        if (!window.Echo) {
-            console.error('❌ Echo not available');
-            alert('Echo not available');
-            return;
-        }
-        
-        console.log('✅ Echo available');
-        
-        if (window.Echo.connector && window.Echo.connector.pusher) {
-            const state = window.Echo.connector.pusher.connection.state;
-            console.log('Echo connection state:', state);
-            
-            if (state === 'connected') {
-                console.log('✅ Echo connected');
-                alert('Echo connected successfully!');
-            } else {
-                console.log('❌ Echo not connected, state:', state);
-                alert('Echo not connected, state: ' + state);
-            }
-                 } else {
-             console.error('❌ Echo connector not available');
-             alert('Echo connector not available');
-         }
-     }
-     
-         // Test channel subscription
-    window.testChannelSubscription = function() {
-         console.log('=== TESTING CHANNEL SUBSCRIPTION ===');
-         
-         if (!window.Echo) {
-             console.error('❌ Echo not available');
-             alert('Echo not available');
-             return;
-         }
-         
-         // Test subscribing to channel chat.3 (from your console log)
-         const testChannel = 'chat.3';
-         console.log('Testing subscription to channel:', testChannel);
-         
-         try {
-             window.Echo.private(testChannel)
-                 .listen('MessageSent', (e) => {
-                     console.log('🎉 TEST: Received message on channel ' + testChannel + ':', e.message);
-                     alert('✅ Test successful! Received message: ' + e.message.body);
-                 });
-             
-             console.log('✅ Successfully subscribed to test channel:', testChannel);
-             alert('Subscribed to channel: ' + testChannel + '\nSend a message from client to test!');
-         } catch (error) {
-             console.error('❌ Failed to subscribe to test channel:', error);
-             alert('Failed to subscribe to channel: ' + error.message);
-         }
-     }
+
 
     // Add message to container
     function addMessageToContainer(message) {
@@ -309,7 +214,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 const message = await response.json();
-                console.log('Admin message sent successfully:', message);
                 addMessageToContainer(message);
                 messageInput.value = '';
                 

@@ -52,8 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             conversationId = data.id;
             
-            console.log('Client chat initialized with conversation ID:', conversationId);
-            console.log('Client will subscribe to channel: chat.' + conversationId);
+
             
             // Fetch existing messages
             fetchMessages();
@@ -138,44 +137,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to listen for real-time messages
     function listenForMessages() {
         if (window.Echo && conversationId) {
-            // Try WebSocket first
-            try {
-                window.Echo.private('chat.' + conversationId)
-                    .listen('MessageSent', (e) => {
-                        console.log('New message received via WebSocket:', e.message);
-                        
-                        // Only add message if it's not from the current user (prevent duplication)
-                        const currentUserId = {{ auth()->id() }};
-                        if (e.message.user.id !== currentUserId) {
-                            addMessageToBox(e.message);
-                        } else {
-                            console.log('Ignoring own message to prevent duplication');
-                        }
-                    });
-            } catch (error) {
-                console.log('WebSocket failed, falling back to polling:', error);
-                usePollingFallback();
-            }
-        } else {
-            // Fallback to polling if Echo is not available
-            usePollingFallback();
-        }
-    }
-
-    // Fallback to polling-based real-time
-    function usePollingFallback() {
-        if (window.PollingEcho && conversationId) {
-            console.log('Using polling-based real-time system');
-            window.PollingEcho.private('chat.' + conversationId)
+            window.Echo.private('chat.' + conversationId)
                 .listen('MessageSent', (e) => {
-                    console.log('New message received via polling:', e.message);
-                    
                     // Only add message if it's not from the current user (prevent duplication)
                     const currentUserId = {{ auth()->id() }};
                     if (e.message.user.id !== currentUserId) {
                         addMessageToBox(e.message);
-                    } else {
-                        console.log('Ignoring own message to prevent duplication');
                     }
                 });
         }

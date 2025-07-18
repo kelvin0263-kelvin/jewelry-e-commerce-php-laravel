@@ -33,34 +33,25 @@ window.Echo = new Echo({
     encrypted: false
 });
 
-// Add connection event listeners for debugging
+// Add connection event listeners
 window.Echo.connector.pusher.connection.bind('connected', function() {
-    console.log('✓ Echo connected to Reverb server');
+    // Connected to Reverb server
 });
 
 window.Echo.connector.pusher.connection.bind('disconnected', function() {
-    console.log('✗ Echo disconnected from Reverb server');
+    // Disconnected from Reverb server
 });
 
 window.Echo.connector.pusher.connection.bind('error', function(error) {
     console.error('Echo connection error:', error);
-    console.error('Error type:', error.type);
-    console.error('Error data:', error.data);
-    console.error('Error error:', error.error);
 });
 
 // Global error handler
 window.Echo.connector.pusher.connection.bind('unavailable', function() {
-    console.error('✗ Reverb server is unavailable. Make sure it\'s running on port 8081');
+    console.error('Reverb server is unavailable. Make sure it\'s running on port 8081');
 });
 
 // Add authentication error handler
 window.Echo.connector.pusher.connection.bind('auth_error', function(error) {
-    console.error('✗ Echo authentication error:', error);
-    console.error('Make sure user is logged in and CSRF token is valid');
-});
-
-// Add state change handler for better debugging
-window.Echo.connector.pusher.connection.bind('state_change', function(states) {
-    console.log('Echo state changed from', states.previous, 'to', states.current);
+    console.error('Echo authentication error:', error);
 });

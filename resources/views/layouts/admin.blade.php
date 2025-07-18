@@ -220,8 +220,7 @@
 <!-- Echo configuration for real-time functionality -->
 <script src="{{ asset('js/echo.js') }}"></script>
 
-<!-- Polling fallback for real-time -->
-<script src="{{ asset('js/polling-realtime.js') }}"></script>
+
 
     @yield('scripts')
 
