@@ -379,14 +379,35 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to listen for real-time messages
     function listenForMessages() {
         if (window.Echo && window.conversationId) {
-            window.Echo.private('chat.' + window.conversationId)
-                .listen('MessageSent', (e) => {
+            const channelName = 'chat.' + window.conversationId;
+            console.log('🎧 Customer listening on channel:', channelName);
+            
+            const channel = window.Echo.private(channelName);
+            
+            // FIXED: Use direct Pusher binding since Laravel Echo .listen() stopped working after modularization
+            if (channel.subscription) {
+                channel.subscription.bind('MessageSent', (data) => {
+                    console.log('📨 Customer received message event via direct Pusher bind:', data);
+                    
                     // Only add message if it's not from the current user (prevent duplication)
                     const currentUserId = {{ auth()->id() }};
-                    if (e.message.user.id !== currentUserId) {
-                        addMessageToBox(e.message);
+                    console.log('👤 Customer user ID:', currentUserId, 'Message user ID:', data.message?.user?.id);
+                    
+                    if (data.message && data.message.user && data.message.user.id !== currentUserId) {
+                        console.log('✅ Adding message to customer chat');
+                        addMessageToBox(data.message);
+                    } else {
+                        console.log('⏭️ Skipping own message in customer chat');
                     }
                 });
+            }
+            
+            channel
+                .error((error) => {
+                    console.error('❌ Customer channel subscription error:', error);
+                });
+        } else {
+            console.log('❌ Echo or conversationId not available for customer chat');
         }
     }
 });
@@ -458,4 +479,5 @@ window.backToSelfService = backToSelfService;
 window.createTicket = createTicket;
 @endauth
 
+</script>
 </script>

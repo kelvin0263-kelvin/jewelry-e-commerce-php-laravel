@@ -2,7 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\CustomerController; // 1. Is this 'use' statement here?
+use App\Modules\Admin\Controllers\ApiCustomerController; // 1. Is this 'use' statement here?
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -18,7 +18,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-use App\Http\Controllers\Api\ChatController;
-
-Route::get('/admin/chat/conversations/{id}/messages', [ChatController::class, 'messages']);
-Route::post('/admin/chat/messages', [ChatController::class, 'store']);
+Route::get('/admin/chat/conversations/{id}/messages', [App\Modules\Support\Controllers\ChatController::class, 'messages']);
+Route::post('/admin/chat/messages', [App\Modules\Support\Controllers\ChatController::class, 'store']);
