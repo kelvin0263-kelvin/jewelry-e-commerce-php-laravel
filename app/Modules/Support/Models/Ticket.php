@@ -3,6 +3,11 @@
 namespace App\Modules\Support\Models;
 
 use App\Modules\User\Models\User;
+use App\Modules\Support\Events\TicketCreated;
+use App\Modules\Support\Events\TicketStatusChanged;
+use App\Modules\Support\Events\TicketAssigned;
+use App\Modules\Support\Events\TicketEscalated;
+use App\Modules\Support\Events\TicketResolved;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -207,46 +212,88 @@ class Ticket extends Model
     // Instance methods
     public function assignToAgent($agentId): void
     {
+        $previousAgent = $this->assignedAgent;
+        $oldStatus = $this->status;
+        $newStatus = $this->status === 'open' ? 'in_progress' : $this->status;
+        
         $this->update([
             'assigned_agent_id' => $agentId,
-            'status' => $this->status === 'open' ? 'in_progress' : $this->status
+            'status' => $newStatus
         ]);
+
+        // Fire events
+        if ($oldStatus !== $newStatus) {
+            TicketStatusChanged::dispatch($this, $oldStatus, $newStatus);
+        }
+        
+        TicketAssigned::dispatch($this, $this->fresh()->assignedAgent, $previousAgent);
     }
 
     public function markAsResolved($agentId = null): void
     {
+        $oldStatus = $this->status;
+        $resolutionTimeHours = $this->created_at->diffInHours(now());
+        $resolvedBy = $agentId ? User::find($agentId) : null;
+        
         $this->update([
             'status' => 'resolved',
             'resolved_at' => now(),
-            'resolution_time_hours' => $this->created_at->diffInHours(now())
+            'resolution_time_hours' => $resolutionTimeHours
         ]);
+
+        // Fire events
+        TicketStatusChanged::dispatch($this, $oldStatus, 'resolved');
+        TicketResolved::dispatch($this, $resolvedBy, $resolutionTimeHours);
     }
 
     public function close($agentId = null): void
     {
+        $oldStatus = $this->status;
+        
         $this->update([
             'status' => 'closed',
             'closed_at' => now()
         ]);
+
+        // Fire event
+        if ($oldStatus !== 'closed') {
+            TicketStatusChanged::dispatch($this, $oldStatus, 'closed');
+        }
     }
 
     public function reopen(): void
     {
+        $oldStatus = $this->status;
+        
         $this->update([
             'status' => 'open',
             'resolved_at' => null,
             'closed_at' => null
         ]);
+
+        // Fire event
+        TicketStatusChanged::dispatch($this, $oldStatus, 'open');
     }
 
-    public function escalate(): void
+    public function escalate(string $reason = 'Manual escalation'): void
     {
+        $oldPriority = $this->priority;
+        $newPriority = match($this->priority) {
+            'low' => 'normal',
+            'normal' => 'high',
+            'high' => 'urgent',
+            'urgent' => 'urgent', // Already at highest priority
+            default => 'normal'
+        };
+        
         $this->update([
             'is_escalated' => true,
             'escalated_at' => now(),
-            'priority' => $this->priority === 'low' ? 'normal' : 
-                         ($this->priority === 'normal' ? 'high' : 'urgent')
+            'priority' => $newPriority
         ]);
+
+        // Fire event
+        TicketEscalated::dispatch($this, $reason, $oldPriority, $newPriority);
     }
 
     public function recordFirstResponse(): void
@@ -267,6 +314,34 @@ class Ticket extends Model
         static::creating(function ($ticket) {
             if (!$ticket->ticket_number) {
                 $ticket->ticket_number = self::generateTicketNumber();
+            }
+        });
+
+        static::created(function ($ticket) {
+            // Fire TicketCreated event
+            TicketCreated::dispatch($ticket);
+        });
+
+        static::updating(function ($ticket) {
+            // Track status changes
+            if ($ticket->isDirty('status')) {
+                $original = $ticket->getOriginal('status');
+                $new = $ticket->status;
+                
+                // We'll dispatch this after the update is complete
+                $ticket->_statusChanged = ['old' => $original, 'new' => $new];
+            }
+        });
+
+        static::updated(function ($ticket) {
+            // Fire TicketStatusChanged event if status was changed
+            if (isset($ticket->_statusChanged)) {
+                TicketStatusChanged::dispatch(
+                    $ticket,
+                    $ticket->_statusChanged['old'],
+                    $ticket->_statusChanged['new']
+                );
+                unset($ticket->_statusChanged);
             }
         });
     }

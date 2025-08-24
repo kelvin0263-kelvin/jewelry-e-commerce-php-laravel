@@ -11,4 +11,7 @@ return [
     App\Modules\Admin\AdminServiceProvider::class,
     App\Modules\Support\SupportServiceProvider::class,
     App\Modules\Inventory\InventoryServiceProvider::class,
+
+    Laravel\Sanctum\SanctumServiceProvider::class, 
+
 ];

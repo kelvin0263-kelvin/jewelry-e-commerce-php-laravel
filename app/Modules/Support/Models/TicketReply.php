@@ -3,6 +3,7 @@
 namespace App\Modules\Support\Models;
 
 use App\Modules\User\Models\User;
+use App\Modules\Support\Events\TicketReplyAdded;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -121,6 +122,9 @@ class TicketReply extends Model
                 // Customer replied
                 $ticket->update(['status' => 'waiting_agent']);
             }
+
+            // Fire TicketReplyAdded event
+            TicketReplyAdded::dispatch($ticket, $reply);
         });
     }
 }

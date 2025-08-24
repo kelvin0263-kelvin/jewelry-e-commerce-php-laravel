@@ -2,21 +2,30 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Modules\Admin\Controllers\ApiCustomerController; // 1. Is this 'use' statement here?
-use Illuminate\Support\Facades\Broadcast;
 
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| is assigned the "api" middleware group. Enjoy building your API!
+|
 */
 
-// 2. Is your GET route defined correctly?
-//Route::get('/customers/segmentation', [CustomerController::class, 'segmentation']);
-
+// User authentication routes
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/admin/chat/conversations/{id}/messages', [App\Modules\Support\Controllers\ChatController::class, 'messages']);
-Route::post('/admin/chat/messages', [App\Modules\Support\Controllers\ChatController::class, 'store']);
+// Include module API routes
+// Admin API routes
+if (file_exists(app_path('Modules/Admin/Routes/api.php'))) {
+    include app_path('Modules/Admin/Routes/api.php');
+}
+
+// Support API routes
+if (file_exists(app_path('Modules/Support/Routes/api.php'))) {
+    include app_path('Modules/Support/Routes/api.php');
+}

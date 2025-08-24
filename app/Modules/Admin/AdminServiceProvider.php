@@ -3,7 +3,7 @@
 namespace App\Modules\Admin;
 
 use Illuminate\Support\ServiceProvider;
-
+use Illuminate\Support\Facades\Route;
 class AdminServiceProvider extends ServiceProvider
 {
     /**
@@ -25,5 +25,12 @@ class AdminServiceProvider extends ServiceProvider
     {
         // Load views
         $this->loadViewsFrom(__DIR__ . '/Views', 'admin');
+
+
+        Route::prefix('api')
+         ->middleware('api')
+         ->group(__DIR__.'/Routes/api.php');
     }
+
+
 }
