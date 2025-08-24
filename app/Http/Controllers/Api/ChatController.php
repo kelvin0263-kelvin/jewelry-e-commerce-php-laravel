@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\ChatQueue;
+use App\Services\ChatQueueService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Events\MessageSent; // 我们很快会创建这个事件
@@ -17,8 +19,18 @@ class ChatController extends Controller
      */
     public function conversations()
     {
-        // 这里可以添加更复杂的逻辑，比如只显示有新消息的会话
-        $conversations = Conversation::with('user')->latest()->get();
+        // Only show conversations that have been accepted by agents
+        // Exclude conversations that are still pending in queue
+        $conversations = Conversation::with('user')
+            ->where(function($query) {
+                $query->where('status', '!=', 'pending')
+                      ->orWhereHas('queueItem', function($subQuery) {
+                          $subQuery->where('status', 'assigned');
+                      });
+            })
+            ->latest()
+            ->get();
+            
         return response()->json($conversations);
     }
 
@@ -88,5 +100,111 @@ class ChatController extends Controller
 
         // Return the message with user relationship
         return response()->json($message, 201);
+    }
+
+    /**
+     * Start a new chat conversation and add to queue
+     */
+    public function startChat(Request $request)
+    {
+        $request->validate([
+            'initial_message' => 'nullable|string|max:500',
+            'priority' => 'nullable|in:low,normal,high,urgent',
+            'escalation_context' => 'nullable|array'
+        ]);
+
+        $user = Auth::user();
+        $queueService = new ChatQueueService();
+
+        // Check if user already has an existing queue item or pending conversation
+        $existingQueueItem = ChatQueue::where('customer_id', $user->id)
+            ->where('status', 'waiting')
+            ->first();
+
+        if ($existingQueueItem) {
+            // Customer is already in queue, return their existing position
+            $queueStatus = $queueService->getQueueStatus($existingQueueItem->conversation_id);
+            
+            return response()->json([
+                'conversation_id' => $existingQueueItem->conversation_id,
+                'queue_status' => $queueStatus,
+                'message' => 'You are already in the chat queue',
+                'position' => $queueStatus['position'],
+                'estimated_wait' => $queueStatus['estimated_wait'],
+                'existing_queue' => true
+            ]);
+        }
+
+        // Check for existing pending conversation
+        $existingConversation = Conversation::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->whereDoesntHave('queueItem', function($query) {
+                $query->where('status', '!=', 'waiting');
+            })
+            ->first();
+
+        if ($existingConversation) {
+            $conversation = $existingConversation;
+        } else {
+            // Create new conversation only if no existing one
+            $conversation = Conversation::create([
+                'user_id' => $user->id,
+                'status' => 'pending'
+            ]);
+        }
+
+        // Add to queue with context from self-service if available
+        $escalationContext = $request->escalation_context ?? session('chat_escalation_context');
+        
+        $queueItem = $queueService->addToQueue(
+            $conversation->id,
+            $user->id,
+            $request->priority ?? 'normal',
+            $escalationContext,
+            $request->initial_message
+        );
+
+        // Clear escalation context from session
+        session()->forget('chat_escalation_context');
+
+        // Get queue status for customer
+        $queueStatus = $queueService->getQueueStatus($conversation->id);
+
+        return response()->json([
+            'conversation_id' => $conversation->id,
+            'queue_status' => $queueStatus,
+            'message' => 'You have been added to the chat queue',
+            'position' => $queueStatus['position'],
+            'estimated_wait' => $queueStatus['estimated_wait']
+        ]);
+    }
+
+    /**
+     * Get queue status for customer
+     */
+    public function getQueueStatus($conversationId)
+    {
+        $queueService = new ChatQueueService();
+        $status = $queueService->getQueueStatus($conversationId);
+        
+        return response()->json($status);
+    }
+
+    /**
+     * Customer leaves queue
+     */
+    public function leaveQueue($conversationId)
+    {
+        $conversation = Conversation::where('id', $conversationId)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        $queueService = new ChatQueueService();
+        $success = $queueService->abandonChat($conversationId);
+
+        return response()->json([
+            'success' => $success,
+            'message' => $success ? 'Left queue successfully' : 'Failed to leave queue'
+        ]);
     }
 }

@@ -18,20 +18,24 @@ use Illuminate\Support\Facades\Log;
 // In routes/web.php
 use App\Models\Conversation;
 
-Route::post('/chat/start', function() {
-    // Find or create a conversation for the logged-in user
-    $conversation = Conversation::firstOrCreate(
-        ['user_id' => auth()->id()],
-        ['admin_id' => null] // You can set this to a specific admin ID if needed
-    );
-    return response()->json($conversation);
-})->middleware('auth');
+// Chat routes - now uses queue system
+Route::post('/chat/start', [App\Http\Controllers\Api\ChatController::class, 'startChat'])->name('chat.start')->middleware('auth');
+Route::get('/chat/queue-status/{conversationId}', [App\Http\Controllers\Api\ChatController::class, 'getQueueStatus'])->name('chat.queue-status')->middleware('auth');
+Route::post('/chat/leave-queue/{conversationId}', [App\Http\Controllers\Api\ChatController::class, 'leaveQueue'])->name('chat.leave-queue')->middleware('auth');
 
 // Chat routes for authenticated users
 Route::middleware(['auth'])->group(function () {
-    Route::get('chat/conversations', [ChatController::class, 'conversations'])->name('chat.conversations');
-    Route::get('chat/conversations/{conversation}/messages', [ChatController::class, 'fetchMessages'])->name('chat.messages');
-    Route::post('chat/messages', [ChatController::class, 'sendMessage'])->name('chat.send');
+    Route::get('chat/conversations', [App\Http\Controllers\Api\ChatController::class, 'conversations'])->name('chat.conversations');
+    Route::get('chat/conversations/{conversation}/messages', [App\Http\Controllers\Api\ChatController::class, 'fetchMessages'])->name('chat.messages');
+    Route::post('chat/messages', [App\Http\Controllers\Api\ChatController::class, 'sendMessage'])->name('chat.send');
+    
+    // Ticket routes
+    Route::resource('tickets', App\Http\Controllers\TicketController::class)->except(['edit', 'update', 'destroy']);
+    Route::post('tickets/{ticket}/reply', [App\Http\Controllers\TicketController::class, 'reply'])->name('tickets.reply');
+    Route::patch('tickets/{ticket}/rate', [App\Http\Controllers\TicketController::class, 'rate'])->name('tickets.rate');
+    Route::patch('tickets/{ticket}/close', [App\Http\Controllers\TicketController::class, 'close'])->name('tickets.close');
+    Route::patch('tickets/{ticket}/reopen', [App\Http\Controllers\TicketController::class, 'reopen'])->name('tickets.reopen');
+    Route::get('tickets/download/attachment', [App\Http\Controllers\TicketController::class, 'downloadAttachment'])->name('tickets.download');
 });
 
 // Admin chat routes
@@ -157,6 +161,21 @@ Route::middleware('auth')->group(function () {
 // Admin routes
 Route::middleware(['auth', 'is_admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+    
+    // Chat Queue Management Routes
+    Route::prefix('chat-queue')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\ChatQueueController::class, 'index'])->name('admin.chat-queue.index');
+        Route::get('/data', [App\Http\Controllers\Admin\ChatQueueController::class, 'getData'])->name('admin.chat-queue.data');
+        Route::post('/{queueId}/accept', [App\Http\Controllers\Admin\ChatQueueController::class, 'acceptChat'])->name('admin.chat-queue.accept');
+        Route::post('/{queueId}/assign', [App\Http\Controllers\Admin\ChatQueueController::class, 'assignChat'])->name('admin.chat-queue.assign');
+        Route::post('/{queueId}/abandon', [App\Http\Controllers\Admin\ChatQueueController::class, 'abandonChat'])->name('admin.chat-queue.abandon');
+        Route::post('/transfer/{conversationId}', [App\Http\Controllers\Admin\ChatQueueController::class, 'transferChat'])->name('admin.chat-queue.transfer');
+        Route::post('/complete/{conversationId}', [App\Http\Controllers\Admin\ChatQueueController::class, 'completeChat'])->name('admin.chat-queue.complete');
+        Route::get('/status/{conversationId}', [App\Http\Controllers\Admin\ChatQueueController::class, 'getQueueStatus'])->name('admin.chat-queue.status');
+        Route::get('/my-chats', [App\Http\Controllers\Admin\ChatQueueController::class, 'getMyChats'])->name('admin.chat-queue.my-chats');
+        Route::get('/stats', [App\Http\Controllers\Admin\ChatQueueController::class, 'getStats'])->name('admin.chat-queue.stats');
+        Route::post('/agent-status', [App\Http\Controllers\Admin\ChatQueueController::class, 'updateAgentStatus'])->name('admin.chat-queue.agent-status');
+    });
     Route::get('/customers', [CustomerController::class, 'index'])->name('admin.customers.index');
     Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('admin.customers.show');
     Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('admin.customers.edit');
@@ -177,6 +196,19 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->group(function () {
         return view('admin.chat.index');
     })->name('admin.chat.index');
     Route::get('/chat/conversations', [ChatController::class, 'conversations'])->name('admin.chat.conversations');
+    
+    // Admin ticket management routes
+    Route::prefix('tickets')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\TicketController::class, 'index'])->name('admin.tickets.index');
+        Route::get('/{ticket}', [App\Http\Controllers\Admin\TicketController::class, 'show'])->name('admin.tickets.show');
+        Route::patch('/{ticket}/assign', [App\Http\Controllers\Admin\TicketController::class, 'assign'])->name('admin.tickets.assign');
+        Route::post('/{ticket}/reply', [App\Http\Controllers\Admin\TicketController::class, 'reply'])->name('admin.tickets.reply');
+        Route::patch('/{ticket}/status', [App\Http\Controllers\Admin\TicketController::class, 'updateStatus'])->name('admin.tickets.status');
+        Route::patch('/{ticket}/priority', [App\Http\Controllers\Admin\TicketController::class, 'updatePriority'])->name('admin.tickets.priority');
+        Route::post('/{ticket}/escalate', [App\Http\Controllers\Admin\TicketController::class, 'escalate'])->name('admin.tickets.escalate');
+        Route::get('/stats/data', [App\Http\Controllers\Admin\TicketController::class, 'getStats'])->name('admin.tickets.stats');
+        Route::post('/bulk-action', [App\Http\Controllers\Admin\TicketController::class, 'bulkAction'])->name('admin.tickets.bulk');
+    });
 });
 
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
@@ -185,6 +217,15 @@ Route::get('/products', [ProductController::class, 'index'])->name('products.ind
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
+// FAQ Route
+Route::get('/faq', [App\Http\Controllers\FaqController::class, 'index'])->name('faq.index');
 
+// Self-Service Routes
+Route::prefix('self-service')->group(function () {
+    Route::get('/', [App\Http\Controllers\SelfServiceController::class, 'index'])->name('self-service.index');
+    Route::get('/{category}', [App\Http\Controllers\SelfServiceController::class, 'category'])->name('self-service.category');
+    Route::post('/help', [App\Http\Controllers\SelfServiceController::class, 'help'])->name('self-service.help');
+    Route::post('/escalate', [App\Http\Controllers\SelfServiceController::class, 'escalate'])->name('self-service.escalate');
+});
 
 require __DIR__.'/auth.php';

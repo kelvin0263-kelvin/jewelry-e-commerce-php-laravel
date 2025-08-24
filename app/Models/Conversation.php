@@ -17,6 +17,13 @@ class Conversation extends Model
     protected $fillable = [
         'user_id',
         'admin_id',
+        'status',
+        'assigned_agent_id',
+        'started_at',
+        'queue_wait_time',
+        'queue_id',
+        'rating',
+        'feedback'
     ];
 
     public function user()
@@ -27,5 +34,15 @@ class Conversation extends Model
     public function messages()
     {
         return $this->hasMany(Message::class);
+    }
+
+    public function queueItem()
+    {
+        return $this->hasOne(ChatQueue::class, 'conversation_id');
+    }
+
+    public function agent()
+    {
+        return $this->belongsTo(User::class, 'assigned_agent_id');
     }
 }
