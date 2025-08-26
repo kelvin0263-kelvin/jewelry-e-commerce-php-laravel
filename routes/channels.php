@@ -20,9 +20,9 @@ Broadcast::channel('App.Modules.User.Models.User.{id}', function ($user, $id) {
 });
 
 // 添加这个新的频道授权
-Broadcast::channel('chat.{conversationId}', function ($user, $conversationId) {
+Broadcast::channel('conversation.{conversationId}', function ($user, $conversationId) {
     Log::info('=== CHANNEL AUTH START ===');
-    Log::info('Channel auth check for chat.' . $conversationId, [
+    Log::info('Channel auth check for conversation.' . $conversationId, [
         'user_provided' => $user !== null,
         'user_id' => $user ? $user->id : 'NO USER',
         'user_email' => $user ? $user->email : 'NO EMAIL',

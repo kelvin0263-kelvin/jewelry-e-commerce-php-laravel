@@ -136,3 +136,4 @@ class UpdateTicketMetrics implements ShouldQueue
         Cache::put('support.resolution.count', $newCount, now()->addHours(24));
     }
 }
+

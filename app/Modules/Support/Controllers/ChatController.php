@@ -7,13 +7,17 @@ use App\Modules\Support\Models\Conversation;
 use App\Modules\Support\Models\Message;
 use App\Modules\Support\Models\ChatQueue;
 use App\Modules\Support\Services\ChatQueueService;
+use App\Modules\Support\Traits\EmitsChatEvents;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Modules\Support\Events\MessageSent; // 我们很快会创建这个事件
+use App\Modules\Support\Events\ConversationTerminated;
+use App\Modules\Support\Services\ChatEventManager;
 use Illuminate\Support\Facades\Broadcast;
 
 class ChatController extends Controller
 {
+    use EmitsChatEvents;
     /**
      * 获取当前管理员的所有聊天会话
      */
@@ -32,6 +36,14 @@ class ChatController extends Controller
             ->get();
             
         return response()->json($conversations);
+    }
+
+    /**
+     * Get conversation details
+     */
+    public function show(Conversation $conversation)
+    {
+        return response()->json($conversation->load(['user', 'agent']));
     }
 
     /**
@@ -60,8 +72,8 @@ class ChatController extends Controller
             'body' => $request->body,
         ]);
 
-        // 广播新消息事件 - broadcast to all users in the channel
-        broadcast(new MessageSent($message->load('user')));
+        // Use Observer pattern to handle message sent event
+        $this->emitMessageSent($message->load('user'), $message->conversation);
 
         return response()->json($message->load('user'));
     }
@@ -95,8 +107,8 @@ class ChatController extends Controller
         // Load user relationship
         $message->load('user');
 
-        // Broadcast the message for real-time updates - broadcast to all users in the channel
-        broadcast(new MessageSent($message));
+        // Use Observer pattern to handle message sent event
+        $this->emitMessageSent($message, $message->conversation);
 
         // Return the message with user relationship
         return response()->json($message, 201);
@@ -135,13 +147,23 @@ class ChatController extends Controller
             ]);
         }
 
-        // Check for existing pending conversation
+        // Check for existing active or pending conversation
         $existingConversation = Conversation::where('user_id', $user->id)
-            ->where('status', 'pending')
+            ->whereIn('status', ['pending', 'active'])
             ->whereDoesntHave('queueItem', function($query) {
                 $query->where('status', '!=', 'waiting');
             })
             ->first();
+            
+        // If there's an active conversation, return it
+        if ($existingConversation && $existingConversation->status === 'active') {
+            return response()->json([
+                'conversation_id' => $existingConversation->id,
+                'message' => 'You have an active conversation',
+                'status' => 'active',
+                'existing_conversation' => true
+            ]);
+        }
 
         if ($existingConversation) {
             $conversation = $existingConversation;
@@ -205,6 +227,84 @@ class ChatController extends Controller
         return response()->json([
             'success' => $success,
             'message' => $success ? 'Left queue successfully' : 'Failed to leave queue'
+        ]);
+    }
+
+    /**
+     * Terminate a conversation
+     */
+    public function terminateConversation($conversationId)
+    {
+        $user = Auth::user();
+        
+        // Find the conversation and validate permissions
+        $conversation = Conversation::findOrFail($conversationId);
+        
+        // Check if user has permission to terminate this conversation
+        if (!$user->is_admin && $conversation->user_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to terminate this conversation'
+            ], 403);
+        }
+
+        // Check if conversation is already terminated
+        if (in_array($conversation->status, ['completed', 'abandoned'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Conversation is already terminated'
+            ], 400);
+        }
+
+        // Update conversation status
+        $conversation->update([
+            'status' => 'completed',
+            'ended_at' => now(),
+            'end_reason' => $user->is_admin ? 'resolved' : 'abandoned'
+        ]);
+
+        // Update queue status if exists
+        $queueItem = ChatQueue::where('conversation_id', $conversationId)->first();
+        if ($queueItem) {
+            $queueItem->update([
+                'status' => 'completed',
+                'completed_at' => now()
+            ]);
+        }
+
+        // Update agent status to reduce active chats count
+        if ($conversation->assigned_agent_id) {
+            $agentStatus = \App\Modules\Support\Models\AgentStatus::where('user_id', $conversation->assigned_agent_id)->first();
+            if ($agentStatus) {
+                $agentStatus->decrement('current_active_chats');
+            }
+        }
+
+        // Create a system message to indicate conversation termination
+        $systemMessage = Message::create([
+            'conversation_id' => $conversationId,
+            'user_id' => null, // System message
+            'body' => $user->is_admin 
+                ? 'Conversation ended by agent.' 
+                : 'Conversation ended by customer.',
+            'message_type' => 'system'
+        ]);
+
+        // Use Observer pattern to handle events
+        // Emit message sent event for system message
+        $this->emitMessageSent($systemMessage, $conversation);
+        
+        // Emit conversation terminated event
+        $this->emitConversationTerminated(
+            $conversation->fresh(),
+            $user->is_admin ? 'admin' : 'customer',
+            $user->is_admin ? 'resolved' : 'abandoned'
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Conversation terminated successfully',
+            'conversation' => $conversation->fresh()
         ]);
     }
 }

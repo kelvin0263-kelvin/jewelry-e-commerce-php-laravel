@@ -182,3 +182,4 @@ class ProductManagementController extends Controller
             ->with('success', 'Product updated successfully.');
     }
 }
+

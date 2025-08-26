@@ -62,3 +62,4 @@ class SendReplyNotification implements ShouldQueue
         }
     }
 }
+

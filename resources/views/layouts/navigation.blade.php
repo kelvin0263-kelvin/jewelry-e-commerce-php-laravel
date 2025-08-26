@@ -58,6 +58,10 @@
                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('tickets.*') ? 'bg-gray-100' : '' }}">
                                     🎫 Support Tickets
                                 </a>
+                                <a href="{{ route('chat-history.index') }}" 
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('chat-history.*') ? 'bg-gray-100' : '' }}">
+                                    📝 Chat History
+                                </a>
                                 <div class="border-t border-gray-100"></div>
                                 <button onclick="startLiveChat()" 
                                         class="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50">
@@ -134,6 +138,9 @@
             @auth
             <x-responsive-nav-link :href="route('tickets.index')" :active="request()->routeIs('tickets.*')">
                 {{ __('My Tickets') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('chat-history.index')" :active="request()->routeIs('chat-history.*')">
+                {{ __('Chat History') }}
             </x-responsive-nav-link>
             @endauth
             <x-responsive-nav-link :href="route('self-service.index')" :active="request()->routeIs('self-service.*')">

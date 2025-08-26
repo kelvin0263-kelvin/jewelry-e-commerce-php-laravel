@@ -43,3 +43,4 @@ class NotifyCustomerTicketCreated implements ShouldQueue
         }
     }
 }
+

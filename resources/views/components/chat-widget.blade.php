@@ -93,10 +93,13 @@
     @auth
     <!-- Live Chat Box (hidden by default) -->
     <div id="chat-box" style="display: none; border: 1px solid #ccc; background-color: white; height: 400px; flex-direction: column; border-radius: 0 0 8px 8px;">
-        <!-- Back to Self-Service Button -->
-        <div style="padding: 10px; background: #f8f9fa; border-bottom: 1px solid #eee; text-align: center;">
+        <!-- Chat Controls -->
+        <div style="padding: 10px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
             <button onclick="backToSelfService()" style="background: none; border: none; color: #666; cursor: pointer; font-size: 12px;">
                 ← Back to Help Options
+            </button>
+            <button id="terminate-chat-btn" onclick="terminateChat()" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; display: none;">
+                End Chat
             </button>
         </div>
         
@@ -122,8 +125,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     
-    window.conversationId = null;
+    window.conversationId = localStorage.getItem('activeConversationId') || null;
     let isShowingSelfService = false;
+    
+    // Check for URL parameter to open specific chat
+    const urlParams = new URLSearchParams(window.location.search);
+    const openChatId = urlParams.get('open_chat');
+    
+    if (openChatId) {
+        // Auto-open chat widget with specific conversation
+        setTimeout(() => {
+            startLiveChat(parseInt(openChatId));
+        }, 1000);
+    }
 
     // Toggle between self-service and hidden
     chatToggle.addEventListener('click', () => {
@@ -186,6 +200,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await response.json();
             window.conversationId = data.conversation_id;
+            localStorage.setItem('activeConversationId', data.conversation_id);
+            
+            // Check if this is an existing active conversation
+            if (data.status === 'active' && data.existing_conversation) {
+                // Show active conversation interface
+                chatMessages.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #059669;">
+                        <div style="font-size: 18px; margin-bottom: 10px;">✅ Resuming Active Chat</div>
+                        <div>You have an active conversation with an agent.</div>
+                    </div>
+                `;
+                
+                // Show terminate button for active conversation
+                showTerminateButton();
+                
+                // Load existing messages and listen for new ones
+                setTimeout(() => {
+                    fetchMessages();
+                    listenForMessages();
+                }, 1000);
+                
+                return;
+            }
             
             // Show queue status
             showQueueStatus(data.queue_status);
@@ -201,25 +238,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showQueueStatus(queueStatus) {
         if (queueStatus.in_queue) {
-            chatMessages.innerHTML = `
-                <div id="queue-status" style="text-align: center; padding: 20px;">
-                    <div style="font-size: 18px; margin-bottom: 10px;">🎫 You're in the queue</div>
-                    <div style="font-size: 24px; font-weight: bold; color: #2563eb;">Position: #${queueStatus.position}</div>
-                    <div style="margin: 10px 0; color: #6b7280;">Estimated wait time: ${queueStatus.estimated_wait} minutes</div>
-                    <div style="margin-top: 15px;">
-                        <button onclick="leaveQueue()" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
-                            Leave Queue
-                        </button>
-                    </div>
-                    <div style="margin-top: 10px; font-size: 12px; color: #9ca3af;">
-                        We'll connect you with the next available agent
+            // Show queue status but allow messaging
+            const queueStatusDiv = `
+                <div id="queue-status" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 16px; margin-bottom: 8px; color: #1d4ed8;">🎫 You're in the queue</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #2563eb;">Position: #${queueStatus.position}</div>
+                        <div style="margin: 8px 0; color: #6b7280; font-size: 14px;">Estimated wait: ${queueStatus.estimated_wait} minutes</div>
+                        <div style="margin-top: 10px;">
+                            <button onclick="leaveQueue()" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                Leave Queue
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
+            
+            // Initialize messages area with queue status
+            chatMessages.innerHTML = queueStatusDiv + '<div id="queue-messages"></div>';
+            
+            // Enable messaging while in queue
+            enableQueueMessaging();
+            
+            // Load any existing messages
+            fetchMessages();
+            listenForMessages();
         } else {
             // Chat is already assigned or completed
             fetchMessages();
             listenForMessages();
+        }
+    }
+    
+    function enableQueueMessaging() {
+        // Enable the chat input for queue messages
+        const chatInput = document.getElementById('chat-input');
+        const chatForm = document.getElementById('chat-form');
+        
+        if (chatInput && chatForm) {
+            chatInput.disabled = false;
+            chatInput.placeholder = 'You can send messages while waiting...';
+            chatForm.style.opacity = '1';
+            chatForm.style.pointerEvents = 'auto';
         }
     }
 
@@ -245,6 +305,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div>You can now start chatting!</div>
                         </div>
                     `;
+                    
+                    // Show terminate button when connected to agent
+                    showTerminateButton();
                     
                     // Load chat interface
                     setTimeout(() => {
@@ -290,6 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     `;
                     window.conversationId = null;
+                    localStorage.removeItem('activeConversationId');
                 } else {
                     alert('Failed to leave queue. Please try again.');
                 }
@@ -331,8 +395,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p>${messageContent}</p>
             </div>
         `;
-        chatMessages.appendChild(messageElement);
-        chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+        // Check if we're in queue mode and append to the correct container
+        const queueMessagesContainer = document.getElementById('queue-messages');
+        const targetContainer = queueMessagesContainer || chatMessages;
+        
+        targetContainer.appendChild(messageElement);
+        
+        // Scroll the main chat container to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     // Function to handle form submission
@@ -344,7 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
         chatInput.value = ''; // Clear input immediately
 
         try {
-            const response = await fetch('/admin/chat/messages', {
+            const response = await fetch('/chat/messages', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -352,8 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     conversation_id: window.conversationId,
-                    user_id: {{ auth()->id() }},
-                    content: messageText
+                    body: messageText
                 })
             });
 
@@ -376,40 +445,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Function to listen for real-time messages
+    // Function to listen for real-time messages using direct Echo
     function listenForMessages() {
-        if (window.Echo && window.conversationId) {
-            const channelName = 'chat.' + window.conversationId;
-            console.log('🎧 Customer listening on channel:', channelName);
-            
-            const channel = window.Echo.private(channelName);
-            
-            // FIXED: Use direct Pusher binding since Laravel Echo .listen() stopped working after modularization
-            if (channel.subscription) {
-                channel.subscription.bind('MessageSent', (data) => {
-                    console.log('📨 Customer received message event via direct Pusher bind:', data);
-                    
-                    // Only add message if it's not from the current user (prevent duplication)
-                    const currentUserId = {{ auth()->id() }};
-                    console.log('👤 Customer user ID:', currentUserId, 'Message user ID:', data.message?.user?.id);
-                    
-                    if (data.message && data.message.user && data.message.user.id !== currentUserId) {
-                        console.log('✅ Adding message to customer chat');
-                        addMessageToBox(data.message);
-                    } else {
-                        console.log('⏭️ Skipping own message in customer chat');
-                    }
-                });
-            }
-            
-            channel
-                .error((error) => {
-                    console.error('❌ Customer channel subscription error:', error);
-                });
-        } else {
-            console.log('❌ Echo or conversationId not available for customer chat');
+        if (!window.conversationId) {
+            console.log('❌ No conversation ID available');
+            return;
         }
+
+        console.log('🎧 Setting up direct Echo message listening for conversation:', window.conversationId);
+        
+        // Subscribe to the conversation channel directly
+        window.Echo.private(`conversation.${window.conversationId}`)
+            .listen('MessageSent', (e) => {
+                const currentUserId = {{ auth()->id() }};
+                
+                if (e.message && e.message.user && e.message.user.id !== currentUserId) {
+                    console.log('✅ Adding message to customer chat');
+                    addMessageToBox(e.message);
+                } else if (e.message && e.message.message_type === 'system') {
+                    console.log('✅ Adding system message to customer chat');
+                    addSystemMessageToBox(e.message);
+                }
+            })
+            .listen('ConversationTerminated', (e) => {
+                if (e.terminatedBy === 'admin') {
+                    console.log('🚫 Customer received termination from admin');
+                    handleConversationTerminated(e, 'admin');
+                }
+            });
     }
+    
+
 });
 
 // Self-service functions (available to all users)
@@ -443,15 +509,51 @@ function openSelfService() {
 window.conversationId = null;
 window.queueCheckInterval = null;
 
-function startLiveChat() {
+function startLiveChat(existingConversationId = null) {
     const selfServiceBox = document.getElementById('self-service-box');
     const chatBox = document.getElementById('chat-box');
     
     if (selfServiceBox) selfServiceBox.style.display = 'none';
     if (chatBox) chatBox.style.display = 'flex';
     
-    // Start new queue-based chat
-    startQueueChat();
+    // Check if we have an existing conversation ID from a previous session
+    const conversationToResume = existingConversationId || window.conversationId;
+    
+    if (conversationToResume) {
+        // Resume existing conversation
+        resumeExistingChat(conversationToResume);
+    } else {
+        // Start new queue-based chat
+        startQueueChat();
+    }
+}
+
+async function resumeExistingChat(conversationId) {
+    try {
+        window.conversationId = conversationId;
+        localStorage.setItem('activeConversationId', conversationId);
+        
+        // Show resuming message
+        chatMessages.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #059669;">
+                <div style="font-size: 18px; margin-bottom: 10px;">🔄 Resuming Chat</div>
+                <div>Reconnecting to your active conversation...</div>
+            </div>
+        `;
+        
+        // Show terminate button for active conversation
+        showTerminateButton();
+        
+        // Load existing messages and listen for new ones
+        setTimeout(() => {
+            fetchMessages();
+            listenForMessages();
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Error resuming chat:', error);
+        chatMessages.innerHTML = '<p style="color: red;">Could not resume chat. Please try again.</p>';
+    }
 }
 
 function backToSelfService() {
@@ -460,6 +562,9 @@ function backToSelfService() {
     
     if (chatBox) chatBox.style.display = 'none';
     if (selfServiceBox) selfServiceBox.style.display = 'block';
+    
+    // Don't clear conversation ID - preserve the conversation state
+    // This allows customers to return to their chat without losing their place
 }
 
 function createTicket() {
@@ -473,11 +578,138 @@ function createTicket() {
     @endauth
 }
 
+function terminateChat() {
+    if (!window.conversationId) {
+        alert('No active conversation to terminate');
+        return;
+    }
+    
+    if (confirm('Are you sure you want to end this chat? This action cannot be undone.')) {
+        fetch(`/chat/terminate/${window.conversationId}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Hide terminate button
+                const terminateBtn = document.getElementById('terminate-chat-btn');
+                if (terminateBtn) terminateBtn.style.display = 'none';
+                
+                // Disable message input
+                const chatInput = document.getElementById('chat-input');
+                const chatForm = document.getElementById('chat-form');
+                if (chatInput) {
+                    chatInput.disabled = true;
+                    chatInput.placeholder = 'Chat has been terminated';
+                }
+                if (chatForm) {
+                    chatForm.style.opacity = '0.5';
+                }
+                
+                // Show termination message
+                const chatMessages = document.getElementById('chat-messages');
+                if (chatMessages) {
+                    const terminationMessage = document.createElement('div');
+                    terminationMessage.style.cssText = 'text-align: center; color: #666; font-style: italic; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;';
+                    terminationMessage.textContent = 'Chat has been terminated. Thank you for contacting us!';
+                    chatMessages.appendChild(terminationMessage);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+                
+                // Clear the stored conversation ID
+                localStorage.removeItem('activeConversationId');
+                window.conversationId = null;
+                
+                alert('Chat terminated successfully');
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to terminate chat');
+        });
+    }
+}
+
+function showTerminateButton() {
+    const terminateBtn = document.getElementById('terminate-chat-btn');
+    if (terminateBtn) {
+        terminateBtn.style.display = 'block';
+    }
+}
+
+function hideTerminateButton() {
+    const terminateBtn = document.getElementById('terminate-chat-btn');
+    if (terminateBtn) {
+        terminateBtn.style.display = 'none';
+    }
+}
+
+function addSystemMessageToBox(message) {
+    const chatMessages = document.getElementById('chat-messages');
+    if (!chatMessages) return;
+    
+    const messageElement = document.createElement('div');
+    messageElement.style.cssText = 'text-align: center; color: #666; font-style: italic; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px; border: 1px solid #e9ecef;';
+    messageElement.innerHTML = `
+        <div style="font-size: 12px; color: #999; margin-bottom: 5px;">System Message</div>
+        <div>${message.body}</div>
+        <div style="font-size: 11px; color: #999; margin-top: 5px;">${new Date(message.created_at).toLocaleString()}</div>
+    `;
+    
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function handleConversationTerminated(data, terminatedBy) {
+    console.log('🚫 Handling conversation termination:', data);
+    
+    // Hide terminate button
+    hideTerminateButton();
+    
+    // Clear stored conversation ID
+    localStorage.removeItem('activeConversationId');
+    window.conversationId = null;
+    
+    // Disable message input
+    const chatInput = document.getElementById('chat-input');
+    const chatForm = document.getElementById('chat-form');
+    if (chatInput) {
+        chatInput.disabled = true;
+        chatInput.placeholder = 'Chat has been terminated by ' + (terminatedBy === 'admin' ? 'agent' : 'customer');
+    }
+    if (chatForm) {
+        chatForm.style.opacity = '0.5';
+        chatForm.style.pointerEvents = 'none';
+    }
+    
+    // Show termination notification
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages) {
+        const terminationMessage = document.createElement('div');
+        terminationMessage.style.cssText = 'text-align: center; color: #dc3545; font-weight: bold; margin: 15px 0; padding: 15px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px;';
+        terminationMessage.innerHTML = `
+            <div style="font-size: 16px; margin-bottom: 5px;">🚫 Chat Terminated</div>
+            <div style="font-size: 14px;">This conversation has been ended by the ${terminatedBy === 'admin' ? 'agent' : 'customer'}.</div>
+            <div style="font-size: 12px; margin-top: 8px; color: #721c24;">Thank you for contacting us!</div>
+        `;
+        chatMessages.appendChild(terminationMessage);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+}
+
 // Make functions globally available
 window.startLiveChat = startLiveChat;
 window.backToSelfService = backToSelfService;
 window.createTicket = createTicket;
+window.terminateChat = terminateChat;
+window.showTerminateButton = showTerminateButton;
+window.hideTerminateButton = hideTerminateButton;
 @endauth
 
-</script>
 </script>

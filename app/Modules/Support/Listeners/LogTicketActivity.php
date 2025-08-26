@@ -127,3 +127,4 @@ class LogTicketActivity implements ShouldQueue
         ]);
     }
 }
+

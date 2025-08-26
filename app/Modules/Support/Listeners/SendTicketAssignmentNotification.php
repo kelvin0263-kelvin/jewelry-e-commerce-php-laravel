@@ -44,3 +44,4 @@ class SendTicketAssignmentNotification implements ShouldQueue
         }
     }
 }
+

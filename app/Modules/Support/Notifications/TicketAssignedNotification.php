@@ -80,3 +80,4 @@ class TicketAssignedNotification extends Notification implements ShouldQueue
         ];
     }
 }
+

@@ -78,3 +78,4 @@ class NewTicketNotification extends Notification implements ShouldQueue
         ];
     }
 }
+

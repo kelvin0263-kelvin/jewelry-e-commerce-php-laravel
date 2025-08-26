@@ -100,3 +100,4 @@
     {{ $products->links() }}
 
 @endsection
+

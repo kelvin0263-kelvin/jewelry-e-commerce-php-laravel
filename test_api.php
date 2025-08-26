@@ -74,3 +74,4 @@ echo "To test authenticated endpoints:\n";
 echo "1. Create a user account and get an API token\n";
 echo "2. Include 'Authorization: Bearer {token}' header in requests\n";
 echo "3. For admin endpoints, ensure the user has is_admin = true\n\n";
+

@@ -20,6 +20,7 @@ class Message extends Model
         'conversation_id',
         'user_id',
         'body',
+        'message_type',
         'read_at',
     ];
 
@@ -31,5 +32,29 @@ class Message extends Model
     public function conversation()
     {
         return $this->belongsTo(Conversation::class);
+    }
+
+    /**
+     * Check if message is a system message
+     */
+    public function isSystemMessage()
+    {
+        return $this->message_type === 'system';
+    }
+
+    /**
+     * Scope to get only user messages
+     */
+    public function scopeUserMessages($query)
+    {
+        return $query->where('message_type', 'user');
+    }
+
+    /**
+     * Scope to get only system messages
+     */
+    public function scopeSystemMessages($query)
+    {
+        return $query->where('message_type', 'system');
     }
 }

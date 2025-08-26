@@ -40,6 +40,13 @@
                 </div>
                 <!-- Admin Reply Form -->
                 <div class="p-4 border-t border-gray-100" id="reply-form-container" style="display: none;">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-gray-600" id="conversation-status"></span>
+                        <button type="button" id="terminate-conversation-btn" onclick="terminateConversation()" 
+                                class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 text-sm">
+                            End Chat
+                        </button>
+                    </div>
                     <form id="admin-reply-form" class="flex gap-2">
                         <input type="hidden" id="current-conversation-id" value="">
                         <input type="text" id="admin-message-input" placeholder="Type your reply..." 
@@ -102,6 +109,10 @@ document.addEventListener('DOMContentLoaded', function() {
         currentConversationId = conversationId;
         
         try {
+            // Fetch conversation details first
+            const conversationResponse = await fetch(`/admin/chat/conversations/${conversationId}`);
+            const conversation = await conversationResponse.json();
+            
             const response = await fetch(`/admin/chat/conversations/${conversationId}/messages`);
             const messages = await response.json();
             
@@ -111,6 +122,50 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show reply form
             document.getElementById('current-conversation-id').value = conversationId;
             document.getElementById('reply-form-container').style.display = 'block';
+            
+            // Check if conversation is terminated and disable form accordingly
+            if (conversation.status === 'completed' || conversation.status === 'abandoned') {
+                const statusElement = document.getElementById('conversation-status');
+                const messageInput = document.getElementById('admin-message-input');
+                const sendButton = document.querySelector('#admin-reply-form button[type="submit"]');
+                const terminateBtn = document.getElementById('terminate-conversation-btn');
+                
+                if (statusElement) {
+                    statusElement.textContent = `Chat ${conversation.status === 'completed' ? 'Completed' : 'Abandoned'}`;
+                    statusElement.className = 'text-sm text-red-600';
+                }
+                
+                if (messageInput) {
+                    messageInput.disabled = true;
+                    messageInput.placeholder = `Chat has been ${conversation.status === 'completed' ? 'completed' : 'abandoned'}`;
+                }
+                if (sendButton) {
+                    sendButton.disabled = true;
+                    sendButton.style.opacity = '0.5';
+                }
+                if (terminateBtn) terminateBtn.style.display = 'none';
+            } else {
+                // Enable form for active conversations
+                const statusElement = document.getElementById('conversation-status');
+                const messageInput = document.getElementById('admin-message-input');
+                const sendButton = document.querySelector('#admin-reply-form button[type="submit"]');
+                const terminateBtn = document.getElementById('terminate-conversation-btn');
+                
+                if (statusElement) {
+                    statusElement.textContent = 'Active Chat';
+                    statusElement.className = 'text-sm text-green-600';
+                }
+                
+                if (messageInput) {
+                    messageInput.disabled = false;
+                    messageInput.placeholder = 'Type your reply...';
+                }
+                if (sendButton) {
+                    sendButton.disabled = false;
+                    sendButton.style.opacity = '1';
+                }
+                if (terminateBtn) terminateBtn.style.display = 'block';
+            }
             
             // Display messages
             const messagesContainer = document.getElementById('messages-container');
@@ -146,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('🔧 Echo connector status:', window.Echo.connector.pusher.connection.state);
         
         conversations.forEach(conversation => {
-            const channelName = 'chat.' + conversation.id;
+            const channelName = 'conversation.' + conversation.id;
             console.log('Subscribing to channel:', channelName);
             
             try {
@@ -164,6 +219,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // FIXED: Use direct Pusher binding since Laravel Echo .listen() stopped working after modularization
                 if (channel.subscription) {
+                    // Listen for new messages
                     channel.subscription.bind('MessageSent', (data) => {
                         console.log('🎉 Real-time message received via direct Pusher bind');
                         console.log('📨 Message data:', data);
@@ -188,6 +244,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.log('📝 Message for different conversation:', data.message.conversation_id, 'vs current:', currentConversationId);
                         }
                     });
+
+                    // Listen for conversation termination
+                    channel.subscription.bind('ConversationTerminated', (data) => {
+                        console.log('🚫 Admin received conversation termination:', data);
+                        
+                        // Only disable if terminated by customer and this is the current conversation
+                        if (data.terminated_by === 'customer' && currentConversationId == data.conversation_id) {
+                            handleAdminConversationTerminated(data);
+                        }
+                    });
                 }
                 
             } catch (error) {
@@ -210,16 +276,30 @@ document.addEventListener('DOMContentLoaded', function() {
     function addMessageToContainer(message) {
         const messagesContainer = document.getElementById('messages-container');
         const messageElement = document.createElement('div');
-        const isAdmin = message.user.is_admin || false;
         
-        messageElement.className = `mb-4 ${isAdmin ? 'text-right' : 'text-left'}`;
-        messageElement.innerHTML = `
-            <div class="inline-block max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isAdmin ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}">
-                <div class="font-medium text-sm">${message.user.name}</div>
-                <div class="mt-1">${message.body}</div>
-                <div class="text-xs mt-1 opacity-75">${new Date(message.created_at).toLocaleString()}</div>
-            </div>
-        `;
+        // Check if it's a system message
+        if (message.message_type === 'system' || !message.user) {
+            messageElement.className = 'mb-4 text-center';
+            messageElement.innerHTML = `
+                <div class="inline-block px-4 py-2 rounded-lg bg-yellow-100 text-yellow-800 border border-yellow-300">
+                    <div class="font-medium text-sm">System Message</div>
+                    <div class="mt-1">${message.body}</div>
+                    <div class="text-xs mt-1 opacity-75">${new Date(message.created_at).toLocaleString()}</div>
+                </div>
+            `;
+        } else {
+            const isAdmin = message.user.is_admin || false;
+            
+            messageElement.className = `mb-4 ${isAdmin ? 'text-right' : 'text-left'}`;
+            messageElement.innerHTML = `
+                <div class="inline-block max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isAdmin ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}">
+                    <div class="font-medium text-sm">${message.user.name}</div>
+                    <div class="mt-1">${message.body}</div>
+                    <div class="text-xs mt-1 opacity-75">${new Date(message.created_at).toLocaleString()}</div>
+                </div>
+            `;
+        }
+        
         messagesContainer.appendChild(messageElement);
     }
 
@@ -264,7 +344,119 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Terminate conversation function
+    window.terminateConversation = async function() {
+        const conversationId = document.getElementById('current-conversation-id').value;
+        
+        if (!conversationId) {
+            alert('No active conversation to terminate');
+            return;
+        }
+        
+        if (confirm('Are you sure you want to end this chat? This action cannot be undone.')) {
+            try {
+                const response = await fetch(`/chat/terminate/${conversationId}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update conversation status
+                    const statusElement = document.getElementById('conversation-status');
+                    if (statusElement) {
+                        statusElement.textContent = 'Chat Terminated';
+                        statusElement.className = 'text-sm text-red-600';
+                    }
+                    
+                    // Disable the form
+                    const messageInput = document.getElementById('admin-message-input');
+                    const sendButton = document.querySelector('#admin-reply-form button[type="submit"]');
+                    const terminateBtn = document.getElementById('terminate-conversation-btn');
+                    
+                    if (messageInput) {
+                        messageInput.disabled = true;
+                        messageInput.placeholder = 'Chat has been terminated';
+                    }
+                    if (sendButton) sendButton.disabled = true;
+                    if (terminateBtn) terminateBtn.style.display = 'none';
+                    
+                    // Add termination message to the chat
+                    const terminationMessage = {
+                        id: Date.now(),
+                        body: 'Conversation ended by agent.',
+                        user: null,
+                        created_at: new Date().toISOString(),
+                        message_type: 'system'
+                    };
+                    addMessageToContainer(terminationMessage);
+                    
+                    alert('Chat terminated successfully');
+                    
+                    // Reload conversations list to update status
+                    loadConversations();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to terminate chat');
+            }
+        }
+    };
 
+    // Handle conversation termination by customer
+    function handleAdminConversationTerminated(data) {
+        console.log('🚫 Handling admin conversation termination:', data);
+        
+        // Update conversation status
+        const statusElement = document.getElementById('conversation-status');
+        if (statusElement) {
+            statusElement.textContent = 'Chat Terminated by Customer';
+            statusElement.className = 'text-sm text-red-600';
+        }
+        
+        // Disable the form
+        const messageInput = document.getElementById('admin-message-input');
+        const sendButton = document.querySelector('#admin-reply-form button[type="submit"]');
+        const terminateBtn = document.getElementById('terminate-conversation-btn');
+        
+        if (messageInput) {
+            messageInput.disabled = true;
+            messageInput.placeholder = 'Chat has been terminated by customer';
+        }
+        if (sendButton) {
+            sendButton.disabled = true;
+            sendButton.style.opacity = '0.5';
+        }
+        if (terminateBtn) terminateBtn.style.display = 'none';
+        
+        // Add termination notification to the chat
+        const messagesContainer = document.getElementById('messages-container');
+        if (messagesContainer) {
+            const terminationElement = document.createElement('div');
+            terminationElement.className = 'mb-4 text-center';
+            terminationElement.innerHTML = `
+                <div class="inline-block px-4 py-3 rounded-lg bg-red-100 text-red-800 border border-red-300">
+                    <div class="font-medium text-sm">🚫 Chat Terminated</div>
+                    <div class="mt-1">This conversation has been ended by the customer.</div>
+                    <div class="text-xs mt-2 opacity-75">${new Date().toLocaleString()}</div>
+                </div>
+            `;
+            messagesContainer.appendChild(terminationElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Show notification
+        alert('The customer has terminated this conversation.');
+        
+        // Reload conversations list to update status
+        loadConversations();
+    }
 
 });
 </script>

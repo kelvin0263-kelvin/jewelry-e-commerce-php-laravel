@@ -19,10 +19,21 @@ use Illuminate\Support\Facades\Log;
 Route::post('/chat/start', [App\Modules\Support\Controllers\ChatController::class, 'startChat'])->name('chat.start')->middleware('auth');
 Route::get('/chat/queue-status/{conversationId}', [App\Modules\Support\Controllers\ChatController::class, 'getQueueStatus'])->name('chat.queue-status')->middleware('auth');
 Route::post('/chat/leave-queue/{conversationId}', [App\Modules\Support\Controllers\ChatController::class, 'leaveQueue'])->name('chat.leave-queue')->middleware('auth');
+Route::post('/chat/terminate/{conversationId}', [App\Modules\Support\Controllers\ChatController::class, 'terminateConversation'])->name('chat.terminate')->middleware('auth');
+
+// Chat History routes
+Route::middleware(['auth'])->prefix('chat-history')->group(function () {
+    Route::get('/', [App\Modules\Support\Controllers\ChatHistoryController::class, 'index'])->name('chat-history.index');
+    Route::get('/search', [App\Modules\Support\Controllers\ChatHistoryController::class, 'search'])->name('chat-history.search');
+    Route::get('/{conversationId}', [App\Modules\Support\Controllers\ChatHistoryController::class, 'show'])->name('chat-history.show');
+    Route::get('/{conversationId}/messages', [App\Modules\Support\Controllers\ChatHistoryController::class, 'messages'])->name('chat-history.messages');
+    Route::get('/{conversationId}/download', [App\Modules\Support\Controllers\ChatHistoryController::class, 'download'])->name('chat-history.download');
+});
 
 // Chat routes for authenticated users
 Route::middleware(['auth'])->group(function () {
     Route::get('chat/conversations', [App\Modules\Support\Controllers\ChatController::class, 'conversations'])->name('chat.conversations');
+    Route::get('chat/conversations/{conversation}', [App\Modules\Support\Controllers\ChatController::class, 'show'])->name('chat.conversation.show');
     Route::get('chat/conversations/{conversation}/messages', [App\Modules\Support\Controllers\ChatController::class, 'fetchMessages'])->name('chat.messages');
     Route::post('chat/messages', [App\Modules\Support\Controllers\ChatController::class, 'sendMessage'])->name('chat.send');
     
@@ -37,6 +48,7 @@ Route::middleware(['auth'])->group(function () {
 
 // Admin chat routes
 Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/chat/conversations/{id}', [App\Modules\Support\Controllers\ChatController::class, 'show']);
     Route::get('/admin/chat/conversations/{id}/messages', [App\Modules\Support\Controllers\ChatController::class, 'messages']);
     Route::post('/admin/chat/messages', [App\Modules\Support\Controllers\ChatController::class, 'store']);
 });
@@ -84,10 +96,10 @@ Route::post('/broadcasting/auth', function (Request $request) {
         $channelNameShort = substr($channelName, 8); // Remove 'private-' prefix
         Log::info('Processing private channel: ' . $channelNameShort);
 
-        // Check if this is a chat channel
-        if (preg_match('/^chat\.(\d+)$/', $channelNameShort, $matches)) {
+        // Check if this is a conversation channel
+        if (preg_match('/^conversation\.(\d+)$/', $channelNameShort, $matches)) {
             $conversationId = $matches[1];
-            Log::info('Authorizing chat channel', [
+            Log::info('Authorizing conversation channel', [
                 'conversation_id' => $conversationId,
                 'user_id' => $user->id,
             ]);

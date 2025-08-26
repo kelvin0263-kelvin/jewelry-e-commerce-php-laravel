@@ -11,7 +11,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register Chat Observer Service Provider
+        $this->app->register(\App\Modules\Support\Providers\ChatObserverServiceProvider::class);
     }
 
     /**
