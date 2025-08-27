@@ -363,8 +363,52 @@ function updatePendingQueue(chats) {
 }
 
 function updateAgentsList(agents) {
-    // Update agents list display
-    // Implementation would update the status badges and chat counts
+    const agentsList = document.getElementById('agents-list');
+    if (!agentsList) return;
+    
+    agentsList.innerHTML = '';
+    
+    agents.forEach(agent => {
+        const agentElement = document.createElement('div');
+        agentElement.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+        
+        // Determine status badge classes and text
+        let statusBadgeClass = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-gray-600 bg-gray-100';
+        let statusText = 'Offline';
+        let statusDotClass = 'w-1.5 h-1.5 bg-gray-400 rounded-full mr-1';
+        
+        if (agent.status === 'online') {
+            statusBadgeClass = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-green-600 bg-green-100';
+            statusText = 'Online';
+            statusDotClass = 'w-1.5 h-1.5 bg-green-400 rounded-full mr-1';
+        } else if (agent.status === 'away') {
+            statusBadgeClass = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-yellow-600 bg-yellow-100';
+            statusText = 'Away';
+            statusDotClass = 'w-1.5 h-1.5 bg-yellow-400 rounded-full mr-1';
+        }
+        
+        agentElement.innerHTML = `
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <div class="font-medium text-gray-900">${agent.user.name}</div>
+                    <div class="text-xs text-gray-500">${agent.current_active_chats}/${agent.max_concurrent_chats} chats</div>
+                </div>
+            </div>
+            <div>
+                <span class="${statusBadgeClass}">
+                    <span class="${statusDotClass}"></span>
+                    ${statusText}
+                </span>
+            </div>
+        `;
+        
+        agentsList.appendChild(agentElement);
+    });
 }
 
 function acceptChat(queueId) {
@@ -454,6 +498,13 @@ function abandonChat(queueId) {
 }
 
 function updateMyStatus(status) {
+    // Immediately update UI to show loading state
+    const statusButtons = document.querySelectorAll('[onclick^="updateMyStatus"]');
+    statusButtons.forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('opacity-50');
+    });
+    
     fetch('/admin/chat-queue/agent-status', {
         method: 'POST',
         headers: {
@@ -468,19 +519,36 @@ function updateMyStatus(status) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Status updated to ' + status);
+            // Show success message briefly
+            showStatusMessage(`Status updated to ${status.toUpperCase()}`, 'success');
+            // Refresh the queue to update agent list
             refreshQueue();
         } else {
-            alert('Failed to update status');
+            showStatusMessage('Failed to update status', 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Failed to update status');
+        showStatusMessage('Failed to update status', 'error');
+    })
+    .finally(() => {
+        // Re-enable buttons
+        statusButtons.forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
+        });
     });
 }
 
 function fixAgentStatus() {
+    // Disable fix button while processing
+    const fixBtn = document.querySelector('[onclick="fixAgentStatus()"]');
+    if (fixBtn) {
+        fixBtn.disabled = true;
+        fixBtn.classList.add('opacity-50');
+        fixBtn.textContent = 'Fixing...';
+    }
+    
     fetch('/admin/chat-queue/agent-status', {
         method: 'POST',
         headers: {
@@ -497,16 +565,54 @@ function fixAgentStatus() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('✅ Agent status fixed! You can now accept chats.');
+            showStatusMessage('✅ Agent status fixed! You can now accept chats.', 'success');
             refreshQueue();
         } else {
-            alert('❌ Failed to fix status: ' + data.message);
+            showStatusMessage('❌ Failed to fix status: ' + data.message, 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('❌ Failed to fix status');
+        showStatusMessage('❌ Failed to fix status', 'error');
+    })
+    .finally(() => {
+        // Re-enable button
+        if (fixBtn) {
+            fixBtn.disabled = false;
+            fixBtn.classList.remove('opacity-50');
+            fixBtn.textContent = 'Fix Status';
+        }
     });
+}
+
+// Helper function to show status messages instead of alerts
+function showStatusMessage(message, type = 'info') {
+    // Remove any existing status messages
+    const existingMessage = document.getElementById('status-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    // Create new status message
+    const messageDiv = document.createElement('div');
+    messageDiv.id = 'status-message';
+    messageDiv.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white font-medium transition-opacity duration-300 ${
+        type === 'success' ? 'bg-green-500' : 
+        type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+    }`;
+    messageDiv.textContent = message;
+    
+    document.body.appendChild(messageDiv);
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        messageDiv.style.opacity = '0';
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.remove();
+            }
+        }, 300);
+    }, 3000);
 }
 </script>
 @endsection

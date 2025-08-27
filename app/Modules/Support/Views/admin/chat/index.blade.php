@@ -236,6 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 conversationElement.className = statusClass;
+                conversationElement.setAttribute('data-conversation-id', conversation.id);
                 conversationElement.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div class="flex-1 min-w-0">
@@ -332,19 +333,57 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Check if conversation is terminated - be more explicit about the conditions
-            const isCompleted = conversation.status === 'completed';
-            const isAbandoned = conversation.status === 'abandoned';
-            const hasEndedAt = conversation.ended_at && conversation.ended_at !== null;
+            console.log('🔍 Raw conversation object:', JSON.stringify(conversation, null, 2));
+            console.log('🔍 Conversation status:', conversation.status, 'Type:', typeof conversation.status);
+            console.log('🔍 Conversation ended_at:', conversation.ended_at, 'Type:', typeof conversation.ended_at);
+            
+            // Multiple ways to detect if a conversation is terminated
+            const statusBasedTermination = ['completed', 'abandoned', 'ended', 'closed', 'terminated'].includes(conversation.status);
+            const hasEndedAt = conversation.ended_at && conversation.ended_at !== null && conversation.ended_at !== '';
+            
+            // Additional check: if conversation list shows it as completed, also check the state we stored
+            const storedState = getConversationState(conversationId);
+            const isStoredAsTerminated = storedState.terminated || ['completed', 'abandoned', 'ended', 'closed'].includes(storedState.status);
             
             // Also check messages for system termination messages
             const hasTerminationMessage = messages.some(msg => 
                 msg.message_type === 'system' && 
-                (msg.body.includes('ended by customer') || msg.body.includes('ended by agent') || msg.body.includes('Conversation ended'))
+                (msg.body.includes('ended by customer') || 
+                 msg.body.includes('ended by agent') || 
+                 msg.body.includes('Conversation ended') ||
+                 msg.body.includes('Chat terminated') ||
+                 msg.body.includes('abandoned') ||
+                 msg.body.includes('completed'))
             );
             
-            const isTerminated = isCompleted || isAbandoned || hasEndedAt || hasTerminationMessage;
+            // If ANY of these conditions are true, the conversation is terminated
+            let isTerminated = statusBasedTermination || hasEndedAt || hasTerminationMessage || isStoredAsTerminated;
             
-            console.log('🔍 Termination check:', { isCompleted, isAbandoned, hasEndedAt, hasTerminationMessage, isTerminated });
+            // FORCE TERMINATION: If we're not detecting termination but conversation shows "Completed" in list
+            // This is a failsafe for edge cases
+            if (!isTerminated) {
+                // Check if the conversation in the list was marked as completed
+                const conversationListItems = document.querySelectorAll('[data-conversation-id="' + conversationId + '"]');
+                const isMarkedCompletedInList = Array.from(conversationListItems).some(item => 
+                    item.textContent.includes('Completed') || item.textContent.includes('Abandoned')
+                );
+                
+                if (isMarkedCompletedInList) {
+                    console.log('🚨 FORCE TERMINATION: Conversation marked as completed in list but not detected by logic');
+                    isTerminated = true;
+                }
+            }
+            
+            console.log('🔍 Comprehensive Termination check:', { 
+                statusBasedTermination,
+                hasEndedAt, 
+                hasTerminationMessage, 
+                isStoredAsTerminated,
+                isTerminated,
+                actualStatus: conversation.status,
+                actualEndedAt: conversation.ended_at,
+                storedState: storedState
+            });
             
             if (isTerminated) {
                 console.log('⚠️ Conversation is terminated, setting up terminated UI');
@@ -381,19 +420,50 @@ document.addEventListener('DOMContentLoaded', function() {
                 terminationNotice.id = 'termination-notice';
                 terminationNotice.className = 'bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-center';
                 
-                const terminatedBy = conversation.end_reason === 'resolved' ? 'admin' : 'customer';
-                const statusText = conversation.status === 'completed' ? 'Completed' : 'Abandoned';
+                // Determine termination reason more accurately
+                let terminatedBy = 'customer';
+                let statusText = 'Abandoned';
+                let terminationMessage = 'This conversation was ended by the customer.';
+                
+                if (conversation.status === 'completed' || conversation.end_reason === 'resolved') {
+                    terminatedBy = 'admin';
+                    statusText = 'Completed';
+                    terminationMessage = 'This conversation was ended by an administrator.';
+                } else if (hasTerminationMessage) {
+                    // Check the actual message to determine who terminated
+                    const termMsg = messages.find(msg => 
+                        msg.message_type === 'system' && 
+                        (msg.body.includes('ended by customer') || msg.body.includes('ended by agent'))
+                    );
+                    if (termMsg && termMsg.body.includes('ended by agent')) {
+                        terminatedBy = 'admin';
+                        statusText = 'Completed';
+                        terminationMessage = 'This conversation was ended by an administrator.';
+                    }
+                }
                 
                 terminationNotice.innerHTML = `
                     <div class="text-red-800 font-medium text-lg">
                         🚫 Chat ${statusText}
                     </div>
                     <div class="text-red-600 text-sm mt-1">
-                        This conversation was ended ${conversation.end_reason ? `(${conversation.end_reason})` : ''} 
-                        ${conversation.ended_at ? `on ${new Date(conversation.ended_at).toLocaleString()}` : ''}
+                        ${terminationMessage}
+                        ${conversation.ended_at ? `<br>Ended on ${new Date(conversation.ended_at).toLocaleString()}` : ''}
                     </div>
                 `;
                 replyFormContainer.insertBefore(terminationNotice, replyFormContainer.firstChild);
+                
+                // Also add a system message to the chat if none exists and conversation is terminated
+                if (!hasTerminationMessage && isTerminated) {
+                    const systemTerminationMessage = {
+                        id: Date.now(),
+                        body: terminatedBy === 'admin' ? 'Conversation ended by agent.' : 'Conversation ended by customer.',
+                        user: null,
+                        created_at: conversation.ended_at || new Date().toISOString(),
+                        message_type: 'system'
+                    };
+                    addMessageToContainer(systemTerminationMessage);
+                }
                 
                 console.log('✅ Terminated UI setup complete');
             } else {
