@@ -52,6 +52,30 @@ class Ticket extends Model
         'satisfaction_rating' => 'integer'
     ];
 
+    protected $hidden = [
+        '_statusChanged'
+    ];
+
+    /**
+     * Override getDirty to exclude temporary properties from database operations
+     */
+    public function getDirty()
+    {
+        $dirty = parent::getDirty();
+        unset($dirty['_statusChanged']);
+        return $dirty;
+    }
+
+    /**
+     * Override attributesToArray to exclude temporary properties
+     */
+    public function attributesToArray()
+    {
+        $attributes = parent::attributesToArray();
+        unset($attributes['_statusChanged']);
+        return $attributes;
+    }
+
     // Relationships
     public function user(): BelongsTo
     {

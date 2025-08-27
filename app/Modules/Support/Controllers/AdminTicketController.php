@@ -157,7 +157,7 @@ class AdminTicketController extends Controller
             'attachments' => $attachments
         ]);
 
-        $messageType = $validated['is_internal'] ? 'internal note' : 'reply';
+        $messageType = ($validated['is_internal'] ?? false) ? 'internal note' : 'reply';
         return back()->with('success', "Your {$messageType} has been added.");
     }
 
