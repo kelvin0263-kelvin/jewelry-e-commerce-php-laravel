@@ -41,7 +41,7 @@
                 <!-- Admin Reply Form -->
                 <div class="p-4 border-t border-gray-100" id="reply-form-container" style="display: none;">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm text-gray-600" id="conversation-status"></span>
+                        <span class="text-sm text-gray-600" id="conversation-status" style="display: none;"></span>
                         <button type="button" id="terminate-conversation-btn" onclick="terminateConversation()" 
                                 class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 text-sm" style="display: none;">
                             End Chat
@@ -234,9 +234,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const isCompleted = conversation.status === 'completed';
             const isAbandoned = conversation.status === 'abandoned';
             const hasEndedAt = conversation.ended_at && conversation.ended_at !== null;
-            const isTerminated = isCompleted || isAbandoned || hasEndedAt;
             
-            console.log('🔍 Termination check:', { isCompleted, isAbandoned, hasEndedAt, isTerminated });
+            // Also check messages for system termination messages
+            const hasTerminationMessage = messages.some(msg => 
+                msg.message_type === 'system' && 
+                (msg.body.includes('ended by customer') || msg.body.includes('ended by agent') || msg.body.includes('Conversation ended'))
+            );
+            
+            const isTerminated = isCompleted || isAbandoned || hasEndedAt || hasTerminationMessage;
+            
+            console.log('🔍 Termination check:', { isCompleted, isAbandoned, hasEndedAt, hasTerminationMessage, isTerminated });
             
             if (isTerminated) {
                 console.log('⚠️ Conversation is terminated, setting up terminated UI');
@@ -293,10 +300,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('✅ Conversation is active, setting up active UI');
                 
                 if (statusElement) {
-                    statusElement.style.display = 'block';
-                    statusElement.textContent = conversation.assigned_agent_id ? 'Active Chat' : 'Waiting for Agent';
-                    statusElement.className = conversation.assigned_agent_id ? 'text-sm text-green-600 font-medium' : 'text-sm text-yellow-600 font-medium';
-                    console.log('✅ Status element set to:', statusElement.textContent);
+                    // Don't show "Waiting for Agent" - keep it hidden
+                    statusElement.style.display = 'none';
+                    console.log('✅ Status element kept hidden');
                 }
                 
                 if (messageInput) {
@@ -334,6 +340,59 @@ document.addEventListener('DOMContentLoaded', function() {
                 messages.forEach(message => {
                     addMessageToContainer(message);
                 });
+            }
+            
+            // After displaying messages, do another termination check
+            const systemMessages = messages.filter(msg => msg.message_type === 'system');
+            const hasTerminationSystemMessage = systemMessages.some(msg => 
+                msg.body.includes('ended by customer') || 
+                msg.body.includes('ended by agent') || 
+                msg.body.includes('Conversation ended')
+            );
+            
+            console.log('🔍 System messages found:', systemMessages.length);
+            console.log('🔍 Has termination system message:', hasTerminationSystemMessage);
+            
+            // If we find termination messages but UI isn't terminated, force termination
+            if (hasTerminationSystemMessage && !isTerminated) {
+                console.log('🚨 FORCE TERMINATION: Found system termination message but UI not terminated');
+                
+                // Force hide UI elements
+                const statusEl = document.getElementById('conversation-status');
+                const messageInp = document.getElementById('admin-message-input');
+                const sendBtn = document.getElementById('send-message-btn');
+                const termBtn = document.getElementById('terminate-conversation-btn');
+                
+                if (statusEl) statusEl.style.display = 'none';
+                if (messageInp) {
+                    messageInp.style.display = 'none';
+                    messageInp.disabled = true;
+                }
+                if (sendBtn) {
+                    sendBtn.style.display = 'none';
+                    sendBtn.disabled = true;
+                }
+                if (termBtn) {
+                    termBtn.style.display = 'none';
+                    termBtn.disabled = true;
+                }
+                
+                // Add termination notice if not already present
+                const replyContainer = document.getElementById('reply-form-container');
+                if (replyContainer && !document.getElementById('termination-notice')) {
+                    const notice = document.createElement('div');
+                    notice.id = 'termination-notice';
+                    notice.className = 'bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-center';
+                    notice.innerHTML = `
+                        <div class="text-red-800 font-medium text-lg">
+                            🚫 Chat Terminated by Customer
+                        </div>
+                        <div class="text-red-600 text-sm mt-1">
+                            The customer has ended this conversation.
+                        </div>
+                    `;
+                    replyContainer.insertBefore(notice, replyContainer.firstChild);
+                }
             }
             
             // Scroll to bottom
