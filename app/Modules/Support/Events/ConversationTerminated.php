@@ -7,11 +7,11 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ConversationTerminated implements ShouldBroadcast
+class ConversationTerminated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -21,43 +21,36 @@ class ConversationTerminated implements ShouldBroadcast
 
     /**
      * Create a new event instance.
+     *
+     * @return void
      */
-    public function __construct(Conversation $conversation, $terminatedBy, $reason = null)
+    public function __construct(Conversation $conversation, string $terminatedBy, ?string $reason = null)
     {
         $this->conversation = $conversation;
-        $this->terminatedBy = $terminatedBy; // 'admin' or 'customer'
+        $this->terminatedBy = $terminatedBy; // 'admin' or 'customer'  
         $this->reason = $reason;
     }
 
     /**
      * Get the channels the event should broadcast on.
+     *
+     * @return \Illuminate\Broadcasting\Channel|array
      */
-    public function broadcastOn(): array
+    public function broadcastOn()
     {
-        return [
-            new PrivateChannel('conversation.' . $this->conversation->id),
-        ];
+        return new PrivateChannel('conversation.' . $this->conversation->id);
     }
-
+    
     /**
-     * The event's broadcast name.
+     * Data to broadcast with the event
      */
-    public function broadcastAs(): string
-    {
-        return 'ConversationTerminated';
-    }
-
-    /**
-     * Get the data to broadcast.
-     */
-    public function broadcastWith(): array
+    public function broadcastWith()
     {
         return [
             'conversation_id' => $this->conversation->id,
-            'terminated_by' => $this->terminatedBy,
+            'terminatedBy' => $this->terminatedBy,
             'reason' => $this->reason,
-            'status' => $this->conversation->status,
-            'ended_at' => $this->conversation->ended_at?->toISOString(),
+            'timestamp' => now()->toISOString()
         ];
     }
 }

@@ -48,6 +48,7 @@ Route::middleware(['auth'])->group(function () {
 
 // Admin chat routes
 Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/chat/conversations', [App\Modules\Support\Controllers\ChatController::class, 'conversations']);
     Route::get('/admin/chat/conversations/{id}', [App\Modules\Support\Controllers\ChatController::class, 'show']);
     Route::get('/admin/chat/conversations/{id}/messages', [App\Modules\Support\Controllers\ChatController::class, 'messages']);
     Route::post('/admin/chat/messages', [App\Modules\Support\Controllers\ChatController::class, 'store']);

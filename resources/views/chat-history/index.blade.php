@@ -100,7 +100,7 @@
                                 
                                 <!-- Action Buttons -->
                                 <div class="flex flex-col space-y-2 ml-4">
-                                    @if($conversation->status === 'active')
+                                    @if($conversation->status === 'active' && !$conversation->ended_at && $conversation->assigned_agent_id)
                                         <button onclick="continueChat({{ $conversation->id }})" 
                                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,6 +108,13 @@
                                             </svg>
                                             Continue Chat
                                         </button>
+                                    @elseif($conversation->status === 'active' && !$conversation->ended_at && !$conversation->assigned_agent_id)
+                                        <span class="inline-flex items-center px-3 py-2 text-sm leading-4 font-medium text-orange-700 bg-orange-100 rounded-md">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            Waiting for Agent
+                                        </span>
                                     @endif
                                     
                                     <a href="{{ route('chat-history.show', $conversation->id) }}" 
@@ -172,11 +179,19 @@
 function continueChat(conversationId) {
     // Set the conversation ID for the widget
     window.conversationId = conversationId;
+    localStorage.setItem('activeConversationId', conversationId);
     
     // Trigger the chat widget to open with the existing conversation
     if (typeof window.startLiveChat === 'function') {
-        // Use the existing startLiveChat function but with a specific conversation
-        window.startLiveChat(conversationId);
+        // Open the chat widget interface
+        const selfServiceBox = document.getElementById('self-service-box');
+        const chatBox = document.getElementById('chat-box');
+        
+        if (selfServiceBox) selfServiceBox.style.display = 'none';
+        if (chatBox) chatBox.style.display = 'flex';
+        
+        // Directly resume the existing conversation without going through queue
+        window.resumeExistingChat(conversationId);
     } else {
         // Fallback: redirect to homepage and open chat
         window.location.href = '/?open_chat=' + conversationId;

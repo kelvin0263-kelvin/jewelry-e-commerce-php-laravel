@@ -23,19 +23,27 @@ class ChatController extends Controller
      */
     public function conversations()
     {
-        // Only show conversations that have been accepted by agents
-        // Exclude conversations that are still pending in queue
-        $conversations = Conversation::with('user')
-            ->where(function($query) {
-                $query->where('status', '!=', 'pending')
-                      ->orWhereHas('queueItem', function($subQuery) {
-                          $subQuery->where('status', 'assigned');
-                      });
-            })
-            ->latest()
-            ->get();
-            
-        return response()->json($conversations);
+        try {
+            // Simplified query - get all conversations with users
+            $conversations = Conversation::with(['user', 'agent'])
+                ->select([
+                    'id', 
+                    'user_id', 
+                    'assigned_agent_id', 
+                    'status', 
+                    'started_at', 
+                    'ended_at', 
+                    'end_reason',
+                    'created_at',
+                    'updated_at'
+                ])
+                ->latest()
+                ->get();
+                
+            return response()->json($conversations);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to load conversations: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -65,6 +73,17 @@ class ChatController extends Controller
             'conversation_id' => 'required|exists:conversations,id',
             'body' => 'required|string',
         ]);
+
+        // Get the conversation first to check its status
+        $conversation = Conversation::findOrFail($request->conversation_id);
+        
+        // Check if conversation is terminated
+        if (in_array($conversation->status, ['completed', 'abandoned'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot send message to a terminated conversation'
+            ], 400);
+        }
 
         $message = Message::create([
             'conversation_id' => $request->conversation_id,
@@ -96,6 +115,17 @@ class ChatController extends Controller
             'user_id' => 'required|exists:users,id',
             'content' => 'required|string',
         ]);
+
+        // Get the conversation first to check its status
+        $conversation = Conversation::findOrFail($validated['conversation_id']);
+        
+        // Check if conversation is terminated
+        if (in_array($conversation->status, ['completed', 'abandoned'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot send message to a terminated conversation'
+            ], 400);
+        }
 
         // Create message with 'body' field (matching your database schema)
         $message = Message::create([
