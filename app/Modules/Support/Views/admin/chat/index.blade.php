@@ -4,24 +4,88 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-6">
-    <div class="bg-white rounded-lg shadow-md">
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800">Chat Management</h1>
-                    <p class="text-gray-600 mt-2">Manage customer conversations and messages</p>
-                </div>
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Chat Management</h1>
+        <p class="text-gray-600 mt-2">Manage customer conversations and messages</p>
+    </div>
 
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow-md p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500">Total Conversations</div>
+                    <div class="text-2xl font-bold text-gray-900" id="total-conversations">0</div>
+                </div>
             </div>
         </div>
 
+        <div class="bg-white rounded-lg shadow-md p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500">Active Chats</div>
+                    <div class="text-2xl font-bold text-gray-900" id="active-chats">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-yellow-100 rounded-lg">
+                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500">Pending</div>
+                    <div class="text-2xl font-bold text-gray-900" id="pending-chats">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-gray-100 rounded-lg">
+                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500">Completed</div>
+                    <div class="text-2xl font-bold text-gray-900" id="completed-chats">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Chat Interface -->
+    <div class="bg-white rounded-lg shadow-md">
         <div class="flex h-96">
             <!-- Conversations List -->
-            <div class="w-1/3 border-r border-gray-200 overflow-y-auto">
-                <div class="p-4 border-b border-gray-100">
-                    <h2 class="font-semibold text-gray-700">Conversations</h2>
+            <div class="w-1/3 border-r border-gray-200">
+                <div class="p-4 border-b border-gray-100 bg-gray-50">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-semibold text-gray-700">Conversations</h2>
+                        <button onclick="loadConversations()" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
                 </div>
-                <div id="conversations-list">
+                <div class="overflow-y-auto" style="height: calc(100% - 60px);" id="conversations-list">
                     <div class="p-4 text-center text-gray-500">
                         Loading conversations...
                     </div>
@@ -30,28 +94,32 @@
 
             <!-- Messages Display -->
             <div class="w-2/3 flex flex-col">
-                <div class="p-4 border-b border-gray-100">
+                <div class="p-4 border-b border-gray-100 bg-gray-50">
                     <h2 class="font-semibold text-gray-700" id="chat-header">Select a conversation</h2>
                 </div>
-                <div class="flex-1 overflow-y-auto p-4" id="messages-container">
-                    <div class="text-center text-gray-500">
-                        Select a conversation to view messages
+                <div class="flex-1 overflow-y-auto p-4 bg-gray-50" id="messages-container">
+                    <div class="text-center text-gray-500 mt-20">
+                        <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                        <p class="text-lg font-medium text-gray-900">Select a conversation</p>
+                        <p class="text-gray-500">Choose a conversation from the list to view messages</p>
                     </div>
                 </div>
                 <!-- Admin Reply Form -->
-                <div class="p-4 border-t border-gray-100" id="reply-form-container" style="display: none;">
+                <div class="p-4 border-t border-gray-200 bg-white" id="reply-form-container" style="display: none;">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-sm text-gray-600" id="conversation-status" style="display: none;"></span>
                         <button type="button" id="terminate-conversation-btn" onclick="terminateConversation()" 
-                                class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 text-sm" style="display: none;">
+                                class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 text-sm transition-colors" style="display: none;">
                             End Chat
                         </button>
                     </div>
                     <form id="admin-reply-form" class="flex gap-2">
                         <input type="hidden" id="current-conversation-id" value="">
                         <input type="text" id="admin-message-input" placeholder="Type your reply..." 
-                               class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
-                        <button type="submit" id="send-message-btn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600" style="display: none;">
+                               class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled>
+                        <button type="submit" id="send-message-btn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors" style="display: none;">
                             Send
                         </button>
                     </form>
@@ -77,6 +145,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return conversationState[conversationId] || { status: 'unknown', terminated: false };
     }
 
+    // Update statistics cards
+    function updateStatistics(conversations) {
+        const totalConversations = conversations.length;
+        const activeChats = conversations.filter(c => c.status === 'active').length;
+        const pendingChats = conversations.filter(c => c.status === 'pending').length;
+        const completedChats = conversations.filter(c => c.status === 'completed' || c.status === 'abandoned').length;
+
+        document.getElementById('total-conversations').textContent = totalConversations;
+        document.getElementById('active-chats').textContent = activeChats;
+        document.getElementById('pending-chats').textContent = pendingChats;
+        document.getElementById('completed-chats').textContent = completedChats;
+    }
+
 
 
     // Load conversations on page load
@@ -97,10 +178,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const conversations = await response.json();
             console.log('Fetched conversations:', conversations);
             
+            // Update statistics cards
+            updateStatistics(conversations);
+            
             const conversationsList = document.getElementById('conversations-list');
             
             if (conversations.length === 0) {
-                conversationsList.innerHTML = '<div class="p-4 text-center text-gray-500">No conversations yet</div>';
+                conversationsList.innerHTML = `
+                    <div class="p-8 text-center text-gray-500">
+                        <svg class="w-12 h-12 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                        <p class="font-medium text-gray-900 mb-1">No conversations yet</p>
+                        <p class="text-sm text-gray-500">Customer conversations will appear here</p>
+                    </div>
+                `;
                 return;
             }
 
@@ -118,18 +210,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 // Add different styling based on conversation status
-                let statusClass = 'p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50';
+                let statusClass = 'p-4 border-b border-gray-100 cursor-pointer hover:bg-blue-50 transition-colors duration-200';
                 let statusColor = 'text-green-600';
                 let statusText = 'Active';
                 let statusBgColor = 'bg-green-100';
                 
                 if (conversation.status === 'completed' || conversation.ended_at) {
-                    statusClass = 'p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50';
+                    statusClass = 'p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-200';
                     statusColor = 'text-gray-600';
                     statusText = 'Completed';
                     statusBgColor = 'bg-gray-100';
                 } else if (conversation.status === 'abandoned') {
-                    statusClass = 'p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50';
+                    statusClass = 'p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-200';
                     statusColor = 'text-gray-600';
                     statusText = 'Abandoned';
                     statusBgColor = 'bg-gray-100';
@@ -146,15 +238,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 conversationElement.className = statusClass;
                 conversationElement.innerHTML = `
                     <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <div class="font-medium text-gray-800">${conversation.user.name}</div>
-                            <div class="text-sm text-gray-600">${conversation.user.email}</div>
-                            <div class="text-xs text-gray-500 mt-1">Conversation #${conversation.id}</div>
-                        </div>
-                        <div class="ml-2">
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusColor} ${statusBgColor}">
-                                ${statusText}
-                            </span>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center mb-1">
+                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-medium text-gray-900 truncate">${conversation.user.name}</div>
+                                    <div class="text-sm text-gray-500 truncate">${conversation.user.email}</div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div class="text-xs text-gray-400">#${conversation.id}</div>
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusColor} ${statusBgColor}">
+                                    ${statusText}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 `;

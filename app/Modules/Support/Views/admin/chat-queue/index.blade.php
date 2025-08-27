@@ -3,140 +3,136 @@
 @section('title', 'Chat Queue Management')
 
 @section('content')
-<div class="container-fluid py-4">
-    <!-- Queue Statistics -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body p-3">
-                    <div class="row">
-                        <div class="col-8">
-                            <div class="numbers">
-                                <p class="text-sm mb-0 text-capitalize font-weight-bold">Waiting Customers</p>
-                                <h5 class="font-weight-bolder mb-0" id="waiting-count">
-                                    {{ $stats['waiting_customers'] }}
-                                </h5>
-                            </div>
+<div class="container mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Chat Queue Management</h1>
+        <p class="text-gray-600 mt-2">Manage incoming chat requests and agent assignments</p>
+    </div>
 
-                        </div>
-                        <div class="col-4 text-end">
-                            <div class="icon icon-shape bg-gradient-warning shadow text-center border-radius-md">
-                                <i class="ni ni-single-02 text-lg opacity-10" aria-hidden="true"></i>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow-md p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-yellow-100 rounded-lg">
+                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500">Waiting Customers</div>
+                    <div class="text-2xl font-bold text-gray-900" id="waiting-count">{{ $stats['waiting_customers'] }}</div>
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body p-3">
-                    <div class="row">
-                        <div class="col-8">
-                            <div class="numbers">
-                                <p class="text-sm mb-0 text-capitalize font-weight-bold">Active Chats</p>
-                                <h5 class="font-weight-bolder mb-0" id="active-count">
-                                    {{ $stats['active_chats'] }}
-                                </h5>
-                            </div>
 
-                        </div>
-                        <div class="col-4 text-end">
-                            <div class="icon icon-shape bg-gradient-success shadow text-center border-radius-md">
-                                <i class="ni ni-chat-round text-lg opacity-10" aria-hidden="true"></i>
-                            </div>
-                        </div>
-                    </div>
+        <div class="bg-white rounded-lg shadow-md p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500">Active Chats</div>
+                    <div class="text-2xl font-bold text-gray-900" id="active-count">{{ $stats['active_chats'] }}</div>
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body p-3">
-                    <div class="row">
-                        <div class="col-8">
-                            <div class="numbers">
-                                <p class="text-sm mb-0 text-capitalize font-weight-bold">Available Agents</p>
-                                <h5 class="font-weight-bolder mb-0" id="available-agents">
-                                    {{ $stats['available_agents'] }}
-                                </h5>
-                            </div>
 
-                        </div>
-                        <div class="col-4 text-end">
-                            <div class="icon icon-shape bg-gradient-info shadow text-center border-radius-md">
-                                <i class="ni ni-headphones text-lg opacity-10" aria-hidden="true"></i>
-                            </div>
-                        </div>
-                    </div>
+        <div class="bg-white rounded-lg shadow-md p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500">Available Agents</div>
+                    <div class="text-2xl font-bold text-gray-900" id="available-agents">{{ $stats['available_agents'] }}</div>
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body p-3">
-                    <div class="row">
-                        <div class="col-8">
-                            <div class="numbers">
-                                <p class="text-sm mb-0 text-capitalize font-weight-bold">Avg Wait Time</p>
-                                <h5 class="font-weight-bolder mb-0" id="avg-wait">
-                                    {{ round($stats['average_wait_time'] / 60, 1) }}m
-                                </h5>
-                            </div>
 
-                        </div>
-                        <div class="col-4 text-end">
-                            <div class="icon icon-shape bg-gradient-primary shadow text-center border-radius-md">
-                                <i class="ni ni-time-alarm text-lg opacity-10" aria-hidden="true"></i>
-                            </div>
-                        </div>
-                    </div>
+        <div class="bg-white rounded-lg shadow-md p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-purple-100 rounded-lg">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-500">Avg Wait Time</div>
+                    <div class="text-2xl font-bold text-gray-900" id="avg-wait">{{ round($stats['average_wait_time'] / 60, 1) }}m</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <!-- Agent Status Panel -->
-        <div class="col-lg-4 mb-4">
-            <div class="card h-100">
-                <div class="card-header pb-0">
-                    <h6>Agent Status</h6>
-                    <div class="mb-3">
-                        <div class="row">
-                            <div class="col-6">
-                                <button onclick="updateMyStatus('online')" class="btn btn-success btn-sm w-100">Online</button>
-                            </div>
-                            <div class="col-6">
-                                <button onclick="updateMyStatus('away')" class="btn btn-warning btn-sm w-100">Away</button>
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-12">
-                                <button onclick="fixAgentStatus()" class="btn btn-info btn-sm w-100">
-                                    <i class="fas fa-wrench"></i> Fix Agent Status
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="p-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Agent Status</h3>
+                    <p class="text-sm text-gray-600">Manage your availability</p>
                 </div>
-                <div class="card-body">
-                    <div id="agents-list">
+                <div class="p-4">
+                    <!-- Status Controls -->
+                    <div class="space-y-2 mb-4">
+                        <button onclick="updateMyStatus('online')" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-md transition-colors">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Online
+                        </button>
+                        <button onclick="updateMyStatus('away')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-md transition-colors">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Away
+                        </button>
+                        <button onclick="fixAgentStatus()" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md transition-colors">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            Fix Status
+                        </button>
+                    </div>
+
+                    <!-- Agents List -->
+                    <div class="space-y-3" id="agents-list">
                         @foreach($agents as $agent)
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="me-3">
-                                    <span class="badge {{ $agent->getStatusBadgeClass() }}">
-                                        {{ $agent->getStatusIcon() }} {{ ucfirst($agent->status) }}
-                                    </span>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-gray-900">{{ $agent->user->name }}</div>
+                                        <div class="text-xs text-gray-500">{{ $agent->current_active_chats }}/{{ $agent->max_concurrent_chats }} chats</div>
+                                    </div>
                                 </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-0">{{ $agent->user->name }}</h6>
-                                    <small class="text-muted">
-                                        {{ $agent->current_active_chats }}/{{ $agent->max_concurrent_chats }} chats
-                                    </small>
+                                <div>
+                                    @if($agent->status === 'online')
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-green-600 bg-green-100">
+                                            <span class="w-1.5 h-1.5 bg-green-400 rounded-full mr-1"></span>
+                                            Online
+                                        </span>
+                                    @elseif($agent->status === 'away')
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-yellow-600 bg-yellow-100">
+                                            <span class="w-1.5 h-1.5 bg-yellow-400 rounded-full mr-1"></span>
+                                            Away
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-gray-600 bg-gray-100">
+                                            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>
+                                            Offline
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
@@ -146,73 +142,110 @@
         </div>
 
         <!-- Pending Queue -->
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header pb-0">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h6>Pending Chats Queue (FIFO)</h6>
-                        <button onclick="refreshQueue()" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-refresh"></i> Refresh
+        <div class="lg:col-span-3">
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800">Pending Chats Queue (FIFO)</h3>
+                            <p class="text-sm text-gray-600">First in, first out - customers waiting for assistance</p>
+                        </div>
+                        <button onclick="refreshQueue()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Refresh
                         </button>
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="p-4">
                     <div id="pending-queue">
                         @if($pendingChats->isEmpty())
-                            <div class="text-center py-4">
-                                <p class="text-muted">No customers waiting in queue</p>
+                            <div class="text-center py-12">
+                                <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="17 8h2a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2V10a2 2 0 012-2h2m2 4h6m-6 4h6m-6-8h6m-6 4h6"></path>
+                                </svg>
+                                <p class="text-lg font-medium text-gray-900 mb-1">No customers waiting in queue</p>
+                                <p class="text-gray-500">New chat requests will appear here</p>
                             </div>
                         @else
-                            @foreach($pendingChats as $chat)
-                                <div class="border rounded p-3 mb-3" data-queue-id="{{ $chat->id }}">
-                                    <div class="row align-items-center">
-                                        <div class="col-md-6">
-                                            <div class="d-flex align-items-center">
-                                                <div class="me-3">
-                                                    <span class="badge bg-info text-white">#{{ $chat->position }}</span>
+                            <div class="space-y-4">
+                                @foreach($pendingChats as $chat)
+                                    <div class="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors" data-queue-id="{{ $chat->id }}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center flex-1 min-w-0">
+                                                <div class="flex-shrink-0 mr-4">
+                                                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium text-white bg-blue-500">
+                                                        #{{ $chat->position }}
+                                                    </span>
                                                 </div>
-                                                <div>
-                                                    <h6 class="mb-1">{{ $chat->customer->name }}</h6>
-                                                    <small class="text-muted">
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex items-center">
+                                                        <h4 class="font-medium text-gray-900 truncate">{{ $chat->customer->name }}</h4>
+                                                        @if($chat->priority !== 'normal')
+                                                            <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $chat->priority === 'urgent' ? 'text-red-600 bg-red-100' : 'text-yellow-600 bg-yellow-100' }}">
+                                                                {{ ucfirst($chat->priority) }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                    <p class="text-sm text-gray-500 truncate">{{ $chat->customer->email }}</p>
+                                                    <div class="flex items-center mt-1 text-xs text-gray-400">
+                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                        </svg>
                                                         Waiting {{ $chat->wait_time }} minutes
-                                                    </small>
-                                                    @if($chat->priority !== 'normal')
-                                                        <span class="badge badge-sm bg-{{ $chat->priority === 'urgent' ? 'danger' : 'warning' }}">
-                                                            {{ ucfirst($chat->priority) }}
-                                                        </span>
-                                                    @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="flex items-center space-x-2 ml-4">
+                                                <button onclick="acceptChat({{ $chat->id }})" 
+                                                        class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-sm transition-colors">
+                                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="5 13l4 4L19 7"></path>
+                                                    </svg>
+                                                    Accept
+                                                </button>
+                                                <div class="relative">
+                                                    <button class="bg-gray-100 hover:bg-gray-200 text-gray-600 p-1 rounded-md transition-colors" onclick="toggleDropdown({{ $chat->id }})">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <div id="dropdown-{{ $chat->id }}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                                                        <div class="py-1">
+                                                            <button onclick="assignToAgent({{ $chat->id }})" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
+                                                                Assign to Agent
+                                                            </button>
+                                                            <button onclick="abandonChat({{ $chat->id }})" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left">
+                                                                Remove from Queue
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
-                                            @if($chat->escalation_context)
-                                                <small class="text-info">
-                                                    <i class="fas fa-arrow-up"></i> Escalated from: {{ $chat->escalation_context['issue_category'] ?? 'Self-service' }}
-                                                </small>
-                                            @endif
-                                            @if($chat->initial_message)
-                                                <p class="small text-muted mb-0">
-                                                    "{{ Str::limit($chat->initial_message, 50) }}"
-                                                </p>
-                                            @endif
-                                        </div>
-                                        <div class="col-md-3 text-end">
-                                            <button onclick="acceptChat({{ $chat->id }})" class="btn btn-success btn-sm me-2">
-                                                <i class="fas fa-check"></i> Accept
-                                            </button>
-                                            <div class="dropdown d-inline">
-                                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
-                                                    <i class="fas fa-ellipsis-v"></i>
-                                                </button>
-                                                <ul class="dropdown-menu">
-                                                    <li><a class="dropdown-item" href="#" onclick="assignToAgent({{ $chat->id }})">Assign to Agent</a></li>
-                                                    <li><a class="dropdown-item" href="#" onclick="abandonChat({{ $chat->id }})">Remove from Queue</a></li>
-                                                </ul>
+                                        
+                                        @if($chat->escalation_context || $chat->initial_message)
+                                            <div class="mt-3 pt-3 border-t border-gray-100">
+                                                @if($chat->escalation_context)
+                                                    <div class="flex items-center text-xs text-blue-600 mb-1">
+                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="7 11l5-5m0 0l5 5m-5-5v12"></path>
+                                                        </svg>
+                                                        Escalated from: {{ $chat->escalation_context['issue_category'] ?? 'Self-service' }}
+                                                    </div>
+                                                @endif
+                                                @if($chat->initial_message)
+                                                    <p class="text-sm text-gray-600 italic">
+                                                        "{{ Str::limit($chat->initial_message, 80) }}"
+                                                    </p>
+                                                @endif
                                             </div>
-                                        </div>
+                                        @endif
                                     </div>
-                                </div>
-                            @endforeach
+                                @endforeach
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -222,34 +255,40 @@
 </div>
 
 <!-- Assign Agent Modal -->
-<div class="modal fade" id="assignAgentModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Assign Chat to Agent</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
+<div id="assignAgentModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Assign Chat to Agent</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
             </div>
-            <div class="modal-body">
-                <form id="assignAgentForm">
-                    <input type="hidden" id="assignQueueId" name="queue_id">
-                    <div class="mb-3">
-                        <label class="form-label">Select Agent</label>
-                        <select class="form-select" id="assignAgentId" name="agent_id" required>
-                            <option value="">Choose an agent...</option>
-                            @foreach($agents->where('status', 'online') as $agent)
-                                @if($agent->canAcceptChats())
-                                    <option value="{{ $agent->user_id }}">
-                                        {{ $agent->user->name }} ({{ $agent->current_active_chats }}/{{ $agent->max_concurrent_chats }})
-                                    </option>
-                                @endif
-                            @endforeach
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitAssignment()">Assign</button>
+            <form id="assignAgentForm">
+                <input type="hidden" id="assignQueueId" name="queue_id">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Agent</label>
+                    <select class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="assignAgentId" name="agent_id" required>
+                        <option value="">Choose an agent...</option>
+                        @foreach($agents->where('status', 'online') as $agent)
+                            @if($agent->canAcceptChats())
+                                <option value="{{ $agent->user_id }}">
+                                    {{ $agent->user->name }} ({{ $agent->current_active_chats }}/{{ $agent->max_concurrent_chats }})
+                                </option>
+                            @endif
+                        @endforeach
+                    </select>
+                </div>
+            </form>
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md transition-colors">
+                    Cancel
+                </button>
+                <button onclick="submitAssignment()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors">
+                    Assign
+                </button>
             </div>
         </div>
     </div>
@@ -260,6 +299,31 @@ let currentQueueId = null;
 
 // Auto-refresh every 30 seconds
 setInterval(refreshQueue, 30000);
+
+function toggleDropdown(chatId) {
+    const dropdown = document.getElementById(`dropdown-${chatId}`);
+    dropdown.classList.toggle('hidden');
+    
+    // Close other dropdowns
+    document.querySelectorAll('[id^="dropdown-"]').forEach(el => {
+        if (el.id !== `dropdown-${chatId}`) {
+            el.classList.add('hidden');
+        }
+    });
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('[onclick^="toggleDropdown"]')) {
+        document.querySelectorAll('[id^="dropdown-"]').forEach(el => {
+            el.classList.add('hidden');
+        });
+    }
+});
+
+function closeModal() {
+    document.getElementById('assignAgentModal').classList.add('hidden');
+}
 
 function refreshQueue() {
     fetch('/admin/chat-queue/data')
@@ -282,7 +346,15 @@ function updateStats(stats) {
 function updatePendingQueue(chats) {
     const container = document.getElementById('pending-queue');
     if (chats.length === 0) {
-        container.innerHTML = '<div class="text-center py-4"><p class="text-muted">No customers waiting in queue</p></div>';
+        container.innerHTML = `
+            <div class="text-center py-12">
+                <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="17 8h2a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2V10a2 2 0 012-2h2m2 4h6m-6 4h6m-6-8h6m-6 4h6"></path>
+                </svg>
+                <p class="text-lg font-medium text-gray-900 mb-1">No customers waiting in queue</p>
+                <p class="text-gray-500">New chat requests will appear here</p>
+            </div>
+        `;
         return;
     }
     
@@ -323,7 +395,7 @@ function acceptChat(queueId) {
 function assignToAgent(queueId) {
     currentQueueId = queueId;
     document.getElementById('assignQueueId').value = queueId;
-    $('#assignAgentModal').modal('show');
+    document.getElementById('assignAgentModal').classList.remove('hidden');
 }
 
 function submitAssignment() {
@@ -345,7 +417,7 @@ function submitAssignment() {
     .then(data => {
         if (data.success) {
             alert('Chat assigned successfully!');
-            $('#assignAgentModal').modal('hide');
+            closeModal();
             refreshQueue();
         } else {
             alert('Error: ' + data.message);
