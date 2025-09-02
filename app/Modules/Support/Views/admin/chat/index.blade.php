@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             conversationsList.innerHTML = '';
-            conversations.forEach(conversation => {
+            conversations.filter(conversation => conversation.status !== 'pending').forEach(conversation => {
                 const conversationElement = document.createElement('div');
                 
                 console.log('🔍 Conversation', conversation.id, 'status:', conversation.status, 'ended_at:', conversation.ended_at);
@@ -1036,7 +1036,10 @@ document.addEventListener('DOMContentLoaded', function() {
             loadConversations();
         }, 500);
     }
+    window.loadConversations = loadConversations;
 
 });
+
+
 </script>
 @endsection 

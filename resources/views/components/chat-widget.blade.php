@@ -166,12 +166,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
 
-    // Toggle between self-service and hidden
-    if (chatToggle) {
+    // (Step 1) - UI Interaction Layer
+    // User clicks chat toggle button to show/hide self-service options    
         chatToggle.addEventListener('click', () => {
             if (!isShowingSelfService) {
                 // Show self-service options first
-                if (selfServiceBox) selfServiceBox.style.display = 'block';
+                if (selfServiceBox) selfServiceBox.style.display = 'block'; 
                 if (chatBox) chatBox.style.display = 'none';
                 isShowingSelfService = true;
             } else {
@@ -181,11 +181,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 isShowingSelfService = false;
             }
         });
-    }
+    
 
+    // (Step 2) - Chat Initialization Layer
+    // User clicks "Chat with an Agent" button
     // Function to initialize chat (get or create conversation)
     window.initializeChat = async function initializeChat() {
         try {
+            // (Step 2.1) - HTTP Request to Backend
+            // Frontend calls /chat/start endpoint to create/get conversation
             // This is a placeholder route. We will create it next.
             const response = await fetch('/chat/start', {
                 method: 'POST',
@@ -195,10 +199,12 @@ document.addEventListener('DOMContentLoaded', function() {
             window.conversationId = data.id;
             
 
-            
+            // (Step 2.2) - Message Fetching Layer
             // Fetch existing messages
             fetchMessages();
 
+            // (Step 2.3) - Real-time Setup Layer
+            // Frontend sets up WebSocket connection for real-time messaging
             // Listen for new messages on the private channel
             window.listenForMessages();
         } catch (error) {
@@ -206,7 +212,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // New queue-based chat initialization
+    // (Step 3) - Queue Management Layer
+    // Enhanced chat initialization with queue system
     async function startQueueChat() {
         const chatMessages = document.getElementById('chat-messages');
         
@@ -226,6 +233,8 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         try {
+            // (Step 3.1) - Queue API Call
+            // Frontend calls /chat/start with queue context
             const response = await fetch('/chat/start', {
                 method: 'POST',
                 headers: {
@@ -249,6 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
             window.conversationId = data.conversation_id;
             localStorage.setItem('activeConversationId', data.conversation_id);
             
+            // (Step 3.2) - Queue Status Handling
+            // Handle different queue scenarios
             // Handle different response scenarios
             if (data.existing_conversation && data.status === 'active' && !data.ended_at && data.assigned_agent_id) {
                 // User has an existing truly active conversation with agent - show it immediately
@@ -324,6 +335,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    //done
+    // (Step 4) - Queue Status Display Layer
     function showQueueStatus(queueStatus) {
         if (queueStatus.in_queue) {
             // Show queue status but allow messaging
@@ -373,6 +386,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    //done
     function enableQueueMessaging() {
         // Enable the chat input for queue messages
         const chatInput = document.getElementById('chat-input');
@@ -386,6 +400,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    //done
+    //(Step 5) - Queue Polling Layer
+    // Polls queue status every 5 seconds to check for agent assignment
     function startQueuePolling() {
         // Clear any existing interval
         if (window.queueCheckInterval) {
@@ -399,6 +416,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             try {
+                // (Step 5.1) - Queue Status API Call
+                // Frontend polls /chat/queue-status/{id} to check queue position
                 const response = await fetch(`/chat/queue-status/${window.conversationId}`);
                 const queueStatus = await response.json();
 
@@ -410,6 +429,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 if (!queueStatus.in_queue) {
+                    // (Step 5.2) - Agent Assignment Detection
                     // Chat has been assigned to an agent
                     clearInterval(window.queueCheckInterval);
                     
@@ -426,7 +446,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Show terminate button when connected to agent
                     showTerminateButton();
                     
-                    // Load chat interface
+                    // (Step 5.3) - Real-time Setup After Assignment
+                    // Load chat interface and setup WebSocket connection
                     setTimeout(() => {
                         window.fetchMessages();
                         window.listenForMessages();
@@ -444,11 +465,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000); // Check every 5 seconds
     }
 
+    //done
     async function leaveQueue() {
         if (!window.conversationId) return;
 
         if (confirm('Are you sure you want to leave the queue?')) {
             try {
+                // (Step 5.4) - Leave Queue API Call
+                // Frontend calls /chat/leave-queue/{id} to abandon queue
                 const response = await fetch(`/chat/leave-queue/${window.conversationId}`, {
                     method: 'POST',
                     headers: {
@@ -462,6 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Clear polling interval
                     clearInterval(window.queueCheckInterval);
                     
+                    // (Step 5.5) - Cleanup After Leaving Queue 
                     // Clean up Echo channel and intervals
                     if (window.currentEchoChannel) {
                         console.log('🔄 Unsubscribing from channel on leave queue');
@@ -510,6 +535,10 @@ document.addEventListener('DOMContentLoaded', function() {
             window.leaveQueue = leaveQueue;
         window.createTicket = createTicket;
 
+
+    //done
+    // (Step 6) (step 5.3.1) - Message Fetching Layer
+    // Fetches existing messages from backend API
     // Function to fetch messages - moved to global scope
     window.fetchMessages = async function fetchMessages() {
         if (!window.conversationId) {
@@ -525,6 +554,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             console.log('Fetching messages for conversation:', window.conversationId);
+            // (Step 6.1) - Messages API Call
+            // Frontend calls /chat/conversations/{id}/messages to get message history
             const response = await fetch(`/chat/conversations/${window.conversationId}/messages`);
             
             if (!response.ok) {
@@ -557,6 +588,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
+    //done
+    // (Step 7) - Message Rendering Layer
+    // Adds a message to the chat UI
     // Function to add a message to the chat box - moved to global scope
     window.addMessageToBox = function addMessageToBox(message) {
         const chatMessages = document.getElementById('chat-messages');
@@ -591,6 +625,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    //done
+    // (Step 8) - Message Sending Layer
+    // Handles form submission to send new messages
     // Function to handle form submission
     if (chatForm && chatInput) {
         chatForm.addEventListener('submit', async (e) => {
@@ -607,7 +644,9 @@ document.addEventListener('DOMContentLoaded', function() {
             chatInput.value = ''; // Clear input immediately
 
             try {
-                const response = await fetch('/chat/messages', {
+                // (Step 8.1) - Send Message API Call
+                // Frontend calls /chat/messages to send new message to backend
+                const response = await fetch('/chat/messages', { //line 38
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -622,6 +661,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
 
                 if (response.ok) {
+                    // (Step 8.2) - Optimistic UI Update
                     // Add the message to the chat immediately with correct structure
                     addMessageToBox({
                         id: data.id,
@@ -651,13 +691,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    
+    //done
+    // (Step 9) - Real-time Connection Layer
+    // Sets up WebSocket connection for real-time messaging
     // Function to listen for real-time messages using direct Echo - moved to global scope
     window.listenForMessages = function listenForMessages() {
+        // check whether exist a valid conversation
         if (!window.conversationId) {
             console.log('❌ No conversation ID available for listening');
             return;
         }
-
+        // check whether the Laravel Echo exist or not 
         if (!window.Echo) {
             console.error('❌ Echo not available - real-time messaging disabled');
             return;
@@ -687,13 +732,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('⚠️ Error leaving channel:', error);
             }
         }
-        
+       
+        // (Step 9.2) - Channel Subscription
         // Subscribe to the conversation channel
-        const channelName = `conversation.${window.conversationId}`;
+        const channelName = `conversation.${window.conversationId}`;// create the channelName based on conversation_id
         window.currentEchoChannel = channelName;
         
         console.log('📡 Attempting to subscribe to channel:', channelName);
         
+        // use Echo subscribe a private channel where other authenticated user can listen to it 
         const channel = window.Echo.private(channelName);
         
         channel.subscribed(() => {
@@ -710,6 +757,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             
+        // (Step 9.3) - Message Reception Handler
         // FIXED: Use direct Pusher binding like admin side - Echo .listen() stopped working
         if (channel.subscription) {
             console.log('🔗 Setting up direct Pusher bindings for channel subscription');
@@ -721,12 +769,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.messageRefreshInterval = null;
             }
             
-            // Track received messages to prevent duplicates
+            // Track received messages to prevent duplicates （if not process will process it )
             if (!window.receivedMessageIds) {
                 window.receivedMessageIds = new Set();
             }
             
-            // Listen for new messages using direct Pusher bind
+            
+            // Listen for new messages(MessageSent) if the backend server broadcast this event the code inside will execute using direct Pusher bind
             channel.subscription.bind('MessageSent', (data) => {
                 console.log('🎉 [CUSTOMER] Real-time message received via direct Pusher bind');
                 console.log('📨 [CUSTOMER] Message data:', data);
@@ -735,7 +784,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('👤 Current user ID:', currentUserId);
                 
                 if (data.message) {
-                    // Check for duplicate messages
+                    // Check for duplicate messages (if already have message id skip it)
                     if (window.receivedMessageIds.has(data.message.id)) {
                         console.log('🔄 [CUSTOMER] Skipping duplicate message ID:', data.message.id);
                         return;
@@ -779,8 +828,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('⚠️ [CUSTOMER] No message in event:', data);
                 }
             });
-
-            // Listen for conversation termination using direct Pusher bind
+            // (Step 9.6) - Conversation Termination Handler
+            // Listen for conversation termination using direct Pusher bind (listen for ConversationTerminated event)
             channel.subscription.bind('ConversationTerminated', (data) => {
                 console.log('🚫 [CUSTOMER] Received ConversationTerminated event:', data);
                 
@@ -788,7 +837,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 handleConversationTerminated(data, data.terminatedBy || 'unknown');
             });
         }
-        
+          // (Step 9.7) - Error Handling and Fallback      
         channel.error((error) => {
                 console.error('❌ [CUSTOMER] Echo channel error:', error);
                 
@@ -848,6 +897,9 @@ window.queueCheckInterval = null;
 window.currentEchoChannel = null; // Track current Echo channel for cleanup
 window.messageRefreshInterval = null; // Fallback message refresh interval
 
+
+//done
+//(Step 2)
 function startLiveChat(existingConversationId = null) {
     const selfServiceBox = document.getElementById('self-service-box');
     const chatBox = document.getElementById('chat-box');
@@ -1120,6 +1172,7 @@ function addSystemMessageToBox(message) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
+//done
 function handleConversationTerminated(data, terminatedBy) {
     console.log('🚫 Handling conversation termination:', data);
     
@@ -1207,6 +1260,7 @@ function handleConversationTerminated(data, terminatedBy) {
     }
 }
 
+//done
 function closeTerminationOverlay() {
     const overlay = document.getElementById('termination-overlay');
     if (overlay) {

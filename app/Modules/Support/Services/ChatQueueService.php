@@ -1,5 +1,7 @@
 <?php
-
+// This entire class is a "Service". This is a great design pattern where all the complex business rules and 
+// logic are kept in one place, separate from the controllers (which handle web requests) and models (which 
+// handle database tables). This makes the code cleaner, easier to test, and reusable.
 namespace App\Modules\Support\Services;
 
 use App\Modules\Support\Models\ChatQueue;

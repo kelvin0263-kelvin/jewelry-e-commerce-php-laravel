@@ -67,6 +67,9 @@ class SupportServiceProvider extends ServiceProvider
             \App\Modules\Support\Services\ChatQueueService::class,
             \App\Modules\Support\Services\ChatQueueService::class
         );
+
+        $this->app->register(\App\Modules\Support\Providers\ChatObserverServiceProvider::class);
+
     }
 
     /**

@@ -4,7 +4,7 @@
             {{ __('Welcome to ') }}{{ config('app.name', 'Jewelry Store') }}
         </h2>
     </x-slot>
-
+    @section('content')
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
@@ -211,8 +211,9 @@
 
         </div>
     </div>
-
+    
     <!-- Include Chat Widget -->
     <x-chat-widget />
-    
+    @endsection
+
 </x-app-layout>

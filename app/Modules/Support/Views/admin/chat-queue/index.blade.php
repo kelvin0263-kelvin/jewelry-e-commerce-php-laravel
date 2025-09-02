@@ -30,7 +30,7 @@
             <div class="flex items-center">
                 <div class="p-2 bg-green-100 rounded-lg">
                     <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                     </svg>
                 </div>
                 <div class="ml-4">
@@ -44,7 +44,7 @@
             <div class="flex items-center">
                 <div class="p-2 bg-blue-100 rounded-lg">
                     <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                     </svg>
                 </div>
                 <div class="ml-4">
@@ -58,7 +58,7 @@
             <div class="flex items-center">
                 <div class="p-2 bg-purple-100 rounded-lg">
                     <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                 </div>
                 <div class="ml-4">
@@ -82,20 +82,20 @@
                     <div class="space-y-2 mb-4">
                         <button onclick="updateMyStatus('online')" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-md transition-colors">
                             <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             Online
                         </button>
                         <button onclick="updateMyStatus('away')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-md transition-colors">
                             <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             Away
                         </button>
                         <button onclick="fixAgentStatus()" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md transition-colors">
                             <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
                             Fix Status
                         </button>
@@ -108,7 +108,7 @@
                                 <div class="flex items-center">
                                     <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                                         <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                         </svg>
                                     </div>
                                     <div>
@@ -152,7 +152,7 @@
                         </div>
                         <button onclick="refreshQueue()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors">
                             <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                             </svg>
                             Refresh
                         </button>
@@ -163,7 +163,7 @@
                         @if($pendingChats->isEmpty())
                             <div class="text-center py-12">
                                 <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="17 8h2a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2V10a2 2 0 012-2h2m2 4h6m-6 4h6m-6-8h6m-6 4h6"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2V10a2 2 0 012-2h2m2 4h6m-6 4h6m-6-8h6m-6 4h6"></path>
                                 </svg>
                                 <p class="text-lg font-medium text-gray-900 mb-1">No customers waiting in queue</p>
                                 <p class="text-gray-500">New chat requests will appear here</p>
@@ -191,7 +191,7 @@
                                                     <p class="text-sm text-gray-500 truncate">{{ $chat->customer->email }}</p>
                                                     <div class="flex items-center mt-1 text-xs text-gray-400">
                                                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                         </svg>
                                                         Waiting {{ $chat->wait_time }} minutes
                                                     </div>
@@ -202,14 +202,14 @@
                                                 <button onclick="acceptChat({{ $chat->id }})" 
                                                         class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-sm transition-colors">
                                                     <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="5 13l4 4L19 7"></path>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                                     </svg>
                                                     Accept
                                                 </button>
                                                 <div class="relative">
                                                     <button class="bg-gray-100 hover:bg-gray-200 text-gray-600 p-1 rounded-md transition-colors" onclick="toggleDropdown({{ $chat->id }})">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
                                                         </svg>
                                                     </button>
                                                     <div id="dropdown-{{ $chat->id }}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
@@ -231,7 +231,7 @@
                                                 @if($chat->escalation_context)
                                                     <div class="flex items-center text-xs text-blue-600 mb-1">
                                                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="7 11l5-5m0 0l5 5m-5-5v12"></path>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
                                                         </svg>
                                                         Escalated from: {{ $chat->escalation_context['issue_category'] ?? 'Self-service' }}
                                                     </div>
@@ -262,7 +262,7 @@
                 <h3 class="text-lg font-medium text-gray-900">Assign Chat to Agent</h3>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="6 18L18 6M6 6l12 12"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
@@ -298,7 +298,7 @@
 let currentQueueId = null;
 
 // Auto-refresh every 30 seconds
-setInterval(refreshQueue, 30000);
+setInterval(refreshQueue, 5000);
 
 function toggleDropdown(chatId) {
     const dropdown = document.getElementById(`dropdown-${chatId}`);
@@ -321,10 +321,13 @@ document.addEventListener('click', function(event) {
     }
 });
 
+// button trigger (ui update)
 function closeModal() {
     document.getElementById('assignAgentModal').classList.add('hidden');
 }
 
+
+//done button trigger
 function refreshQueue() {
     fetch('/admin/chat-queue/data')
         .then(response => response.json())
@@ -349,18 +352,107 @@ function updatePendingQueue(chats) {
         container.innerHTML = `
             <div class="text-center py-12">
                 <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="17 8h2a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2V10a2 2 0 012-2h2m2 4h6m-6 4h6m-6-8h6m-6 4h6"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2V10a2 2 0 012-2h2m2 4h6m-6 4h6m-6-8h6m-6 4h6"></path>
                 </svg>
                 <p class="text-lg font-medium text-gray-900 mb-1">No customers waiting in queue</p>
                 <p class="text-gray-500">New chat requests will appear here</p>
             </div>
         `;
         return;
-    }
+    }else{
     
     // Update queue display (simplified for demo)
     // In production, you'd want to update each item individually
+     // Build the complete queue list HTML
+    let queueHTML = '<div class="space-y-4">';
+    
+    chats.forEach(chat => {
+        const priorityClass = chat.priority === 'urgent' ? 'text-red-600 bg-red-100' : 
+                             chat.priority === 'high' ? 'text-yellow-600 bg-yellow-100' : '';
+        
+        queueHTML += `
+            <div class="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors" data-queue-id="${chat.id}">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center flex-1 min-w-0">
+                        <div class="flex-shrink-0 mr-4">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium text-white bg-blue-500">
+                                #${chat.position}
+                            </span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center">
+                                <h4 class="font-medium text-gray-900 truncate">${chat.customer.name}</h4>
+                                ${chat.priority !== 'normal' ? `
+                                    <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${priorityClass}">
+                                        ${chat.priority.charAt(0).toUpperCase() + chat.priority.slice(1)}
+                                    </span>
+                                ` : ''}
+                            </div>
+                            <p class="text-sm text-gray-500 truncate">${chat.customer.email}</p>
+                            <div class="flex items-center mt-1 text-xs text-gray-400">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Waiting ${chat.wait_time} minutes
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2 ml-4">
+                        <button onclick="acceptChat(${chat.id})" 
+                                class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-sm transition-colors">
+                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Accept
+                        </button>
+                        <div class="relative">
+                            <button class="bg-gray-100 hover:bg-gray-200 text-gray-600 p-1 rounded-md transition-colors" onclick="toggleDropdown(${chat.id})">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                                </svg>
+                            </button>
+                            <div id="dropdown-${chat.id}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                                <div class="py-1">
+                                    <button onclick="assignToAgent(${chat.id})" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
+                                        Assign to Agent
+                                    </button>
+                                    <button onclick="abandonChat(${chat.id})" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left">
+                                        Remove from Queue
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${chat.escalation_context || chat.initial_message ? `
+                    <div class="mt-3 pt-3 border-t border-gray-100">
+                        ${chat.escalation_context ? `
+                            <div class="flex items-center text-xs text-blue-600 mb-1">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
+                                </svg>
+                                Escalated from: ${chat.escalation_context.issue_category || 'Self-service'}
+                            </div>
+                        ` : ''}
+                        ${chat.initial_message ? `
+                            <div class="text-xs text-gray-600">
+                                <strong>Initial message:</strong> ${chat.initial_message.substring(0, 100)}${chat.initial_message.length > 100 ? '...' : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    });
+    
+    queueHTML += '</div>';
+    container.innerHTML = queueHTML;
 }
+}
+
+window.refreshQueue = refreshQueue;
 
 function updateAgentsList(agents) {
     const agentsList = document.getElementById('agents-list');
@@ -411,6 +503,7 @@ function updateAgentsList(agents) {
     });
 }
 
+//done button trigger
 function acceptChat(queueId) {
     if (confirm('Accept this chat?')) {
         fetch(`/admin/chat-queue/${queueId}/accept`, {
@@ -436,12 +529,15 @@ function acceptChat(queueId) {
     }
 }
 
+//done button trigger (just show ui only)
 function assignToAgent(queueId) {
     currentQueueId = queueId;
     document.getElementById('assignQueueId').value = queueId;
     document.getElementById('assignAgentModal').classList.remove('hidden');
 }
 
+
+//done button trigger
 function submitAssignment() {
     const agentId = document.getElementById('assignAgentId').value;
     if (!agentId) {
@@ -473,6 +569,7 @@ function submitAssignment() {
     });
 }
 
+//done button trigger
 function abandonChat(queueId) {
     if (confirm('Remove this customer from queue?')) {
         fetch(`/admin/chat-queue/${queueId}/abandon`, {
@@ -497,6 +594,8 @@ function abandonChat(queueId) {
     }
 }
 
+
+//done button trigger
 function updateMyStatus(status) {
     // Immediately update UI to show loading state
     const statusButtons = document.querySelectorAll('[onclick^="updateMyStatus"]');

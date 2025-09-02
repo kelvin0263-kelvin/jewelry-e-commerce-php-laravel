@@ -16,10 +16,10 @@ use Illuminate\Support\Facades\Log;
 
 
 // Chat routes - now uses queue system
-Route::post('/chat/start', [App\Modules\Support\Controllers\ChatController::class, 'startChat'])->name('chat.start')->middleware('auth');
-Route::get('/chat/queue-status/{conversationId}', [App\Modules\Support\Controllers\ChatController::class, 'getQueueStatus'])->name('chat.queue-status')->middleware('auth');
-Route::post('/chat/leave-queue/{conversationId}', [App\Modules\Support\Controllers\ChatController::class, 'leaveQueue'])->name('chat.leave-queue')->middleware('auth');
-Route::post('/chat/terminate/{conversationId}', [App\Modules\Support\Controllers\ChatController::class, 'terminateConversation'])->name('chat.terminate')->middleware('auth');
+Route::post('/chat/start', [App\Modules\Support\Controllers\ChatController::class, 'startChat'])->name('chat.start')->middleware('auth'); // done //{route(‘chat.start’) //auth a guard ensure only login user can access }
+Route::get('/chat/queue-status/{conversationId}', [App\Modules\Support\Controllers\ChatController::class, 'getQueueStatus'])->name('chat.queue-status')->middleware('auth'); // done
+Route::post('/chat/leave-queue/{conversationId}', [App\Modules\Support\Controllers\ChatController::class, 'leaveQueue'])->name('chat.leave-queue')->middleware('auth'); //done
+Route::post('/chat/terminate/{conversationId}', [App\Modules\Support\Controllers\ChatController::class, 'terminateConversation'])->name('chat.terminate')->middleware('auth'); //done //done admin side
 
 // Chat History routes
 Route::middleware(['auth'])->prefix('chat-history')->group(function () {
@@ -34,8 +34,8 @@ Route::middleware(['auth'])->prefix('chat-history')->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('chat/conversations', [App\Modules\Support\Controllers\ChatController::class, 'conversations'])->name('chat.conversations');
     Route::get('chat/conversations/{conversation}', [App\Modules\Support\Controllers\ChatController::class, 'show'])->name('chat.conversation.show');
-    Route::get('chat/conversations/{conversation}/messages', [App\Modules\Support\Controllers\ChatController::class, 'fetchMessages'])->name('chat.messages');
-    Route::post('chat/messages', [App\Modules\Support\Controllers\ChatController::class, 'sendMessage'])->name('chat.send');
+    Route::get('chat/conversations/{conversation}/messages', [App\Modules\Support\Controllers\ChatController::class, 'fetchMessages'])->name('chat.messages'); //line 552 
+    Route::post('chat/messages', [App\Modules\Support\Controllers\ChatController::class, 'sendMessage'])->name('chat.send'); // line 641
     
     // Ticket routes
     Route::resource('tickets', App\Modules\Support\Controllers\TicketController::class)->except(['edit', 'update', 'destroy']);
@@ -48,10 +48,10 @@ Route::middleware(['auth'])->group(function () {
 
 // Admin chat routes
 Route::middleware(['auth'])->group(function () {
-    Route::get('/admin/chat/conversations', [App\Modules\Support\Controllers\ChatController::class, 'conversations']);
-    Route::get('/admin/chat/conversations/{id}', [App\Modules\Support\Controllers\ChatController::class, 'show']);
-    Route::get('/admin/chat/conversations/{id}/messages', [App\Modules\Support\Controllers\ChatController::class, 'messages']);
-    Route::post('/admin/chat/messages', [App\Modules\Support\Controllers\ChatController::class, 'store']);
+    Route::get('/admin/chat/conversations', [App\Modules\Support\Controllers\ChatController::class, 'conversations']);//done
+    Route::get('/admin/chat/conversations/{id}', [App\Modules\Support\Controllers\ChatController::class, 'show']); //done 
+    Route::get('/admin/chat/conversations/{id}/messages', [App\Modules\Support\Controllers\ChatController::class, 'messages']); //done
+    Route::post('/admin/chat/messages', [App\Modules\Support\Controllers\ChatController::class, 'store']);//done sent message
 });
 
 // Comment out Laravel's default broadcast routes - they're not working properly
@@ -148,12 +148,8 @@ Route::post('/broadcasting/auth', function (Request $request) {
 
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('home');
 });
-
-
-
-
 
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -174,17 +170,17 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->group(function () {
     
     // Chat Queue Management Routes
     Route::prefix('chat-queue')->group(function () {
-        Route::get('/', [App\Modules\Support\Controllers\ChatQueueController::class, 'index'])->name('admin.chat-queue.index');
-        Route::get('/data', [App\Modules\Support\Controllers\ChatQueueController::class, 'getData'])->name('admin.chat-queue.data');
-        Route::post('/{queueId}/accept', [App\Modules\Support\Controllers\ChatQueueController::class, 'acceptChat'])->name('admin.chat-queue.accept');
-        Route::post('/{queueId}/assign', [App\Modules\Support\Controllers\ChatQueueController::class, 'assignChat'])->name('admin.chat-queue.assign');
-        Route::post('/{queueId}/abandon', [App\Modules\Support\Controllers\ChatQueueController::class, 'abandonChat'])->name('admin.chat-queue.abandon');
+        Route::get('/', [App\Modules\Support\Controllers\ChatQueueController::class, 'index'])->name('admin.chat-queue.index'); //  visit http://127.0.0.1:8000/admin/chat-queue --> ChatQueueController index function --> return view 
+        Route::get('/data', [App\Modules\Support\Controllers\ChatQueueController::class, 'getData'])->name('admin.chat-queue.data'); // admin\chat-queue\index.blade.php line 329
+        Route::post('/{queueId}/accept', [App\Modules\Support\Controllers\ChatQueueController::class, 'acceptChat'])->name('admin.chat-queue.accept'); // admin\chat-queue\index.blade.php line 507 
+        Route::post('/{queueId}/assign', [App\Modules\Support\Controllers\ChatQueueController::class, 'assignChat'])->name('admin.chat-queue.assign'); // admin\chat-queue\index.blade.php line 548
+        Route::post('/{queueId}/abandon', [App\Modules\Support\Controllers\ChatQueueController::class, 'abandonChat'])->name('admin.chat-queue.abandon'); // admin\chat-queue\index.blade.php line 572
         Route::post('/transfer/{conversationId}', [App\Modules\Support\Controllers\ChatQueueController::class, 'transferChat'])->name('admin.chat-queue.transfer');
         Route::post('/complete/{conversationId}', [App\Modules\Support\Controllers\ChatQueueController::class, 'completeChat'])->name('admin.chat-queue.complete');
         Route::get('/status/{conversationId}', [App\Modules\Support\Controllers\ChatQueueController::class, 'getQueueStatus'])->name('admin.chat-queue.status');
         Route::get('/my-chats', [App\Modules\Support\Controllers\ChatQueueController::class, 'getMyChats'])->name('admin.chat-queue.my-chats');
         Route::get('/stats', [App\Modules\Support\Controllers\ChatQueueController::class, 'getStats'])->name('admin.chat-queue.stats');
-        Route::post('/agent-status', [App\Modules\Support\Controllers\ChatQueueController::class, 'updateAgentStatus'])->name('admin.chat-queue.agent-status');
+        Route::post('/agent-status', [App\Modules\Support\Controllers\ChatQueueController::class, 'updateAgentStatus'])->name('admin.chat-queue.agent-status'); // admin\chat-queue\index.blade.php line 597
     });
     Route::get('/customers', [CustomerController::class, 'index'])->name('admin.customers.index');
     Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('admin.customers.show');
@@ -239,7 +235,7 @@ Route::get('/products', [ProductController::class, 'index'])->name('products.ind
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
 // FAQ Route
-Route::get('/faq', [App\Modules\Support\Controllers\FaqController::class, 'index'])->name('faq.index');
+Route::get('/faq', [App\Modules\Support\Controllers\FaqController::class, 'index'])->name('faq.index')->middleware('auth');
 
 // Self-Service Routes
 Route::prefix('self-service')->group(function () {

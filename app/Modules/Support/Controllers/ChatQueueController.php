@@ -20,6 +20,7 @@ class ChatQueueController extends Controller
 
     /**
      * Display chat queue dashboard
+     * Initial viewing and return view 
      */
     public function index()
     {
@@ -32,6 +33,7 @@ class ChatQueueController extends Controller
 
     /**
      * Get queue data for AJAX updates
+     * Route line 174
      */
     public function getData()
     {
@@ -44,6 +46,7 @@ class ChatQueueController extends Controller
 
     /**
      * Accept a chat from the queue
+     * Route line 175
      */
     public function acceptChat(Request $request, $queueId)
     {
@@ -76,6 +79,7 @@ class ChatQueueController extends Controller
 
     /**
      * Assign chat to specific agent
+     * Route line 176
      */
     public function assignChat(Request $request, $queueId)
     {
@@ -168,6 +172,7 @@ class ChatQueueController extends Controller
 
     /**
      * Update agent status
+     * Route line 183
      */
     public function updateAgentStatus(Request $request)
     {
@@ -241,6 +246,7 @@ class ChatQueueController extends Controller
 
     /**
      * Abandon chat (remove from queue)
+     * Route line 177
      */
     public function abandonChat($queueId)
     {

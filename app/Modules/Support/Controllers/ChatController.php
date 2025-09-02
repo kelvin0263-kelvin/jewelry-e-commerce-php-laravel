@@ -17,9 +17,18 @@ use Illuminate\Support\Facades\Broadcast;
 
 class ChatController extends Controller
 {
+    //new 1
+    protected $chatEventManager;
+
+    // 通过构造函数“注入”依赖
+    public function __construct(ChatEventManager $chatEventManager)
+    {
+        $this->chatEventManager = $chatEventManager;
+    }
     use EmitsChatEvents;
     /**
-     * 获取当前管理员的所有聊天会话
+     * 获取当前管理员的所有聊天会话 （x)
+     * D:\Desktop\jewelry-e-commerce-php-laravel\app\Modules\Support\Views\admin\chat\index.blade.php
      */
     public function conversations()
     {
@@ -48,6 +57,7 @@ class ChatController extends Controller
 
     /**
      * Get conversation details
+     *D:\Desktop\jewelry-e-commerce-php-laravel\app\Modules\Support\Views\admin\chat\index.blade.php
      */
     public function show(Conversation $conversation)
     {
@@ -56,6 +66,7 @@ class ChatController extends Controller
 
     /**
      * 获取指定会话的所有消息
+     * line 37 
      */
     public function fetchMessages(Conversation $conversation)
     {
@@ -66,6 +77,7 @@ class ChatController extends Controller
 
     /**
      * 发送新消息
+     * line 38
      */
     public function sendMessage(Request $request)
     {
@@ -91,12 +103,17 @@ class ChatController extends Controller
             'body' => $request->body,
         ]);
 
-        // Use Observer pattern to handle message sent event
+
+        //new2
         $this->emitMessageSent($message->load('user'), $message->conversation);
+
+        // Use Observer pattern to handle message sent event
+        // $this->emitMessageSent($message->load('user'), $message->conversation);
 
         return response()->json($message->load('user'));
     }
 
+    //D:\Desktop\jewelry-e-commerce-php-laravel\app\Modules\Support\Views\admin\chat\index.blade.php
     public function messages($id)
     {
         // Fetch messages for the conversation with user relationship
@@ -107,6 +124,7 @@ class ChatController extends Controller
         return response()->json($messages);
     }
 
+    //D:\Desktop\jewelry-e-commerce-php-laravel\app\Modules\Support\Views\admin\chat\index.blade.php sent message (also use observe pattern)
     public function store(Request $request)
     {
         // Validate and store the message
@@ -146,18 +164,23 @@ class ChatController extends Controller
 
     /**
      * Start a new chat conversation and add to queue
+     * Receive frontend http request 
+     * Step 1 line 20
      */
     public function startChat(Request $request)
     {
+        //validate the frontend request message 
         $request->validate([
             'initial_message' => 'nullable|string|max:500',
             'priority' => 'nullable|in:low,normal,high,urgent',
             'escalation_context' => 'nullable|array'
         ]);
 
+        //get current login user information
         $user = Auth::user();
         $queueService = new ChatQueueService();
 
+        // check (1)
         // Check if user already has an existing queue item or pending conversation
         $existingQueueItem = ChatQueue::where('customer_id', $user->id)
             ->where('status', 'waiting')
@@ -167,6 +190,7 @@ class ChatController extends Controller
             // Customer is already in queue, return their existing position
             $queueStatus = $queueService->getQueueStatus($existingQueueItem->conversation_id);
             
+
             return response()->json([
                 'conversation_id' => $existingQueueItem->conversation_id,
                 'queue_status' => $queueStatus,
@@ -177,6 +201,7 @@ class ChatController extends Controller
             ]);
         }
 
+        // check  (2)
         // Check for existing active or pending conversation
         $existingConversation = Conversation::where('user_id', $user->id)
             ->whereIn('status', ['pending', 'active'])
@@ -195,7 +220,10 @@ class ChatController extends Controller
             ]);
         }
 
+        //  如果没有，则创建新的会话
+         // 如果代码能执行到这里，说明用户既没有在排队，也没有活跃的会话。
         if ($existingConversation) {
+            //if pending conversation use it 
             $conversation = $existingConversation;
         } else {
             // Create new conversation only if no existing one
@@ -233,6 +261,8 @@ class ChatController extends Controller
 
     /**
      * Get queue status for customer
+     * Step 2
+     * ChatQueueService under // Services Folder
      */
     public function getQueueStatus($conversationId)
     {
@@ -244,6 +274,7 @@ class ChatController extends Controller
 
     /**
      * Customer leaves queue
+     * //done
      */
     public function leaveQueue($conversationId)
     {
@@ -262,6 +293,8 @@ class ChatController extends Controller
 
     /**
      * Terminate a conversation
+     * //done
+     * //admin side done
      */
     public function terminateConversation($conversationId)
     {
