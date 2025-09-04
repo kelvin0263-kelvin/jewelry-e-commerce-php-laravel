@@ -19,7 +19,7 @@ class TicketController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Auth::user()->tickets()->latest();
+            $query = Ticket::where('user_id', Auth::id())->latest();
             
             // Filter by status
             if ($request->has('status') && $request->status !== 'all') {
