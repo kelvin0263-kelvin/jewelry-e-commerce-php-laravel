@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Modules\Inventory\Factories;
+
+use App\Modules\Inventory\Models\RingItem;
+use App\Modules\Inventory\Models\NecklaceItem;
+use App\Modules\Inventory\Models\EarringsItem;
+use App\Modules\Inventory\Models\BraceletItem;
+use App\Modules\Inventory\Models\InventoryItem;
+
+class InventoryItemFactory
+{
+    public static function create(string $type, string $material, float $price, array $params = []): InventoryItem
+    {
+        return match ($type) {
+            'Ring' => new RingItem($material, $price, $params['stoneType'], $params['size']),
+            'Necklace' => new NecklaceItem($material, $price, $params['length'], $params['hasPendant'] ?? false),
+            'Earrings' => new EarringsItem($material, $price, $params['style'], $params['isPair'] ?? true),
+            'Bracelet' => new BraceletItem($material, $price, $params['claspType'], $params['adjustable'] ?? false),
+            default => throw new \Exception("Unknown inventory item type: $type"),
+        };
+    }
+}

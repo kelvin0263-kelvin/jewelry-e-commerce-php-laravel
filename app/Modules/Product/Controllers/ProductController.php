@@ -14,19 +14,18 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = Product::forCustomers()->latest()->paginate(12);
+        $products = Product::forCustomers()->paginate(12);
         return view('product::products.index', compact('products'));
     }
 
     /**
      * Display individual product details for customers
      */
-    public function show(Product $product)
-    {
-        // Only show published products to customers
-        if (!$product->isPublished()) {
-            abort(404);
-        }
-        return view('product::products.show', compact('product'));
-    }
+    public function scopeForCustomers($query)
+{
+    return $query->where('is_visible', true)
+                 ->whereNotNull('published_at')
+                 ->whereHas('inventory'); // ✅ Remove status filter
+}
+
 }

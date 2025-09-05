@@ -11,35 +11,25 @@ use Illuminate\Support\Facades\Auth;
 class ProductManagementController extends Controller
 {
     /**
-     * Display products ready for enhancement and publishing
+     * Display all products.
      */
     public function index()
     {
-        // Show all products except those still in draft (inventory stage)
-        $products = Product::whereIn('status', ['pending_review', 'approved', 'published'])
-            ->with('publishedBy')
-            ->latest()
-            ->paginate(15);
-            
+        $products = Product::ForCustomers()->paginate(15);
+
         return view('product::admin.product-management.index', compact('products'));
     }
 
     /**
-     * Show form to enhance a basic product from inventory
+     * Show form to enhance a product.
      */
     public function enhance(Product $product)
     {
-        // Only allow enhancement of draft products
-        if ($product->status !== 'draft') {
-            return redirect()->route('admin.product-management.index')
-                ->with('error', 'This product has already been enhanced.');
-        }
-
         return view('product::admin.product-management.enhance', compact('product'));
     }
 
     /**
-     * Store enhanced product details
+     * Store enhanced product details.
      */
     public function storeEnhancement(Request $request, Product $product)
     {
@@ -69,78 +59,48 @@ class ProductManagementController extends Controller
             'features' => $data['features'],
             'discount_price' => $data['discount_price'],
             'customer_images' => $data['customer_images'] ?? [],
-            'status' => 'pending_review'
         ]);
 
         return redirect()->route('admin.product-management.index')
-            ->with('success', 'Product enhanced successfully and is now pending review.');
+            ->with('success', 'Product enhanced successfully.');
     }
 
     /**
-     * Approve product for publishing
-     */
-    public function approve(Product $product)
-    {
-        if ($product->status !== 'pending_review') {
-            return redirect()->back()->with('error', 'Product is not in pending review status.');
-        }
-
-        $product->update(['status' => 'approved']);
-
-        return redirect()->back()->with('success', 'Product approved. It can now be published.');
-    }
-
-    /**
-     * Publish product to customers
+     * Publish product to customers.
      */
     public function publish(Product $product)
     {
-        if (!$product->canBePublished()) {
-            return redirect()->back()->with('error', 'Product cannot be published yet.');
-        }
-
         $product->update([
-            'status' => 'published',
             'is_visible' => true,
             'published_at' => now(),
-            'published_by' => Auth::id()
+            'published_by' => Auth::id(),
         ]);
 
-        return redirect()->back()->with('success', 'Product published successfully! It is now visible to customers.');
+        return redirect()->back()->with('success', 'Product published successfully!');
     }
 
     /**
-     * Unpublish product from customers
+     * Unpublish product from customers.
      */
     public function unpublish(Product $product)
     {
-        if ($product->status !== 'published') {
-            return redirect()->back()->with('error', 'Product is not published.');
-        }
-
         $product->update([
             'is_visible' => false,
-            'status' => 'approved' // Keep it approved but not visible
         ]);
 
-        return redirect()->back()->with('success', 'Product unpublished. It is no longer visible to customers.');
+        return redirect()->back()->with('success', 'Product unpublished successfully.');
     }
 
     /**
-     * Edit enhanced product details
+     * Edit product details.
      */
     public function edit(Product $product)
     {
-        if ($product->status === 'draft') {
-            return redirect()->route('admin.product-management.enhance', $product)
-                ->with('info', 'This product needs to be enhanced first.');
-        }
-
         return view('product::admin.product-management.edit', compact('product'));
     }
 
     /**
-     * Update enhanced product details
+     * Update product details.
      */
     public function update(Request $request, Product $product)
     {
@@ -168,7 +128,7 @@ class ProductManagementController extends Controller
                     Storage::disk('public')->delete($oldImage);
                 }
             }
-            
+
             $customerImages = [];
             foreach ($request->file('customer_images') as $image) {
                 $customerImages[] = $image->store('products/customer', 'public');
@@ -182,4 +142,3 @@ class ProductManagementController extends Controller
             ->with('success', 'Product updated successfully.');
     }
 }
-

@@ -2,80 +2,46 @@
 
 namespace App\Modules\Product\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory; // ✅ Import HasFactory
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Modules\User\Models\User;
+use App\Modules\Inventory\Models\Inventory; // ✅ Import Inventory
 
-
-// extends Illuminate\Database\Eloquent\Model:
-// so the  Product throught extends Model extends the Laravel all the method that is able to communicate with the database
-// and also the method that is able to create a new product
-// and also the method that is able to update a product
-// and also the method that is able to delete a product
-// and also the method that is able to show a product
-// and also the method that is able to index a product
-// and also the method that is able to store a product
 class Product extends Model
 {
     use HasFactory;
 
+    protected $table = 'products';
+
     protected $fillable = [
         'name',
-        'sku',
         'description',
-        'marketing_description',
         'price',
-        'discount_price',
-        'quantity',
-        'min_stock_level',
+        'inventory_id',
         'image_path',
-        'internal_image_path',
-        'customer_images',
-        'category',
-        'features',
         'status',
-        'is_visible',
-        'published_at',
-        'published_by',
     ];
 
-    protected $casts = [
-        'customer_images' => 'array',
-        'features' => 'array',
-        'published_at' => 'datetime',
-        'is_visible' => 'boolean',
-    ];
-
-    public function scopeDraft($query)
+    // Each product belongs to one inventory
+    public function inventory()
     {
-        return $query->where('status', 'draft');
+        return $this->belongsTo(Inventory::class, 'inventory_id');
     }
 
-    public function scopeForCustomers($query)
+    // Optional: fetch all variations linked to this product through inventory
+    public function variations()
     {
-        return $query->where('status', 'published')
-                    ->where('is_visible', true);
+        return $this->hasManyThrough(
+            \App\Modules\Inventory\Models\InventoryVariation::class, // Final model
+            Inventory::class,                                       // Intermediate model
+            'id',           // Inventory local key
+            'inventory_id', // Variation foreign key
+            'inventory_id', // Product local key
+            'id'            // Inventory local key
+        );
     }
 
-    public function publishedBy()
-    {
-        return $this->belongsTo(User::class, 'published_by');
-    }
-
-    public function canBePublished()
-    {
-        return $this->status === 'approved' && 
-               !empty($this->marketing_description) && 
-               !empty($this->category);
-    }
-
-    public function isPublished()
-    {
-        return $this->status === 'published' && $this->is_visible;
-    }
-
-    public function orders()
-    {
-        return $this->belongsToMany(Order::class)->withPivot('quantity', 'price');
-    }
+public static function forCustomers()
+{
+    return self::whereHas('inventory', fn($q) => $q->where('status', 'published'));
+}
 }

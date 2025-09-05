@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Modules\Inventory\Controllers\InventoryController;
 
 
 
@@ -188,14 +189,33 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->group(function () {
     Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('admin.customers.update');
     Route::get('/customers/segmentation', [ApiCustomerController::class, 'segmentation'])->name('admin.customers.segmentation');
     
-    // Inventory Management (Basic product creation - internal only)
-    Route::get('/inventory', [App\Modules\Inventory\Controllers\InventoryController::class, 'index'])->name('admin.inventory.index');
-    Route::get('/inventory/create', [App\Modules\Inventory\Controllers\InventoryController::class, 'create'])->name('admin.inventory.create');
-    Route::post('/inventory', [App\Modules\Inventory\Controllers\InventoryController::class, 'store'])->name('admin.inventory.store');
-    Route::get('/inventory/{product}/edit', [App\Modules\Inventory\Controllers\InventoryController::class, 'edit'])->name('admin.inventory.edit');
-    Route::put('/inventory/{product}', [App\Modules\Inventory\Controllers\InventoryController::class, 'update'])->name('admin.inventory.update');
-    Route::delete('/inventory/{product}', [App\Modules\Inventory\Controllers\InventoryController::class, 'destroy'])->name('admin.inventory.destroy');
-    
+    //Inventory Management (Basic product creation - internal only)
+    // Route::get('/inventory', [App\Modules\Inventory\Controllers\InventoryController::class, 'index'])->name('admin.inventory.index');
+    // Route::get('/inventory/create', [App\Modules\Inventory\Controllers\InventoryController::class, 'create'])->name('admin.inventory.create');
+    // Route::post('/inventory', [App\Modules\Inventory\Controllers\InventoryController::class, 'store'])->name('admin.inventory.store');
+    // Route::get('/inventory/{product}/edit', [App\Modules\Inventory\Controllers\InventoryController::class, 'edit'])->name('admin.inventory.edit');
+    // Route::put('/inventory/{product}', [App\Modules\Inventory\Controllers\InventoryController::class, 'update'])->name('admin.inventory.update');
+    // Route::delete('/inventory/{product}', [App\Modules\Inventory\Controllers\InventoryController::class, 'destroy'])->name('admin.inventory.destroy');
+
+
+Route::prefix('admin/inventory')
+    ->name('admin.inventory.')
+    ->controller(InventoryController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{inventory}/edit', 'edit')->name('edit');
+        Route::put('/{inventory}', 'update')->name('update');
+        Route::put('/{inventory}/toggle-status', 'toggleStatus')->name('toggleStatus');
+        Route::delete('/{inventory}', 'destroy')->name('destroy');
+    });
+
+
+
+
+
+
     // Product Management (Enhancement and publishing)
     Route::prefix('product-management')->group(function () {
         Route::get('/', [App\Modules\Product\Controllers\ProductManagementController::class, 'index'])->name('admin.product-management.index');
