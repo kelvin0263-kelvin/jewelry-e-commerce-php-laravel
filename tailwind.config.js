@@ -19,7 +19,8 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['"Janson Text"', ...defaultTheme.fontFamily.sans],
+                serif: ['"Janson Text"', ...defaultTheme.fontFamily.serif],
             },
             keyframes: {
                 fadeSlide: {

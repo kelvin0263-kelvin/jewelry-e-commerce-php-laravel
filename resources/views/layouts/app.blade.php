@@ -12,13 +12,13 @@
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
         
         <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/app.css', 'resources/css/style.css', 'resources/js/app.js'])
         <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     </head>
     <body class="font-sans antialiased bg-gray-100">
         <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
+            <x-navbar />
 
             <!-- Page Content -->
             <main class="container mx-auto px-6 py-8">

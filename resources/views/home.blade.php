@@ -5,145 +5,271 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
-    @vite(['resources/css/app.css', 'resources/css/style.css'])
     <link rel="shortcut icon" href="assests/icon.png" type="image/x-icon">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+@vite(['resources/css/app.css', 'resources/css/style.css', 'resources/js/app.js'])
 
 
 </head>
 
 <body>
-<header id="mainNav"
-  class="fixed top-0 left-0 w-full z-50 transition-colors duration-300 ease-in-out bg-transparents">
 
-    <div class="max-w-7xl mx-auto flex flex-col items-center">
-        {{-- Logo --}}
-        <div class="py-4">
-            <a href="{{ url('/') }}" class="text-3xl font-serif tracking-widest">TIFFANY REPLICA</a>
-        </div>
+    <header id="mainNav" class="fixed top-0 left-0 w-full z-50 transition-colors duration-300 ease-in-out bg-white">
 
-        {{-- Main Navigation --}}
-        <ul id="navLinks"
-            class="relative flex space-x-10 text-sm font-medium text-white transition-colors duration-300">
+        <div class="max-w-7xl mx-auto flex flex-col items-center relative">
+  {{-- Logo --}}
+<div class="py-4">
+<a id="logoText" href="{{ url('/') }}"
+   class="text-3xl font-serif tracking-widest transition-colors duration-300 text-white inline-block relative px-2 pb-1 after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black after:transition-all after:duration-300 hover:after:w-full">
+    TIFFANY REPLICA
+</a>
 
-            {{-- LOVE & ENGAGEMENT --}}
-            <li class="group relative">
-                <a href="#"
-                   class="inline-block px-2 pb-1 relative transition
+</div>
+
+            {{-- Navigation Row --}}
+            <div class="w-full relative flex items-center justify-between">
+
+                {{-- Left spacer (optional, keep empty or put icons like search/location) --}}
+                <div class="w-20"></div>
+
+                {{-- Main Navigation --}}
+                <ul id="navLinks"
+                    class="relative flex space-x-10 text-sm font-medium text-white transition-colors duration-300">
+
+                    <li>
+                        <a href="{{ route('dashboard') }}"
+                            class="inline-block px-2 pb-3 relative transition
                           after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
-                          after:transition-all after:duration-300 group-hover:after:w-full">
-                   LOVE & ENGAGEMENT
-                </a>
+                          after:transition-all after:duration-300 hover:after:w-full 
+                          {{ request()->routeIs('dashboard') ? 'font-bold text-black after:w-full' : '' }}">
+                            Home
+                        </a>
+                    </li>
+                    {{-- LOVE & ENGAGEMENT --}}
+                    <li class="group relative">
+                        <a href="{{ route('products.index') }}"
+                            class="inline-block px-2 pb-3 relative transition
+                          after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
+                          after:transition-all after:duration-300 hover:after:w-full 
+                          {{ request()->routeIs('products.*') ? 'font-bold text-black after:w-full' : '' }}">
+                            Products
+                        </a>
 
-                {{-- Full-width dropdown (fixed to viewport) --}}
-                <div
-                    class="fixed left-0 top-[86px] hidden w-screen bg-white shadow-xl border-t border-gray-200
-                           group-hover:block animate-fadeSlide z-40">
-                    
-                    {{-- Inner container keeps content centered --}}
-                    <div class="max-w-7xl mx-auto px-8 py-10">
-                        <div class="grid grid-cols-4 gap-8">
+                        {{-- Full-width dropdown (fixed to viewport) --}}
+                        <div
+                            class="fixed inset-x-0 hidden bg-white shadow-xl border-t border-gray-200 group-hover:block animate-fadeSlide z-40 pt-10 pb-12 mt-[10px]"
+                            style="top: var(--navH, 86px); min-height: calc(100vh - var(--navH, 86px));">
 
-                            {{-- Column 1 --}}
-                            <div>
-                                <h3 class="text-gray-900 font-semibold mb-3">Categories</h3>
-                                <ul class="space-y-2 text-gray-600">
-                                    <li><a href="#">Engagement Rings</a></li>
-                                    <li><a href="#">Wedding Bands</a></li>
-                                    <li><a href="#">Couple’s Rings</a></li>
-                                    <li><a href="#">Women’s Wedding Bands</a></li>
-                                    <li><a href="#">Men’s Wedding Bands</a></li>
-                                </ul>
-                                <h3 class="text-gray-400 font-semibold mt-6 mb-2">Shop By Shape</h3>
-                                <ul class="space-y-2 text-gray-600">
-                                    <li><a href="#">Round</a></li>
-                                    <li><a href="#">Oval</a></li>
-                                    <li><a href="#">Emerald</a></li>
-                                    <li><a href="#">Cushion</a></li>
-                                </ul>
-                            </div>
+                            {{-- Inner container keeps content centered --}}
+                            <div class="max-w-7xl mx-auto px-8 py-10">
+                                <div class="grid grid-cols-4 gap-8">
 
-                            {{-- Column 2 --}}
-                            <div>
-                                <h3 class="text-gray-900 font-semibold mb-3">Collections</h3>
-                                <ul class="space-y-2 text-gray-600">
-                                    <li><a href="#">The Tiffany® Setting</a></li>
-                                    <li><a href="#">Tiffany True®</a></li>
-                                    <li><a href="#">Tiffany Harmony®</a></li>
-                                    <li><a href="#">Tiffany Soleste®</a></li>
-                                    <li><a href="#">Tiffany Novo®</a></li>
-                                    <li><a href="#">Jean Schlumberger</a></li>
-                                    <li><a href="#">Tiffany Together</a></li>
-                                    <li><a href="#">Tiffany Forever</a></li>
-                                    <li><a href="#">T&CO.™</a></li>
-                                </ul>
-                            </div>
+                                    {{-- Column 1 --}}
+                                    <div>
+                                        <h3 class="text-gray-900 font-semibold mb-3">Categories</h3>
+                                        <ul class="space-y-2 text-gray-600">
+                                            <li><a href="#">Engagement Rings</a></li>
+                                            <li><a href="#">Wedding Bands</a></li>
+                                            <li><a href="#">Couple’s Rings</a></li>
+                                            <li><a href="#">Women’s Wedding Bands</a></li>
+                                            <li><a href="#">Men’s Wedding Bands</a></li>
+                                        </ul>
+                                        <h3 class="text-gray-400 font-semibold mt-6 mb-2">Shop By Shape</h3>
+                                        <ul class="space-y-2 text-gray-600">
+                                            <li><a href="#">Round</a></li>
+                                            <li><a href="#">Oval</a></li>
+                                            <li><a href="#">Emerald</a></li>
+                                            <li><a href="#">Cushion</a></li>
+                                        </ul>
+                                    </div>
 
-                            {{-- Column 3 --}}
-                            <div>
-                                <h3 class="text-gray-900 font-semibold mb-3">The Tiffany Difference</h3>
-                                <ul class="space-y-2 text-gray-600">
-                                    <li><a href="#">A Tiffany Ring</a></li>
-                                    <li><a href="#">Tiffany Lifetime Service</a></li>
-                                    <li><a href="#">Responsible Sourcing</a></li>
-                                    <li><a href="#">How to Choose an Engagement Ring</a></li>
-                                    <li><a href="#">How to Choose a Wedding Band</a></li>
-                                </ul>
-                            </div>
+                                    {{-- Column 2 --}}
+                                    <div>
+                                        <h3 class="text-gray-900 font-semibold mb-3">Collections</h3>
+                                        <ul class="space-y-2 text-gray-600">
+                                            <li><a href="#">The Tiffany® Setting</a></li>
+                                            <li><a href="#">Tiffany True®</a></li>
+                                            <li><a href="#">Tiffany Harmony®</a></li>
+                                            <li><a href="#">Tiffany Soleste®</a></li>
+                                            <li><a href="#">Tiffany Novo®</a></li>
+                                            <li><a href="#">Jean Schlumberger</a></li>
+                                            <li><a href="#">Tiffany Together</a></li>
+                                            <li><a href="#">Tiffany Forever</a></li>
+                                            <li><a href="#">T&CO.™</a></li>
+                                        </ul>
+                                    </div>
 
-                            {{-- Column 4 (images) --}}
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <img src="/images/ring1.jpg" class="w-full rounded" alt="ring">
-                                    <p class="text-sm mt-2">A Tiffany Ring</p>
+                                    {{-- Column 3 --}}
+                                    <div>
+                                        <h3 class="text-gray-900 font-semibold mb-3">The Tiffany Difference</h3>
+                                        <ul class="space-y-2 text-gray-600">
+                                            <li><a href="#">A Tiffany Ring</a></li>
+                                            <li><a href="#">Tiffany Lifetime Service</a></li>
+                                            <li><a href="#">Responsible Sourcing</a></li>
+                                            <li><a href="#">How to Choose an Engagement Ring</a></li>
+                                            <li><a href="#">How to Choose a Wedding Band</a></li>
+                                        </ul>
+                                    </div>
+
+                                    {{-- Column 4 (images) --}}
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <img src="/images/ring1.jpg" class="w-full rounded" alt="ring">
+                                            <p class="text-sm mt-2">A Tiffany Ring</p>
+                                        </div>
+                                        <div>
+                                            <img src="/images/ring2.jpg" class="w-full rounded" alt="craft">
+                                            <p class="text-sm mt-2">Craftsmanship</p>
+                                        </div>
+                                        <div>
+                                            <img src="/images/ring3.jpg" class="w-full rounded" alt="diamonds">
+                                            <p class="text-sm mt-2">The Guide to Diamonds</p>
+                                        </div>
+                                        <div>
+                                            <img src="/images/ring4.jpg" class="w-full rounded" alt="appointment">
+                                            <p class="text-sm mt-2">Book An Appointment</p>
+                                        </div>
+                                    </div>
+
                                 </div>
-                                <div>
-                                    <img src="/images/ring2.jpg" class="w-full rounded" alt="craft">
-                                    <p class="text-sm mt-2">Craftsmanship</p>
-                                </div>
-                                <div>
-                                    <img src="/images/ring3.jpg" class="w-full rounded" alt="diamonds">
-                                    <p class="text-sm mt-2">The Guide to Diamonds</p>
-                                </div>
-                                <div>
-                                    <img src="/images/ring4.jpg" class="w-full rounded" alt="appointment">
-                                    <p class="text-sm mt-2">Book An Appointment</p>
-                                </div>
                             </div>
-
                         </div>
-                    </div>
-                </div>
-            </li>
+                    </li>
 
-            {{-- Other nav items --}}
-            <li class="group relative">
-                <a href="#"
-                   class="inline-block px-2 pb-1 relative transition
+                    {{-- Other nav items --}}
+
+
+                    <li class="group relative">
+                        <a href="{{ route('faq.index') }}"
+                            class="inline-block px-2 pb-3 relative transition
                           after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
-                          after:transition-all after:duration-300 group-hover:after:w-full">
-                   HIGH JEWELRY
-                </a>
-            </li>
-            <li class="group relative">
-                <a href="#"
-                   class="inline-block px-2 pb-1 relative transition
+                          after:transition-all after:duration-300 hover:after:w-full 
+                          {{ request()->routeIs('faq.*') ? 'font-bold text-black after:w-full' : '' }}">
+                            FAQ
+                        </a>
+                    </li>
+                    @auth
+                        <li>
+                            <a href="{{ route('tickets.index') }}"
+                                class="inline-block px-2 pb-3 relative transition
                           after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
-                          after:transition-all after:duration-300 group-hover:after:w-full">
-                   FINE WATCHES
-                </a>
-            </li>
-            <li class="group relative">
-                <a href="#"
-                   class="inline-block px-2 pb-1 relative transition
-                          after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
-                          after:transition-all after:duration-300 group-hover:after:w-full">
-                   GIFTS
-                </a>
-            </li>
-        </ul>
-    </div>
-</header>
+                          after:transition-all after:duration-300 hover:after:w-full 
+                          {{ request()->routeIs('tickets.*') ? 'font-bold text-black after:w-full' : '' }}">
+                                My Tickets
+                            </a>
+                        </li>
+                    @endauth
+
+                    <li class="group relative">
+                        <a href="#"
+                            class="inline-block px-2 pb-3 relative transition
+              after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
+              after:transition-all after:duration-300 group-hover:after:w-full">
+                            Support
+                        </a>
+
+                        {{-- Full-width dropdown (like Products) --}}
+                        <div
+                            class="fixed inset-x-0 hidden bg-white shadow-xl border-t border-gray-200 group-hover:block animate-fadeSlide z-40 pt-10 pb-12 mt-[10px]"
+                            style="top: var(--navH, 86px); min-height: calc(100vh - var(--navH, 86px));">
+
+                            {{-- Inner container keeps content centered --}}
+                            <div class="max-w-7xl mx-auto px-8 py-10">
+                                <div class="grid grid-cols-4 gap-8">
+
+                                    {{-- Column 1 --}}
+                                    <div>
+                                        <h3 class="text-gray-900 font-semibold mb-3">Help Center</h3>
+                                        <ul class="space-y-2 text-gray-600">
+                                            <li><a href="{{ route('faq.index') }}">📚 FAQ & Help</a></li>
+                                            <li><a href="{{ route('self-service.index') }}">🛠️ Self Service</a></li>
+                                            <li><a href="{{ route('tickets.index') }}">🎫 Support Tickets</a></li>
+                                            <li><a href="{{ route('chat-history.index') }}">📝 Chat History</a></li>
+                                        </ul>
+                                    </div>
+
+                                    {{-- Column 2 --}}
+                                    <div>
+                                        <h3 class="text-gray-900 font-semibold mb-3">Live Support</h3>
+                                        <ul class="space-y-2 text-gray-600">
+                                            <li>
+                                                <button onclick="startLiveChat()" class="text-blue-600 hover:underline">
+                                                    💬 Live Chat
+                                                </button>
+                                            </li>
+                                            <li><a href="#">📧 Email Us</a></li>
+                                            <li><a href="#">📞 Call Center</a></li>
+                                        </ul>
+                                    </div>
+
+                                    {{-- Column 3 --}}
+                                    <div>
+                                        <h3 class="text-gray-900 font-semibold mb-3">Guides</h3>
+                                        <ul class="space-y-2 text-gray-600">
+                                            <li><a href="#">Getting Started</a></li>
+                                            <li><a href="#">Account & Profile</a></li>
+                                            <li><a href="#">Troubleshooting</a></li>
+                                            <li><a href="#">Billing & Payments</a></li>
+                                        </ul>
+                                    </div>
+
+                                    {{-- Column 4 (images/visuals) --}}
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <img src="/images/support1.jpg" class="w-full rounded" alt="support">
+                                            <p class="text-sm mt-2">Knowledge Base</p>
+                                        </div>
+                                        <div>
+                                            <img src="/images/support2.jpg" class="w-full rounded" alt="contact">
+                                            <p class="text-sm mt-2">Contact Support</p>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+
+
+
+
+
+
+                </ul>
+                {{-- Customer (always right aligned) --}}
+                @auth
+                    <div class="w-20 flex justify-end">
+                        <x-dropdown align="right" width="48">
+                                   <x-slot name="trigger">
+            <button id="customerTrigger"
+                class="flex items-center space-x-1 px-2 pb-3 relative text-sm font-medium text-white 
+                       transition after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 
+                       after:bg-black after:transition-all after:duration-300 hover:after:w-full">
+                <span>Customer</span>
+                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+            </button>
+        </x-slot>
+
+                            <x-slot name="content">
+                                <x-dropdown-link :href="route('dashboard')">{{ __('Dashboard') }}</x-dropdown-link>
+                                <x-dropdown-link :href="route('profile.edit')">{{ __('Profile') }}</x-dropdown-link>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <x-dropdown-link :href="route('logout')"
+                                        onclick="event.preventDefault(); this.closest('form').submit();">
+                                        {{ __('Log Out') }}
+                                    </x-dropdown-link>
+                                </form>
+                            </x-slot>
+                        </x-dropdown>
+                    </div>
+                @endauth
+            </div>
+        </div>
+    </header>
+
 
     <div class="homepage-container-1" id="homepage">
         <div class="homepage-container-1-1">
@@ -153,7 +279,7 @@
             </p>
             <br><br>
         </div>
-        <video src="{{ asset('videos/hero-video.mp4') }}" autoplay muted loop></video>
+<video src="{{ asset('videos/hero-video.mp4') }}" autoplay muted loop playsinline preload="auto"></video>
     </div>
     <main>
         <div class="homepage-container-2">
@@ -326,27 +452,60 @@
 
     <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const nav = document.getElementById("mainNav");
-  const links = document.getElementById("navLinks");
+    const nav = document.getElementById("mainNav");
+    const links = document.getElementById("navLinks");
+    const logo = document.getElementById("logoText");
+    const customer = document.getElementById("customerTrigger");
 
-  function handleScroll() {
-    const scrolled = window.scrollY > 50; // trigger earlier for reliability
-    if (scrolled) {
-      nav?.classList.add("bg-white", "shadow-md");
-      nav?.classList.remove("bg-transparent");
-      links?.classList.add("text-gray-800");
-      links?.classList.remove("text-white");
-    } else {
-      nav?.classList.add("bg-transparent");
-      nav?.classList.remove("bg-white", "shadow-md");
-      links?.classList.add("text-white");
-      links?.classList.remove("text-gray-800");
+    function setSolid() {
+        nav?.classList.add("bg-white", "shadow-md");
+        nav?.classList.remove("bg-transparent");
+
+        links?.classList.add("text-gray-800");
+        links?.classList.remove("text-white");
+
+        logo?.classList.add("text-gray-800");
+        logo?.classList.remove("text-white");
+
+        customer?.classList.add("text-gray-800");
+        customer?.classList.remove("text-white");
     }
-  }
 
-  window.addEventListener("scroll", handleScroll, { passive: true });
-  handleScroll(); // run once on load
+    function setTransparent() {
+        nav?.classList.add("bg-transparent");
+        nav?.classList.remove("bg-white", "shadow-md");
+
+        links?.classList.add("text-white");
+        links?.classList.remove("text-gray-800");
+
+        logo?.classList.add("text-white");
+        logo?.classList.remove("text-gray-800");
+
+        customer?.classList.add("text-white");
+        customer?.classList.remove("text-gray-800");
+    }
+
+    function handleScroll() {
+        if (window.scrollY > 50) {
+            setSolid();
+        } else {
+            setTransparent();
+        }
+    }
+
+    // Scroll handling
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
+    // 🔹 Hover entire nav bar
+    nav.addEventListener("mouseenter", setSolid);
+    nav.addEventListener("mouseleave", () => {
+        if (window.scrollY <= 50) {
+            setTransparent();
+        }
+    });
 });
+
     </script>
 </body>
 
