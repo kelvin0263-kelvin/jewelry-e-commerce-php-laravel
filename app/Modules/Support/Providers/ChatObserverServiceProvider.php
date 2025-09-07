@@ -5,7 +5,6 @@ namespace App\Modules\Support\Providers;
 use App\Modules\Support\Services\ChatEventManager;
 use App\Modules\Support\Observers\BroadcastObserver;
 use App\Modules\Support\Observers\DatabaseObserver;
-use App\Modules\Support\Observers\NotificationObserver;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Log;
 
@@ -27,7 +26,7 @@ class ChatObserverServiceProvider extends ServiceProvider
         // Register individual observers
         $this->app->singleton(BroadcastObserver::class);
         $this->app->singleton(DatabaseObserver::class);
-        $this->app->singleton(NotificationObserver::class);
+        
     }
 
     /**
@@ -50,7 +49,6 @@ class ChatObserverServiceProvider extends ServiceProvider
             $observers = [
                 BroadcastObserver::class,
                 DatabaseObserver::class,
-                NotificationObserver::class,
             ];
 
             foreach ($observers as $observerClass) {
@@ -81,7 +79,6 @@ class ChatObserverServiceProvider extends ServiceProvider
             ChatEventManager::class,
             BroadcastObserver::class,
             DatabaseObserver::class,
-            NotificationObserver::class,
         ];
     }
 }

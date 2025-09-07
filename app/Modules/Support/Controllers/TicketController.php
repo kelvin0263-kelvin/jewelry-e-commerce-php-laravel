@@ -12,6 +12,62 @@ use Illuminate\Validation\ValidationException;
 
 class TicketController extends Controller
 {
+    // done (S)
+    // (Multipurpose Internet Mail Extensions) not only checking extension but also the real content 
+    // Allowed MIME types for attachments which is a white list of content can upload (server-side sniffed)
+    private array $allowedMimes = [
+        'image/jpeg', //image type with jpeg extension
+        'image/png',
+        'application/pdf',
+        'text/plain',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+
+    // done (s)
+    // Centralized, secure upload handler – stores to private disk and returns metadata
+    // parameter can be null or array type 
+     private function secureStoreAttachments(?array $files): array{
+        if (!$files) {
+            return [];
+        }
+
+        $attachments = [];
+        foreach ($files as $file) {
+            // Extra server-side content sniffing
+            $finfo = new \finfo(FILEINFO_MIME_TYPE); // create a new php built in finfo oject 
+            $realMime = $finfo->file($file->getPathname()); // use the finfo to check the MIME type
+
+            // Validate MIME against allowedMimes whitelist
+            if (!in_array($realMime, $this->allowedMimes, true)) {
+                throw ValidationException::withMessages([
+                    'attachments' => 'One or more files have an unsupported type.', //if not valid throw this message
+                ]);
+            }
+
+            // Basic image integrity check
+            if (str_starts_with($realMime, 'image/')) {
+                if (@getimagesize($file->getPathname()) === false) {
+                    throw ValidationException::withMessages([
+                        'attachments' => 'Invalid image file provided.',
+                    ]);
+                }
+            }
+
+            // Store on private disk (local) so files are not web-accessible
+            // path prefix is tickets/attachments file name is hash value 
+            $path = $file->store('tickets/attachments', 'local');
+
+            $attachments[] = [
+                'name' => $file->getClientOriginalName(), // file original name
+                'path' => $path, // store path 
+                'size' => $file->getSize(), // file size 
+                'type' => $realMime, // the mime detected
+            ];
+        }
+
+        return $attachments;
+    }
     /**
      * Display customer's tickets
      */
@@ -32,41 +88,32 @@ class TicketController extends Controller
     {
         $categories = Ticket::getCategories();
         $priorities = Ticket::getPriorities();
-        
+
         return view('support::tickets.create', compact('categories', 'priorities'));
     }
 
     /**
+     * done(s)
      * Store a newly created ticket
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'subject' => 'required|string|max:255',
+            'subject' => 'required|string|max:255', //less than 255 character
             'description' => 'required|string|max:5000',
-            'category' => 'required|in:' . implode(',', array_keys(Ticket::getCategories())),
+            'category' => 'required|in:' . implode(',', array_keys(Ticket::getCategories())), // must under predefined category
             'priority' => 'required|in:' . implode(',', array_keys(Ticket::getPriorities())),
-            'contact_email' => 'nullable|email',
+            'contact_email' => 'nullable|email', // can be null 
             'contact_phone' => 'nullable|string|max:20',
-            'preferred_contact_method' => 'required|in:email,phone,portal',
-            'attachments.*' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf,doc,docx,txt'
+            'preferred_contact_method' => 'required|in:email,phone,portal', // only the 3 value 
+            'attachments' => 'nullable|array|max:5', // max is 5 only
+            'attachments.*' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf,doc,docx,txt|mimetypes:image/jpeg,image/png,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document' //must less than 5mb and must fullfill mimetype and extension
         ]);
 
-        // Handle file uploads
-        $attachments = [];
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $path = $file->store('tickets/attachments', 'public');
-                $attachments[] = [
-                    'name' => $file->getClientOriginalName(),
-                    'path' => $path,
-                    'size' => $file->getSize(),
-                    'type' => $file->getMimeType()
-                ];
-            }
-        }
+        // Handle file uploads securely (private storage + server-side sniffing) and return an array which contains file name / path / size / type
+        $attachments = $this->secureStoreAttachments($request->file('attachments'));
 
-        // Create the ticket
+        // Create the ticket in database
         $ticket = Ticket::create([
             'user_id' => Auth::id(),
             'subject' => $validated['subject'],
@@ -107,7 +154,7 @@ class TicketController extends Controller
         }
 
         $ticket->load(['assignedAgent', 'replies.user']);
-        
+
         // Mark customer replies as read by customer
         $ticket->replies()
             ->where('reply_type', 'agent')
@@ -118,6 +165,7 @@ class TicketController extends Controller
     }
 
     /**
+     * Done(s)
      * Add a reply to the ticket
      */
     public function reply(Request $request, Ticket $ticket)
@@ -136,22 +184,12 @@ class TicketController extends Controller
 
         $validated = $request->validate([
             'message' => 'required|string|max:2000',
-            'attachments.*' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf,doc,docx,txt'
+            'attachments' => 'nullable|array|max:5',
+            'attachments.*' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf,doc,docx,txt|mimetypes:image/jpeg,image/png,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         ]);
 
-        // Handle file uploads
-        $attachments = [];
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $path = $file->store('tickets/attachments', 'public');
-                $attachments[] = [
-                    'name' => $file->getClientOriginalName(),
-                    'path' => $path,
-                    'size' => $file->getSize(),
-                    'type' => $file->getMimeType()
-                ];
-            }
-        }
+        // Handle file uploads securely
+        $attachments = $this->secureStoreAttachments($request->file('attachments'));
 
         // Create the reply
         TicketReply::create([
@@ -250,27 +288,47 @@ class TicketController extends Controller
     }
 
     /**
+     * done (s)
      * Download attachment
      */
     public function downloadAttachment(Request $request)
     {
+        // get the request path value
         $path = $request->query('path');
-        
-        if (!$path || !Storage::disk('public')->exists($path)) {
+
+        // First prefer private disk (local). Fallback to public for backward compatibility
+        $onLocal = $path && Storage::disk('local')->exists($path);
+        $onPublic = $path && Storage::disk('public')->exists($path); // by default not have but for old data
+        if (!$path || (!$onLocal && !$onPublic)) {
             abort(404, 'File not found.');
         }
 
-        // Additional security: ensure the file belongs to a ticket the user has access to
-        $ticket = Ticket::where('user_id', Auth::id())
-            ->whereHas('replies', function ($query) use ($path) {
-                $query->whereJsonContains('attachments', ['path' => $path]);
-            })
-            ->first();
+        // Additional security: ensure the file belongs to a ticket the caller can access
+        $user = Auth::user();
 
+        if ($user && ($user->is_admin ?? false)) { // for any admin
+            // Admin access: allow if the file is attached to any ticket reply
+            // Optionally restrict to assigned tickets: add ->where('assigned_agent_id', $user->id)
+            $ticket = Ticket::whereHas('replies', function ($query) use ($path) {
+                $query->whereJsonContains('attachments', ['path' => $path]);
+            })->first();
+        } else {
+            // Customer access: only if the file belongs to their own ticket
+            $ticket = Ticket::where('user_id', $user?->id)
+                ->whereHas('replies', function ($query) use ($path) {
+                    $query->whereJsonContains('attachments', ['path' => $path]);
+                })
+                ->first();
+        }
+
+        // after validation still not have reject 
         if (!$ticket) {
             abort(403, 'You do not have permission to download this file.');
         }
 
-        return Storage::disk('public')->download($path);
+        //Storage::disk()->download($path) 会自动生成一个 HTTP 响应，触发浏览器下载。
+        return $onLocal
+            ? Storage::disk('local')->download($path)
+            : Storage::disk('public')->download($path);
     }
 }

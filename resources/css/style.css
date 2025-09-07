@@ -464,25 +464,28 @@ body {
 	padding-left: 10px;
   }
   
-  .footer-col .social-links a {
-	display: inline-block;
-	height: 40px;
-	width: 40px;
-	background-color: rgb(241, 239, 239);
-	margin: 10px 10px 0;
-	text-align: center;
-	line-height: 40px;
-	border-radius: 50%;
-	color: black;
-	transition: all 0.5s ease;
+.footer-col .social-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  width: 40px;
+  background-color: rgb(241, 239, 239);
+  margin: 10px 10px 0;
+  border-radius: 50%;
+  color: black;
+  line-height: 1; /* avoid baseline offset */
+  transition: all 0.2s ease-in-out;
+}
+
+.footer-col .social-links a svg {
+  display: block; /* remove baseline gap */
+}
   
-  }
-  
-  .footer-col .social-links a:hover {
-	color: white;
-	background-color: black;
-  
-  }
+.footer-col .social-links a:hover {
+  color: white;
+  background-color: black;
+}
   
   .Copyright p {
 	color: #ffffffb2;
@@ -495,8 +498,6 @@ body {
   /*-----------------------------------------             Footer End      --------------------------------------------*/
   /*------------------------------------------------------------------------------------------------------------------*/
   
-
-
 
 
 

@@ -5,25 +5,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
-    <link rel="shortcut icon" href="assests/icon.png" type="image/x-icon">
-@vite(['resources/css/app.css', 'resources/css/style.css', 'resources/js/app.js'])
+    <link rel="shortcut icon" href="{{ asset('images/smallIcon.jpg') }}" type="image/x-icon">
+    @vite(['resources/css/app.css', 'resources/css/style.css', 'resources/js/app.js'])
 
 
 </head>
 
 <body>
 
+    <!-- Inline SVG sprite for icons -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"
+        focusable="false">
+        <symbol id="icon-account" viewBox="0 0 24 24">
+            <path fill="currentColor"
+                d="M12 12c2.761 0 5-2.239 5-5S14.761 2 12 2 7 4.239 7 7s2.239 5 5 5Zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5Z" />
+        </symbol>
+    </svg>
+
     <header id="mainNav" class="fixed top-0 left-0 w-full z-50 transition-colors duration-300 ease-in-out bg-white">
 
         <div class="max-w-7xl mx-auto flex flex-col items-center relative">
-  {{-- Logo --}}
-<div class="py-4">
-<a id="logoText" href="{{ url('/') }}"
-   class="text-3xl font-serif tracking-widest transition-colors duration-300 text-white inline-block relative px-2 pb-1 after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black after:transition-all after:duration-300 hover:after:w-full">
-    TIFFANY REPLICA
-</a>
+            {{-- Logo --}}
+            <div class="py-4">
+                <a id="logoText" href="{{ url('/') }}"
+                    class="text-3xl font-serif tracking-widest transition-colors duration-300 text-white inline-block relative px-2 pb-1 after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black after:transition-all after:duration-300 hover:after:w-full">
+                    TIFFANY REPLICA
+                </a>
 
-</div>
+            </div>
 
             {{-- Navigation Row --}}
             <div class="w-full relative flex items-center justify-between">
@@ -36,11 +45,10 @@
                     class="relative flex space-x-10 text-sm font-medium text-white transition-colors duration-300">
 
                     <li>
-                        <a href="{{ route('dashboard') }}"
+                        <a href="{{ route('home') }}"
                             class="inline-block px-2 pb-3 relative transition
-                          after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
-                          after:transition-all after:duration-300 hover:after:w-full 
-                          {{ request()->routeIs('dashboard') ? 'font-bold text-black after:w-full' : '' }}">
+          after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
+          after:transition-all after:duration-300 hover:after:w-full">
                             Home
                         </a>
                     </li>
@@ -55,30 +63,49 @@
                         </a>
 
                         {{-- Full-width dropdown (fixed to viewport) --}}
-                        <div
-                            class="fixed inset-x-0 hidden bg-white shadow-xl border-t border-gray-200 group-hover:block animate-fadeSlide z-40 pt-10 pb-12 mt-[10px]"
+                        <div class="fixed inset-x-0 hidden bg-white shadow-xl border-t border-gray-200 group-hover:block animate-fadeSlide z-40 pt-10 pb-12 mt-[10px]"
                             style="top: var(--navH, 86px); min-height: calc(100vh - var(--navH, 86px));">
 
                             {{-- Inner container keeps content centered --}}
                             <div class="max-w-7xl mx-auto px-8 py-10">
-                                <div class="grid grid-cols-4 gap-8">
+                                <div
+                                    class="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr_1.6fr] gap-10 lg:gap-16 xl:gap-20">
 
                                     {{-- Column 1 --}}
                                     <div>
                                         <h3 class="text-gray-900 font-semibold mb-3">Categories</h3>
                                         <ul class="space-y-2 text-gray-600">
-                                            <li><a href="#">Engagement Rings</a></li>
-                                            <li><a href="#">Wedding Bands</a></li>
-                                            <li><a href="#">Couple’s Rings</a></li>
-                                            <li><a href="#">Women’s Wedding Bands</a></li>
-                                            <li><a href="#">Men’s Wedding Bands</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200"
+                                                    class="hover:underline transition duration-200"
+                                                    class="hover:underline transition duration-200">Engagement Rings</a>
+                                            </li>
+                                            <li><a href="#"class="hover:underline transition duration-200"
+                                                    class="hover:underline transition duration-200"
+                                                    class="hover:underline transition duration-200">Wedding Bands</a>
+                                            </li>
+                                            <li><a href="#"class="hover:underline transition duration-200"
+                                                    class="hover:underline transition duration-200"
+                                                    class="hover:underline transition duration-200">Couple’s Rings</a>
+                                            </li>
+                                            <li><a href="#"class="hover:underline transition duration-200"
+                                                    class="hover:underline transition duration-200"
+                                                    class="hover:underline transition duration-200">Women’s Wedding
+                                                    Bands</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200"
+                                                    class="hover:underline transition duration-200"
+                                                    class="hover:underline transition duration-200">Men’s Wedding
+                                                    Bands</a></li>
                                         </ul>
                                         <h3 class="text-gray-400 font-semibold mt-6 mb-2">Shop By Shape</h3>
                                         <ul class="space-y-2 text-gray-600">
-                                            <li><a href="#">Round</a></li>
-                                            <li><a href="#">Oval</a></li>
-                                            <li><a href="#">Emerald</a></li>
-                                            <li><a href="#">Cushion</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200"
+                                                    class="hover:underline transition duration-200">Round</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200"
+                                                    class="hover:underline transition duration-200">Oval</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200"
+                                                    class="hover:underline transition duration-200">Emerald</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200"
+                                                    class="hover:underline transition duration-200">Cushion</a></li>
                                         </ul>
                                     </div>
 
@@ -86,15 +113,25 @@
                                     <div>
                                         <h3 class="text-gray-900 font-semibold mb-3">Collections</h3>
                                         <ul class="space-y-2 text-gray-600">
-                                            <li><a href="#">The Tiffany® Setting</a></li>
-                                            <li><a href="#">Tiffany True®</a></li>
-                                            <li><a href="#">Tiffany Harmony®</a></li>
-                                            <li><a href="#">Tiffany Soleste®</a></li>
-                                            <li><a href="#">Tiffany Novo®</a></li>
-                                            <li><a href="#">Jean Schlumberger</a></li>
-                                            <li><a href="#">Tiffany Together</a></li>
-                                            <li><a href="#">Tiffany Forever</a></li>
-                                            <li><a href="#">T&CO.™</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">The
+                                                    Tiffany® Setting</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">Tiffany
+                                                    True®</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">Tiffany
+                                                    Harmony®</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">Tiffany
+                                                    Soleste®</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">Tiffany
+                                                    Novo®</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">Jean
+                                                    Schlumberger</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">Tiffany
+                                                    Together</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">Tiffany
+                                                    Forever</a></li>
+                                            <li><a
+                                                    href="#"class="hover:underline transition duration-200">T&CO.™</a>
+                                            </li>
                                         </ul>
                                     </div>
 
@@ -102,32 +139,24 @@
                                     <div>
                                         <h3 class="text-gray-900 font-semibold mb-3">The Tiffany Difference</h3>
                                         <ul class="space-y-2 text-gray-600">
-                                            <li><a href="#">A Tiffany Ring</a></li>
-                                            <li><a href="#">Tiffany Lifetime Service</a></li>
-                                            <li><a href="#">Responsible Sourcing</a></li>
-                                            <li><a href="#">How to Choose an Engagement Ring</a></li>
-                                            <li><a href="#">How to Choose a Wedding Band</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">A
+                                                    Tiffany Ring</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">Tiffany
+                                                    Lifetime Service</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">Responsible
+                                                    Sourcing</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">How to
+                                                    Choose an Engagement Ring</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">How to
+                                                    Choose a Wedding Band</a></li>
                                         </ul>
                                     </div>
 
-                                    {{-- Column 4 (images) --}}
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <img src="/images/ring1.jpg" class="w-full rounded" alt="ring">
-                                            <p class="text-sm mt-2">A Tiffany Ring</p>
-                                        </div>
-                                        <div>
-                                            <img src="/images/ring2.jpg" class="w-full rounded" alt="craft">
-                                            <p class="text-sm mt-2">Craftsmanship</p>
-                                        </div>
-                                        <div>
-                                            <img src="/images/ring3.jpg" class="w-full rounded" alt="diamonds">
-                                            <p class="text-sm mt-2">The Guide to Diamonds</p>
-                                        </div>
-                                        <div>
-                                            <img src="/images/ring4.jpg" class="w-full rounded" alt="appointment">
-                                            <p class="text-sm mt-2">Book An Appointment</p>
-                                        </div>
+                                    {{-- Column 4 (single feature image) --}}
+                                    <div class="lg:pl-4">
+                                        <h3 class="text-gray-900 font-semibold mb-3">Tiffany Watches</h3>
+                                        <img src="{{ asset('images/nav2.jpeg') }}" alt="Tiffany Watches"
+                                            class="w-full h-72 md:h-96 lg:h-[480px] object-cover rounded">
                                     </div>
 
                                 </div>
@@ -168,8 +197,7 @@
                         </a>
 
                         {{-- Full-width dropdown (like Products) --}}
-                        <div
-                            class="fixed inset-x-0 hidden bg-white shadow-xl border-t border-gray-200 group-hover:block animate-fadeSlide z-40 pt-10 pb-12 mt-[10px]"
+                        <div class="fixed inset-x-0 hidden bg-white shadow-xl border-t border-gray-200 group-hover:block animate-fadeSlide z-40 pt-10 pb-12 mt-[10px]"
                             style="top: var(--navH, 86px); min-height: calc(100vh - var(--navH, 86px));">
 
                             {{-- Inner container keeps content centered --}}
@@ -180,10 +208,18 @@
                                     <div>
                                         <h3 class="text-gray-900 font-semibold mb-3">Help Center</h3>
                                         <ul class="space-y-2 text-gray-600">
-                                            <li><a href="{{ route('faq.index') }}">📚 FAQ & Help</a></li>
-                                            <li><a href="{{ route('self-service.index') }}">🛠️ Self Service</a></li>
-                                            <li><a href="{{ route('tickets.index') }}">🎫 Support Tickets</a></li>
-                                            <li><a href="{{ route('chat-history.index') }}">📝 Chat History</a></li>
+                                            <li><a
+                                                    href="{{ route('faq.index') }}"class="hover:underline transition duration-200">
+                                                    FAQ & Help</a></li>
+                                            <li><a
+                                                    href="{{ route('self-service.index') }}"class="hover:underline transition duration-200">
+                                                    Self Service</a></li>
+                                            <li><a
+                                                    href="{{ route('tickets.index') }}"class="hover:underline transition duration-200">Support
+                                                    Tickets</a></li>
+                                            <li><a
+                                                    href="{{ route('chat-history.index') }}"class="hover:underline transition duration-200">
+                                                    Chat History</a></li>
                                         </ul>
                                     </div>
 
@@ -192,12 +228,14 @@
                                         <h3 class="text-gray-900 font-semibold mb-3">Live Support</h3>
                                         <ul class="space-y-2 text-gray-600">
                                             <li>
-                                                <button onclick="startLiveChat()" class="text-blue-600 hover:underline">
-                                                    💬 Live Chat
+                                                <button onclick="startLiveChat()" class="text-600 hover:underline">
+                                                    Live Chat
                                                 </button>
                                             </li>
-                                            <li><a href="#">📧 Email Us</a></li>
-                                            <li><a href="#">📞 Call Center</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">Email
+                                                    Us</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200"> Call
+                                                    Center</a></li>
                                         </ul>
                                     </div>
 
@@ -205,23 +243,24 @@
                                     <div>
                                         <h3 class="text-gray-900 font-semibold mb-3">Guides</h3>
                                         <ul class="space-y-2 text-gray-600">
-                                            <li><a href="#">Getting Started</a></li>
-                                            <li><a href="#">Account & Profile</a></li>
-                                            <li><a href="#">Troubleshooting</a></li>
-                                            <li><a href="#">Billing & Payments</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">Getting
+                                                    Started</a></li>
+                                            <li><a href="#"class="hover:underline transition duration-200">Account
+                                                    & Profile</a></li>
+                                            <li><a
+                                                    href="#"class="hover:underline transition duration-200">Troubleshooting</a>
+                                            </li>
+                                            <li><a href="#"class="hover:underline transition duration-200">Billing
+                                                    & Payments</a></li>
                                         </ul>
                                     </div>
 
                                     {{-- Column 4 (images/visuals) --}}
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <img src="/images/support1.jpg" class="w-full rounded" alt="support">
-                                            <p class="text-sm mt-2">Knowledge Base</p>
-                                        </div>
-                                        <div>
-                                            <img src="/images/support2.jpg" class="w-full rounded" alt="contact">
-                                            <p class="text-sm mt-2">Contact Support</p>
-                                        </div>
+                                    {{-- Column 4 (single feature image) --}}
+                                    <div>
+                                        <h3 class="text-gray-900 font-semibold mb-3">Tiffany Watches</h3>
+                                        <img src="{{ asset('images/nav1.jpeg') }}" alt="Tiffany Watches"
+                                            class="w-full h-64 md:h-72 lg:h-80 object-cover rounded">
                                     </div>
 
                                 </div>
@@ -235,22 +274,40 @@
 
 
                 </ul>
+
+                {{-- Guest account icon (keeps center aligned) --}}
+                @guest
+                    <div class="w-20 flex justify-end">
+                        <a id="customerTrigger" href="{{ route('login') }}" aria-label="Account"
+                            class="inline-flex items-center px-2 pb-3 relative text-sm font-medium text-white transition 
+                                  after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
+                                  after:transition-all after:duration-300 hover:after:w-full hover:text-black 
+                                  focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
+
+                            <svg class="h-5 w-5 transition-transform duration-200 will-change-transform"
+                                aria-hidden="true" focusable="false">
+                                <use href="#icon-account"></use>
+                            </svg>
+                        </a>
+                    </div>
+                @endguest
+
                 {{-- Customer (always right aligned) --}}
                 @auth
-                    <div class="w-20 flex justify-end">
+                    <div class="w-auto flex justify-end">
                         <x-dropdown align="right" width="48">
-                                   <x-slot name="trigger">
-            <button id="customerTrigger"
-                class="flex items-center space-x-1 px-2 pb-3 relative text-sm font-medium text-white 
+                            <x-slot name="trigger">
+                                <button id="customerTrigger"
+                                    class="flex items-center space-x-1 px-2 pb-3 relative text-sm font-medium text-white 
                        transition after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 
                        after:bg-black after:transition-all after:duration-300 hover:after:w-full">
-                <span>Customer</span>
-                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-            </button>
-        </x-slot>
+                                    <span>Hello, {{ auth()->user()->name }}</span>
+                                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                                    </svg>
+                                </button>
+                            </x-slot>
 
                             <x-slot name="content">
                                 <x-dropdown-link :href="route('dashboard')">{{ __('Dashboard') }}</x-dropdown-link>
@@ -271,6 +328,7 @@
     </header>
 
 
+
     <div class="homepage-container-1" id="homepage">
         <div class="homepage-container-1-1">
             <br>
@@ -279,97 +337,118 @@
             </p>
             <br><br>
         </div>
-<video src="{{ asset('videos/hero-video.mp4') }}" autoplay muted loop playsinline preload="auto"></video>
+        <video src="{{ asset('videos/hero-video.mp4') }}" autoplay muted loop playsinline preload="auto"></video>
     </div>
-    <main>
-        <div class="homepage-container-2">
-            <div class="homepage-container-2-2">
-                <h1>Own Real Estate, One Token at a Time<h1>
-
-                        <p>Transform the way you invest in real estate with our tokenized platform. By dividing
-                            properties into digital tokens, we make it easy for everyone to access lucrative real estate
-                            opportunities. Invest in properties worldwide, enjoy rental income, and trade tokens
-                            effortlessly on a secure blockchain-backed marketplace. Join us in democratizing property
-                            ownership!.</p>
+    <!-- Engagement Rings wide image with caption -->
+    <section id="engagement-rings" class="py-12 md:py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 md:px-6">
+            <div class="relative overflow-hidden">
+                <img src="{{ asset('images/home6.webp') }}" alt="Engagement ring" class="w-full h-auto object-cover"
+                    loading="lazy">
             </div>
-            <div class="homepage-container-2-1"><img src="assests/image-5.webp" alt=""></div>
-
+            <div class="mt-8 text-center">
+                <h2 class="text-3xl md:text-4xl font-serif text-gray-800">Engagement Rings</h2>
+                <p class="mt-4 text-gray-500">Each Graff engagement ring is a remarkable masterpiece, thoughtfully
+                    designed and expertly crafted to highlight the distinctive character of its diamond.</p>
+                <a href="{{ route('products.index') }}"
+                    class="inline-block mt-6 px-10 py-3 border border-[#c9b57b] text-[#8b7a41] tracking-widest text-sm md:text-base hover:bg-[#c9b57b] hover:text-white transition-colors duration-200">SHOP
+                    NOW</a>
+            </div>
         </div>
-
-        <div class="homepage-container-3">
-            <div class="homepage-container-3-2">
-                <h1>Invest Smarter, Invest Together</h1>
-
-                <p>Say goodbye to traditional real estate barriers. With tokenization, you can now co-own premium
-                    properties by purchasing affordable tokens. Our platform provides transparency, flexibility, and
-                    accessibility for investors and property owners alike. Discover how real estate tokenization is
-                    reshaping the industry by empowering individuals to create wealth with minimal risk. </p>
-            </div>
-            <div class="homepage-container-3-1"><img src="assests/image-6.jpg" alt=""></div>
-
-        </div>
-
-        <div class="homepage-container-4">
-            <div class="homepage-container-4-1" style="text-align: right; width: 700px; padding-top: 50px;">
-                <h1>Creating modern and <br> comfortable spaces for living</h1>
-            </div>
-            <div class="homepage-container-4-2">
-                <div class="homepage-container-4-2-1"><img src="assests/image-3.webp" alt="" width="150px">
+    </section>
+    <!-- Fine Jewelry Collections split section -->
+    <section class="relative w-full" id="fine-jewelry">
+        <div class="grid grid-cols-1 md:grid-cols-2 min-h-[100vh] items-stretch">
+            <div class="order-2 md:order-1 flex items-center justify-center bg-white py-16">
+                <div class="px-8 md:px-12 lg:px-16 text-center md:text-left">
+                    <h2 class="text-3xl md:text-4xl lg:text-5xl font-serif tracking-wide text-gray-800">Fine Jewelry
+                        Collections</h2>
+                    <p class="mt-4 text-gray-500 max-w-xl">From exceptional in scale to delicate in design, explore the
+                        House's unrivaled diamond jewels.</p>
+                    <a href="{{ route('products.index') }}"
+                        class="inline-block mt-8 px-10 py-3 border border-[#c9b57b] text-[#8b7a41] tracking-widest text-sm md:text-base hover:bg-[#c9b57b] hover:text-white transition-colors duration-200">DISCOVER</a>
                 </div>
-                <div class="homepage-container-4-2-2"><img src="assests/image-1.jpg" alt="" width="450px"
-                        height="500px"></div>
-
-                <div class="homepage-container-4-2-3">
-                    <h1 style="font-weight: bold;">Effortless Renting, Redefined for Modern Living"</h1>
-                    <br>
-                    <p style="font-weight: bolder;">Discover a smarter way to rent with our innovative platform
-                        designed
-                        to simplify the process for both tenants and property owners. Whether you're searching for the
-                        perfect home or looking to lease your property, we bring ease and efficiency to every step. Our
-                        system ensures transparency, secure transactions, and flexible options tailored to your needs.
-                        For tenants, explore a wide range of modern, comfortable spaces to suit your lifestyle. For
-                        property owners, streamline the rental process with tools that help you manage listings, track
-                        payments, and connect with potential tenants effortlessly. Embrace a hassle-free renting
-                        experience that prioritizes convenience and satisfaction for all.</p>
+            </div>
+            <div class="order-1 md:order-2 relative bg-black">
+                <img src="{{ asset('images/home1.webp') }}" alt="Fine jewelry diamonds"
+                    class="absolute inset-0 w-full h-full object-cover object-center" loading="lazy">
+            </div>
+        </div>
+        <div class="hidden md:block absolute inset-y-0 left-1/2 w-px bg-gray-200"></div>
+    </section>
+    <!-- Watch Collections split section -->
+    <section class="relative w-full border-t border-[#c9b57b]" id="watch-collections">
+        <div class="grid grid-cols-1 md:grid-cols-2 min-h-[100vh] items-stretch">
+            <div class="order-1 relative bg-black">
+                <img src="{{ asset('images/home2.avif') }}" alt="Watch collection"
+                    class="absolute inset-0 w-full h-full object-cover object-center" loading="lazy">
+            </div>
+            <div class="order-2 flex items-center justify-center bg-white py-16">
+                <div class="px-8 md:px-12 lg:px-16 text-center md:text-left">
+                    <h2 class="text-3xl md:text-4xl lg:text-5xl font-serif tracking-wide text-gray-800">Watch
+                        Collections</h2>
+                    <p class="mt-4 text-gray-500 max-w-xl">Through its inimitable watches collections, the House of
+                        Harry Winston reinvents the way to tell time.</p>
+                    <a href="{{ route('products.index') }}"
+                        class="inline-block mt-8 px-10 py-3 border border-[#c9b57b] text-[#8b7a41] tracking-widest text-sm md:text-base hover:bg-[#c9b57b] hover:text-white transition-colors duration-200">DISCOVER</a>
                 </div>
-                <div class="homepage-container-4-2-4"><img src="assests/image-4.webp" alt="" width="200px"
-                        height="200px"></div>
-
             </div>
         </div>
+        <div class="hidden md:block absolute inset-y-0 left-1/2 w-px bg-gray-200"></div>
+    </section>
 
-        <div class="homepage-container-5">
-            <div class="homepage-container-5-1">
-                <div class="content">
-                    Our Story </div>
-            </div>
-            <div class="homepage-container-5-2">
-                <h1>
-                    "Building Dreams, One Space at a Time"
-                </h1>
-                <p>"Our story began with a simple mission: to make real estate accessible, transparent, and inclusive
-                    for everyone. We believe that property ownership and renting should be more than just
-                    transactions—it should be a pathway to creating better lives and stronger communities. With this
-                    vision, we set out to revolutionize the real estate industry by combining modern technology,
-                    innovative solutions, and a deep understanding of what people need in their living and investment
-                    spaces." </p>
 
-                <br>
-                <p>
-                    "Over the years, we have grown into a platform that empowers individuals to take control of their
-                    real estate journeys, whether through investing, renting, or managing properties. By leveraging the
-                    power of blockchain and tokenization, we’ve opened doors to opportunities that were once out of
-                    reach. But our story doesn’t end here—we’re continuously evolving, driven by the passion to create
-                    spaces that are not only modern and comfortable but also sustainable and future-ready. Join us as we
-                    continue to build dreams and redefine the way people connect with real estate."
-                </p>
+
+    <!-- The Tiffany Experience -->
+    <section id="tiffany-experience" class="py-20 md:py-24 bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+            <h2 class="text-3xl md:text-4xl font-serif text-gray-800 text-center">The Tiffany Experience</h2>
+            <div class="mt-14 grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16 items-start">
+                <!-- Shipping & Returns -->
+                <div class="text-center">
+                    <div class="h-28 md:h-32 flex items-center justify-center">
+                        <img src="{{ asset('images/home3.jpeg') }}" alt="Shipping and Returns"
+                            class="h-full w-auto object-contain select-none" loading="lazy">
+                    </div>
+                    <h3 class="mt-8 text-2xl md:text-3xl font-serif text-gray-800 leading-tight">Shipping<br>& Returns
+                    </h3>
+                    <p class="mt-4 text-gray-500 max-w-xs mx-auto">Complimentary shipping and returns on all orders.
+                    </p>
+                    <a href="#"
+                        class="inline-block mt-6 text-gray-800 hover:text-black tracking-widest text-xs border-b border-[#c9b57b] hover:border-black pb-1">LEARN
+                        MORE</a>
+                </div>
+
+                <!-- At Your Service -->
+                <div class="text-center">
+                    <div class="h-28 md:h-32 flex items-center justify-center">
+                        <img src="{{ asset('images/home4.jpeg') }}" alt="At Your Service"
+                            class="h-full w-auto object-contain select-none" loading="lazy">
+                    </div>
+                    <h3 class="mt-8 text-2xl md:text-3xl font-serif text-gray-800 leading-tight">At Your<br>Service
+                    </h3>
+                    <p class="mt-4 text-gray-500 max-w-xs mx-auto">Our client care experts are always here to help.</p>
+                    <a href="#"
+                        class="inline-block mt-6 text-gray-800 hover:text-black tracking-widest text-xs border-b border-[#c9b57b] hover:border-black pb-1">CONTACT
+                        US</a>
+                </div>
+
+                <!-- Iconic Blue Box -->
+                <div class="text-center">
+                    <div class="h-28 md:h-32 flex items-center justify-center">
+                        <img src="{{ asset('images/home5.jpeg') }}" alt="Iconic Blue Box"
+                            class="h-full w-auto object-contain select-none" loading="lazy">
+                    </div>
+                    <h3 class="mt-8 text-2xl md:text-3xl font-serif text-gray-800 leading-tight">Iconic<br>Blue Box
+                    </h3>
+                    <p class="mt-4 text-gray-500 max-w-xs mx-auto">Your purchase comes wrapped in our Blue Box
+                        packaging.</p>
+                    <a href="#"
+                        class="inline-block mt-6 text-gray-800 hover:text-black tracking-widest text-xs border-b border-[#c9b57b] hover:border-black pb-1">EXPLORE</a>
+                </div>
             </div>
         </div>
-
-
-
-
-    </main>
+    </section>
 
     <footer class="footer"><!--Footer-->
         <div class="container-footer">
@@ -416,7 +495,7 @@
                                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                                     stroke-width="2"
                                     d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z" />
-                            </svg></i></a>
+                            </svg></a>
                         <a href="https://www.instagram.com/puma/"><svg style=" width: 16px;height:16px"
                                 aria-hidden="true" fill="currentColor" xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 448 512">
@@ -451,61 +530,62 @@
     <script src="app1.js"></script>
 
     <script>
-document.addEventListener("DOMContentLoaded", () => {
-    const nav = document.getElementById("mainNav");
-    const links = document.getElementById("navLinks");
-    const logo = document.getElementById("logoText");
-    const customer = document.getElementById("customerTrigger");
+        document.addEventListener("DOMContentLoaded", () => {
+            const nav = document.getElementById("mainNav");
+            const links = document.getElementById("navLinks");
+            const logo = document.getElementById("logoText");
+            const customer = document.getElementById("customerTrigger");
 
-    function setSolid() {
-        nav?.classList.add("bg-white", "shadow-md");
-        nav?.classList.remove("bg-transparent");
+            function setSolid() {
+                nav?.classList.add("bg-white", "shadow-md");
+                nav?.classList.remove("bg-transparent");
 
-        links?.classList.add("text-gray-800");
-        links?.classList.remove("text-white");
+                links?.classList.add("text-gray-800");
+                links?.classList.remove("text-white");
 
-        logo?.classList.add("text-gray-800");
-        logo?.classList.remove("text-white");
+                logo?.classList.add("text-gray-800");
+                logo?.classList.remove("text-white");
 
-        customer?.classList.add("text-gray-800");
-        customer?.classList.remove("text-white");
-    }
+                customer?.classList.add("text-gray-800");
+                customer?.classList.remove("text-white");
+            }
 
-    function setTransparent() {
-        nav?.classList.add("bg-transparent");
-        nav?.classList.remove("bg-white", "shadow-md");
+            function setTransparent() {
+                nav?.classList.add("bg-transparent");
+                nav?.classList.remove("bg-white", "shadow-md");
 
-        links?.classList.add("text-white");
-        links?.classList.remove("text-gray-800");
+                links?.classList.add("text-white");
+                links?.classList.remove("text-gray-800");
 
-        logo?.classList.add("text-white");
-        logo?.classList.remove("text-gray-800");
+                logo?.classList.add("text-white");
+                logo?.classList.remove("text-gray-800");
 
-        customer?.classList.add("text-white");
-        customer?.classList.remove("text-gray-800");
-    }
+                customer?.classList.add("text-white");
+                customer?.classList.remove("text-gray-800");
+            }
 
-    function handleScroll() {
-        if (window.scrollY > 50) {
-            setSolid();
-        } else {
-            setTransparent();
-        }
-    }
+            function handleScroll() {
+                if (window.scrollY > 50) {
+                    setSolid();
+                } else {
+                    setTransparent();
+                }
+            }
 
-    // Scroll handling
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
+            // Scroll handling
+            window.addEventListener("scroll", handleScroll, {
+                passive: true
+            });
+            handleScroll();
 
-    // 🔹 Hover entire nav bar
-    nav.addEventListener("mouseenter", setSolid);
-    nav.addEventListener("mouseleave", () => {
-        if (window.scrollY <= 50) {
-            setTransparent();
-        }
-    });
-});
-
+            // 🔹 Hover entire nav bar
+            nav.addEventListener("mouseenter", setSolid);
+            nav.addEventListener("mouseleave", () => {
+                if (window.scrollY <= 50) {
+                    setTransparent();
+                }
+            });
+        });
     </script>
 </body>
 

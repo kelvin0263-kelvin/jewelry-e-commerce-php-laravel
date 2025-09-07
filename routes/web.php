@@ -63,7 +63,9 @@ Route::prefix('self-service')->group(function () {
 
 Route::middleware('auth')->group(function () {
     // Live chat lifecycle
-    Route::post('/chat/start', [ChatController::class, 'startChat'])->name('chat.start');
+    Route::post('/chat/start', [ChatController::class, 'startChat'])
+        ->middleware('throttle:chat-start')
+        ->name('chat.start');
     Route::get('/chat/queue-status/{conversationId}', [ChatController::class, 'getQueueStatus'])->name('chat.queue-status');
     Route::post('/chat/leave-queue/{conversationId}', [ChatController::class, 'leaveQueue'])->name('chat.leave-queue');
     Route::post('/chat/terminate/{conversationId}', [ChatController::class, 'terminateConversation'])->name('chat.terminate');
@@ -72,14 +74,26 @@ Route::middleware('auth')->group(function () {
     Route::get('chat/conversations', [ChatController::class, 'conversations'])->name('chat.conversations');
     Route::get('chat/conversations/{conversation}', [ChatController::class, 'show'])->name('chat.conversation.show');
     Route::get('chat/conversations/{conversation}/messages', [ChatController::class, 'fetchMessages'])->name('chat.messages');
-    Route::post('chat/messages', [ChatController::class, 'sendMessage'])->name('chat.send');
+    Route::post('chat/messages', [ChatController::class, 'sendMessage'])
+        ->middleware('throttle:chat-send')
+        ->name('chat.send');
 
     // Ticketing
-    Route::resource('tickets', TicketController::class)->except(['edit', 'update', 'destroy']);
-    Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
-    Route::patch('tickets/{ticket}/rate', [TicketController::class, 'rate'])->name('tickets.rate');
-    Route::patch('tickets/{ticket}/close', [TicketController::class, 'close'])->name('tickets.close');
-    Route::patch('tickets/{ticket}/reopen', [TicketController::class, 'reopen'])->name('tickets.reopen');
+    Route::resource('tickets', TicketController::class)
+        ->except(['edit', 'update', 'destroy'])
+        ->middleware('throttle:ticket-post');
+    Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])
+        ->middleware('throttle:ticket-post')
+        ->name('tickets.reply');
+    Route::patch('tickets/{ticket}/rate', [TicketController::class, 'rate'])
+        ->middleware('throttle:ticket-post')
+        ->name('tickets.rate');
+    Route::patch('tickets/{ticket}/close', [TicketController::class, 'close'])
+        ->middleware('throttle:ticket-post')
+        ->name('tickets.close');
+    Route::patch('tickets/{ticket}/reopen', [TicketController::class, 'reopen'])
+        ->middleware('throttle:ticket-post')
+        ->name('tickets.reopen');
     Route::get('tickets/download/attachment', [TicketController::class, 'downloadAttachment'])->name('tickets.download');
 });
 
@@ -222,7 +236,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/chat/conversations', [ChatController::class, 'conversations'])->name('admin.chat.conversations');
     Route::get('/chat/conversations/{id}', [ChatController::class, 'show'])->name('admin.chat.show');
     Route::get('/chat/conversations/{id}/messages', [ChatController::class, 'messages'])->name('admin.chat.messages');
-    Route::post('/chat/messages', [ChatController::class, 'store'])->name('admin.chat.store');
+    Route::post('/chat/messages', [ChatController::class, 'store'])
+        ->middleware('throttle:admin-chat')
+        ->name('admin.chat.store');
 
     // Admin chat queue management
     Route::prefix('chat-queue')->group(function () {
@@ -267,4 +283,3 @@ Route::middleware(['auth'])->group(function () {
         return view('dashboard');
     })->name('dashboard');
 });
-

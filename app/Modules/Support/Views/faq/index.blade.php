@@ -4,17 +4,10 @@
 
 @section('content')
 
-    <!-- Page Header -->
-    <div class="bg-white shadow-sm border-b border-gray-200 mb-8">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <h1 class="text-2xl font-semibold text-gray-800">
-                Frequently Asked Questions
-            </h1>
-        </div>
-    </div>
+
 
     <div class="py-8">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+        <div >
             <!-- FAQ Header -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-8">
                 <div class="p-8 text-center">

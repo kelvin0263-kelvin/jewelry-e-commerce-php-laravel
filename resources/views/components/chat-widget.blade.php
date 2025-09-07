@@ -2,8 +2,8 @@
 <div id="chat-widget-container" style="position: fixed; bottom: 20px; right: 20px; width: 350px; z-index: 1000;">
     <!-- Chat Header/Toggle Button -->
     <div id="chat-toggle"
-        style="background-color: #2d3748; color: white; padding: 10px 15px; border-radius: 8px 8px 0 0; cursor: pointer; text-align: center; font-weight: bold;">
-        💬 Need Help?
+        style="background-color: black; color: white; padding: 10px 15px; border-radius: 8px 8px 0 0; cursor: pointer; text-align: center; font-weight: bold;">
+        Need Help?
     </div>
 
     <!-- Self-Service Options -->
@@ -86,7 +86,7 @@
                     need?</p>
                 @auth
                     <button onclick="startLiveChat()"
-                        style="width: 100%; padding: 12px; background: #2d3748; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                        style="width: 100%; padding: 12px; background: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
                         💬 Chat with an Agent
                     </button>
                 @else
@@ -134,6 +134,17 @@
 </div>
 
 <script>
+    // Sanctum CSRF helpers for API calls
+    async function sanctumBoot() {
+        if (!document.cookie.includes('XSRF-TOKEN')) {
+            await fetch('/sanctum/csrf-cookie', { credentials: 'include' });
+        }
+    }
+    function xsrf() {
+        const m = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const chatToggle = document.getElementById('chat-toggle');
         const selfServiceBox = document.getElementById('self-service-box');
@@ -141,6 +152,34 @@
         const chatMessages = document.getElementById('chat-messages');
         const chatForm = document.getElementById('chat-form');
         const chatInput = document.getElementById('chat-input');
+
+        // Utility: disable a button for N seconds with a live countdown, then re-enable
+        function disableButtonCountdown(selector, seconds, baseLabel) {
+            const btn = typeof selector === 'string' ? document.querySelector(selector) : selector;
+            if (!btn) return;
+            let remaining = parseInt(seconds, 10);
+            if (!remaining || Number.isNaN(remaining)) remaining = 0;
+            const original = baseLabel || btn.textContent.trim();
+            const update = () => { btn.textContent = remaining > 0 ? `${original} (${remaining}s)` : original; };
+            btn.disabled = true; update();
+            const timer = setInterval(() => {
+                remaining -= 1; update();
+                if (remaining <= 0) { clearInterval(timer); btn.disabled = false; }
+            }, 1000);
+        }
+
+        // Observe chat message panel and auto-apply a 3s lockout on the re-join button after leaving queue
+        if (chatMessages) {
+            const mo = new MutationObserver(() => {
+                const rejoin = chatMessages.querySelector('button[onclick="startQueueChat()"]');
+                if (rejoin && !rejoin.dataset.countdownApplied) {
+                    rejoin.dataset.countdownApplied = '1';
+                    rejoin.id = 'join-queue-btn';
+                    disableButtonCountdown(rejoin, 3, 'Join Queue Again');
+                }
+            });
+            mo.observe(chatMessages, { childList: true, subtree: true });
+        }
 
         // Ensure all required elements exist before proceeding
         if (!chatToggle || !selfServiceBox) {
@@ -153,7 +192,14 @@
         const storedConversationId = localStorage.getItem('activeConversationId');
         if (storedConversationId) {
             // Validate the stored conversation is still active
-            fetch(`/chat/conversations/${storedConversationId}`)
+            sanctumBoot()
+                .then(() => fetch(`/api/support/chat/conversations/${storedConversationId}`, {
+                    headers: {
+                        'X-XSRF-TOKEN': xsrf(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'include'
+                }))
                 .then(response => response.json())
                 .then(conversation => {
                     if (conversation.status !== 'active' || conversation.ended_at) {
@@ -206,18 +252,24 @@
         // Function to initialize chat (get or create conversation)
         window.initializeChat = async function initializeChat() {
             try {
+                await sanctumBoot();
                 // (Step 2.1) - HTTP Request to Backend
-                // Frontend calls /chat/start endpoint to create/get conversation
-                // This is a placeholder route. We will create it next.
-                const response = await fetch('/chat/start', {
+                // Frontend calls /api/support/chat/start endpoint to create/get conversation
+                const response = await fetch('/api/support/chat/start', {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                            .getAttribute('content')
-                    }
+                        'Content-Type': 'application/json',
+                        'X-XSRF-TOKEN': xsrf(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        escalation_context: window.chatEscalationContext || null,
+                        initial_message: 'Hello, I need assistance.'
+                    })
                 });
                 const data = await response.json();
-                window.conversationId = data.id;
+                window.conversationId = data.conversation_id;
 
 
                 // (Step 2.2) - Message Fetching Layer
@@ -235,6 +287,7 @@
 
         // (Step 3) - Queue Management Layer
         // Enhanced chat initialization with queue system
+        const chatState = { starting: false, conversationId: null };
         async function startQueueChat() {
             const chatMessages = document.getElementById('chat-messages');
 
@@ -244,6 +297,15 @@
                 setTimeout(() => startQueueChat(), 100);
                 return;
             }
+            // Prevent duplicate calls (ignore stale localStorage flag)
+            if (chatState.starting || chatState.conversationId || window.conversationId) {
+                return;
+            }
+            // If a stale conversation id exists in localStorage, clear it and proceed
+            if (localStorage.getItem('activeConversationId')) {
+                try { localStorage.removeItem('activeConversationId'); } catch (e) {}
+            }
+            chatState.starting = true;
 
             // Show connecting message
             chatMessages.innerHTML = `
@@ -255,29 +317,79 @@
 
             try {
                 // (Step 3.1) - Queue API Call
-                // Frontend calls /chat/start with queue context
-                const response = await fetch('/chat/start', {
+                // Frontend calls /api/support/chat/start with queue context
+                await sanctumBoot();
+                const response = await fetch('/api/support/chat/start', {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                            .getAttribute('content'),
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-XSRF-TOKEN': xsrf(),
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
+                    credentials: 'include',
                     body: JSON.stringify({
-                        escalation_context: null,
+                        escalation_context: window.chatEscalationContext || null,
                         initial_message: 'Hello, I need assistance.'
                     })
                 });
 
+                if (response.status === 429) {
+                    let retryAfter = parseInt(response.headers.get('Retry-After') || '0', 10);
+                    if (!retryAfter || Number.isNaN(retryAfter)) {
+                        const resetHeader = parseInt(response.headers.get('X-RateLimit-Reset') || '0', 10);
+                        if (resetHeader && !Number.isNaN(resetHeader)) {
+                            retryAfter = Math.max(0, Math.ceil(resetHeader - Date.now() / 1000));
+                        } else {
+                            retryAfter = 60; // sensible default
+                        }
+                    }
+
+                    let remaining = retryAfter;
+                    chatMessages.innerHTML = `
+                        <div style="text-align:center;color:#ef4444;padding:20px;">
+                            Too many requests. Please try again in <span id="retry-countdown">${remaining}</span>s.
+                        </div>
+                    `;
+                    const countdownEl = document.getElementById('retry-countdown');
+                    const countdownTimer = setInterval(() => {
+                        remaining -= 1;
+                        if (countdownEl) countdownEl.textContent = String(Math.max(remaining, 0));
+                        if (remaining <= 0) clearInterval(countdownTimer);
+                    }, 1000);
+
+                    // If a re-join button is visible, disable it with the same countdown
+                    disableButtonCountdown('#join-queue-btn', retryAfter, 'Join Queue Again');
+
+                    chatState.starting = false;
+                    return;
+                }
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    const text = await response.text().catch(() => '');
+                    chatState.starting = false;
+                    throw new Error(text || `HTTP ${response.status}: ${response.statusText}`);
                 }
 
                 const data = await response.json();
                 console.log('Chat start response:', data);
 
+                // Validate response
+                if (!data || !data.conversation_id) {
+                    chatState.starting = false;
+                    const msg = (data && (data.message || data.error)) ? String(data.message || data.error) : 'No conversation id returned';
+                    chatMessages.innerHTML = `
+                        <div style="text-align:center;padding:20px;color:#ef4444;">
+                            <div style="font-size:18px;margin-bottom:10px;">❌ Could not start chat</div>
+                            <div>${msg}</div>
+                            <button onclick="startQueueChat()" style="background:#2563eb;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:10px;">Try Again</button>
+                        </div>
+                    `;
+                    return;
+                }
+
                 // Set the conversation ID
                 window.conversationId = data.conversation_id;
+                chatState.conversationId = data.conversation_id;
+                chatState.starting = false;
                 localStorage.setItem('activeConversationId', data.conversation_id);
 
                 // (Step 3.2) - Queue Status Handling
@@ -378,7 +490,7 @@
                         Estimated wait: ${queueStatus.estimated_wait} minutes
                     </div>
                     <div style="margin-top: 10px;">
-                        <button onclick="leaveQueue()" 
+                        <button id="leave-btn" onclick="leaveQueue()" 
                                 style="background: #ef4444; color: white; border: none; 
                                     padding: 6px 12px; border-radius: 4px; 
                                     cursor: pointer; font-size: 12px;">
@@ -392,6 +504,10 @@
 
                 // Initialize messages area with queue status
                 chatMessages.innerHTML = queueStatusDiv + '<div id="queue-messages"></div>';
+                const btn = document.getElementById('leave-btn');
+
+                disableButtonCountdown(btn, 3, 'Leave Queue');
+
 
                 // Enable messaging while in queue
                 enableQueueMessaging();
@@ -452,8 +568,15 @@
 
                 try {
                     // (Step 5.1) - Queue Status API Call
-                    // Frontend polls /chat/queue-status/{id} to check queue position
-                    const response = await fetch(`/chat/queue-status/${window.conversationId}`);
+                    // Frontend polls /api/support/chat/queue/{id} to check queue position
+                    await sanctumBoot();
+                    const response = await fetch(`/api/support/chat/queue/${window.conversationId}`, {
+                        headers: {
+                            'X-XSRF-TOKEN': xsrf(),
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        credentials: 'include'
+                    });
                     const queueStatus = await response.json();
 
                     // If user manually left queue, don't process queue updates
@@ -502,18 +625,21 @@
 
         //done
         async function leaveQueue() {
+            
             if (!window.conversationId) return;
 
             if (confirm('Are you sure you want to leave the queue?')) {
                 try {
                     // (Step 5.4) - Leave Queue API Call
-                    // Frontend calls /chat/leave-queue/{id} to abandon queue
-                    const response = await fetch(`/chat/leave-queue/${window.conversationId}`, {
+                    // Frontend calls /api/support/chat/{id}/leave to abandon queue
+                    await sanctumBoot();
+                    const response = await fetch(`/api/support/chat/${window.conversationId}/leave`, {
                         method: 'POST',
                         headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                                .getAttribute('content')
-                        }
+                            'X-XSRF-TOKEN': xsrf(),
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        credentials: 'include'
                     });
 
                     const data = await response.json();
@@ -538,7 +664,7 @@
                         const chatMessages = document.getElementById('chat-messages');
                         if (chatMessages) {
                             chatMessages.innerHTML = `
-                            <div style="text-align: center; padding: 20px; color: #6b7280;">
+                            <div style="display:flex;flex-direction:column;justify-content:center;text-align: center; padding: 20px; color: #6b7280;">
                                 <div style="font-size: 18px; margin-bottom: 10px;">👋 Left Queue</div>
                                 <div>You have left the chat queue successfully.</div>
                                 <button onclick="startQueueChat()" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px;">
@@ -550,6 +676,10 @@
 
                         // Clear stored conversation data
                         window.conversationId = null;
+                        if (typeof chatState !== 'undefined') {
+                            chatState.conversationId = null;
+                            chatState.starting = false;
+                        }
                         localStorage.removeItem('activeConversationId');
 
                         // Hide terminate button if visible
@@ -591,8 +721,15 @@
             try {
                 console.log('Fetching messages for conversation:', window.conversationId);
                 // (Step 6.1) - Messages API Call
-                // Frontend calls /chat/conversations/{id}/messages to get message history
-                const response = await fetch(`/chat/conversations/${window.conversationId}/messages`);
+                // Frontend calls /api/support/chat/conversations/{id}/messages to get message history
+                await sanctumBoot();
+                const response = await fetch(`/api/support/chat/conversations/${window.conversationId}/messages`, {
+                    headers: {
+                        'X-XSRF-TOKEN': xsrf(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'include'
+                });
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -682,19 +819,73 @@
 
                 try {
                     // (Step 8.1) - Send Message API Call
-                    // Frontend calls /chat/messages to send new message to backend
-                    const response = await fetch('/chat/messages', { //line 38
+                    // Frontend calls /api/support/chat/messages to send new message to backend
+                    await sanctumBoot();
+                    const response = await fetch('/api/support/chat/messages', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector(
-                                'meta[name="csrf-token"]').getAttribute('content')
+                            'X-XSRF-TOKEN': xsrf(),
+                            'X-Requested-With': 'XMLHttpRequest'
                         },
+                        credentials: 'include',
                         body: JSON.stringify({
                             conversation_id: window.conversationId,
                             body: messageText
                         })
                     });
+
+                    // Handle rate limiting (429): disable input + show live countdown
+                    if (response.status === 429) {
+                        let retryAfter = parseInt(response.headers.get('Retry-After') || '0', 10);
+                        if (!retryAfter || Number.isNaN(retryAfter)) {
+                            const resetHeader = parseInt(response.headers.get('X-RateLimit-Reset') || '0', 10);
+                            if (resetHeader && !Number.isNaN(resetHeader)) {
+                                retryAfter = Math.max(0, Math.ceil(resetHeader - Date.now() / 1000));
+                            } else {
+                                retryAfter = 60;
+                            }
+                        }
+
+                        const sendBtn = chatForm ? chatForm.querySelector('button[type="submit"]') : null;
+                        const originalPH = chatInput.placeholder;
+                        chatInput.disabled = true;
+                        if (sendBtn) sendBtn.disabled = true;
+
+                        // Render a small inline notice with live seconds
+                        const noticeId = 'chat-send-rate-limit';
+                        let notice = document.getElementById(noticeId);
+                        if (!notice) {
+                            notice = document.createElement('div');
+                            notice.id = noticeId;
+                            notice.style.cssText = 'margin:8px 0; padding:8px; border-radius:6px; background:#FEF2F2; color:#991B1B; font-size:12px;';
+                            if (chatMessages && chatMessages.parentElement) {
+                                chatMessages.parentElement.insertBefore(notice, chatMessages);
+                            }
+                        }
+
+                        let remaining = retryAfter;
+                        const updateNotice = () => {
+                            notice.innerHTML = `You are sending messages too fast. Please wait <strong>${remaining}</strong>s.`;
+                            chatInput.placeholder = `Please wait ${remaining}s...`;
+                        };
+                        updateNotice();
+                        const t = setInterval(() => {
+                            remaining -= 1;
+                            if (remaining <= 0) {
+                                clearInterval(t);
+                                notice.remove();
+                                chatInput.disabled = false;
+                                if (sendBtn) sendBtn.disabled = false;
+                                chatInput.placeholder = originalPH || 'Type your message...';
+                                chatInput.focus();
+                            } else {
+                                updateNotice();
+                            }
+                        }, 1000);
+
+                        return; // Stop further processing for this send
+                    }
 
                     const data = await response.json();
 
@@ -720,12 +911,25 @@
                             chatInput.value =
                             messageText; // Restore message if failed for other reasons
                         }
-                        alert('Failed to send message: ' + (data.message || 'Unknown error'));
+                        // Show inline error instead of alert
+                        const err = document.createElement('div');
+                        err.style.cssText = 'margin:8px 0; padding:8px; border-radius:6px; background:#FEF2F2; color:#991B1B; font-size:12px;';
+                        err.textContent = 'Failed to send message: ' + (data.message || 'Unknown error');
+                        if (chatMessages && chatMessages.parentElement) {
+                            chatMessages.parentElement.insertBefore(err, chatMessages);
+                            setTimeout(() => err.remove(), 4000);
+                        }
                     }
                 } catch (error) {
                     console.error('Failed to send message:', error);
                     chatInput.value = messageText; // Restore message if failed
-                    alert('Failed to send message');
+                    const err = document.createElement('div');
+                    err.style.cssText = 'margin:8px 0; padding:8px; border-radius:6px; background:#FEF2F2; color:#991B1B; font-size:12px;';
+                    err.textContent = 'Failed to send message';
+                    if (chatMessages && chatMessages.parentElement) {
+                        chatMessages.parentElement.insertBefore(err, chatMessages);
+                        setTimeout(() => err.remove(), 4000);
+                    }
                 }
             });
         }
@@ -993,7 +1197,14 @@
         `;
 
             // Check conversation status first
-            const statusResponse = await fetch(`/chat/conversations/${conversationId}`);
+            await sanctumBoot();
+            const statusResponse = await fetch(`/api/support/chat/conversations/${conversationId}`, {
+                headers: {
+                    'X-XSRF-TOKEN': xsrf(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'include'
+            });
             if (!statusResponse.ok) {
                 throw new Error('Failed to get conversation status');
             }
@@ -1106,13 +1317,15 @@
                 terminateBtn.textContent = 'Terminating...';
             }
 
-            fetch(`/chat/terminate/${window.conversationId}`, {
+            sanctumBoot().then(() => fetch(`/api/support/chat/${window.conversationId}/terminate`, {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-XSRF-TOKEN': xsrf(),
+                        'X-Requested-With': 'XMLHttpRequest',
                         'Content-Type': 'application/json'
-                    }
-                })
+                    },
+                    credentials: 'include'
+                }))
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -1329,4 +1542,21 @@
     window.showTerminateButton = showTerminateButton;
     window.hideTerminateButton = hideTerminateButton;
     @endauth
+
+    // Compatibility global API so product pages can trigger the widget
+    window.SupportChat = window.SupportChat || {};
+    window.SupportChat.open = async function(opts = {}) {
+        try {
+            window.chatEscalationContext = opts.escalation_context || null;
+            if (typeof window.startLiveChat === 'function') {
+                await window.startLiveChat();
+            } else {
+                // not authenticated: redirect to login used by the widget
+                window.location.href = '{{ route('login') }}';
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Unable to start chat right now.');
+        }
+    };
 </script>

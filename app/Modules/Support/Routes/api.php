@@ -22,11 +22,22 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Chat functionality for users
     Route::prefix('support/chat')->group(function () {
+        // Start chat (queue)
+        Route::post('/start', [ChatController::class, 'startChat']);
+        // Queue status
+        Route::get('/queue/{conversationId}', [ChatController::class, 'getQueueStatus']);
+        // Leave queue
+        Route::post('/{conversationId}/leave', [ChatController::class, 'leaveQueue']);
+        // Terminate conversation
+        Route::post('/{conversationId}/terminate', [ChatController::class, 'terminateConversation']);
+        
         Route::get('/conversations', [ChatController::class, 'userConversations']); // GET /api/support/chat/conversations
         Route::post('/conversations', [ChatController::class, 'createConversation']); // POST /api/support/chat/conversations
         Route::get('/conversations/{conversation}', [ChatController::class, 'show']); // GET /api/support/chat/conversations/{id}
         Route::get('/conversations/{conversation}/messages', [ChatController::class, 'messages']); // GET /api/support/chat/conversations/{id}/messages
         Route::post('/conversations/{conversation}/messages', [ChatController::class, 'sendMessage']); // POST /api/support/chat/conversations/{id}/messages
+        // Alternative message endpoint without conversation in path
+        Route::post('/messages', [ChatController::class, 'sendMessage']); // POST /api/support/chat/messages
     });
     
     // FAQ and self-service
