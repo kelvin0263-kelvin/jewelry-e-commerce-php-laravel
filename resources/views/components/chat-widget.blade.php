@@ -740,6 +740,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('📡 Attempting to subscribe to channel:', channelName);
         
+        //在执行这行代码时，Laravel Echo 会自动向你的 Laravel 后端服务器发送一个认证请求，请求的地址通常是 /broadcasting/auth
         // use Echo subscribe a private channel where other authenticated user can listen to it 
         const channel = window.Echo.private(channelName);
         
@@ -828,6 +829,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('⚠️ [CUSTOMER] No message in event:', data);
                 }
             });
+            
             // (Step 9.6) - Conversation Termination Handler
             // Listen for conversation termination using direct Pusher bind (listen for ConversationTerminated event)
             channel.subscription.bind('ConversationTerminated', (data) => {

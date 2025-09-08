@@ -198,7 +198,7 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->group(function () {
     // Route::delete('/inventory/{product}', [App\Modules\Inventory\Controllers\InventoryController::class, 'destroy'])->name('admin.inventory.destroy');
 
 
-Route::prefix('admin/inventory')
+Route::prefix('/inventory')
     ->name('admin.inventory.')
     ->controller(InventoryController::class)
     ->group(function () {
