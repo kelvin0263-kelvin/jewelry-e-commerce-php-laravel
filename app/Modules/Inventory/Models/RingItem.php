@@ -22,7 +22,22 @@ class RingItem extends InventoryItem
 
     public function calculateValue(): float
     {
-        $stonePremium = $this->stoneType === 'Diamond' ? 500 : 100;
-        return $this->price + $stonePremium;
+        $basePrice = $this->basePrice ?? 500;
+
+        // Stone premium
+        $stonePremiums = [
+            'Diamond' => 500,
+            'Ruby' => 300,
+            'Sapphire' => 250,
+            'Emerald' => 200,
+            'Pearl' => 150,
+            'Amethyst' => 100,
+        ];
+        $stonePremium = $stonePremiums[$this->stoneType] ?? 0;
+
+        return $basePrice + $stonePremium;
     }
+
+
+
 }

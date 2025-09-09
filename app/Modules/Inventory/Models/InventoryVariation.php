@@ -20,6 +20,12 @@ class InventoryVariation extends Model
         'price',
         'stock',
         'image_path',
+        'properties',
+    ];
+
+    protected $casts = [
+        'properties' => 'array',
+        'price' => 'decimal:2',
     ];
 
     // Each variation belongs to one inventory

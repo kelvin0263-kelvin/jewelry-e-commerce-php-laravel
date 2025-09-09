@@ -25,8 +25,11 @@ class NecklaceItem extends InventoryItem
 
     public function calculateValue(): float
     {
+        $basePrice = $this->basePrice ?? 100; // original input price
         $lengthPremium = $this->length * 10;
         $pendantPremium = $this->hasPendant ? 200 : 0;
-        return $this->price + $lengthPremium + $pendantPremium;
+
+        return $basePrice + $lengthPremium + $pendantPremium;
     }
+
 }

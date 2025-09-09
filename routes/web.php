@@ -205,6 +205,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         ->name('admin.inventory.')
         ->controller(InventoryController::class)
         ->group(function () {
+            Route::get('/dashboard', 'dashboard')->name('dashboard');
             Route::get('/', 'index')->name('index');
             Route::get('/create', 'create')->name('create');
             Route::post('/', 'store')->name('store');
@@ -282,4 +283,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
+});
+
+// Factory Demo Routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/factory-demo', [\App\Modules\Inventory\Controllers\FactoryDemoController::class, 'demo'])->name('factory.demo');
+    Route::get('/factory-demo/{inventoryId}/enhanced-data', [\App\Modules\Inventory\Controllers\FactoryDemoController::class, 'getEnhancedData'])->name('factory.enhanced-data');
+    Route::get('/factory-demo/type-options/{type}', [\App\Modules\Inventory\Controllers\FactoryDemoController::class, 'getTypeOptions'])->name('factory.type-options');
 });

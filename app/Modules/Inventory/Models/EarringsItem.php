@@ -25,6 +25,22 @@ class EarringsItem extends InventoryItem
 
     public function calculateValue(): float
     {
-        return $this->isPair ? $this->price : $this->price * 0.6;
+        $basePrice = $this->basePrice ?? 400;
+
+        $stylePremiums = [
+            'Stud' => 0,
+            'Hoop' => 120,
+            'Drop' => 140,
+            'Chandelier' => 180,
+            'Cluster' => 150,
+            'Dangle' => 200,
+        ];
+
+        $premium = $stylePremiums[$this->style] ?? 0;
+
+        $price = $this->isPair ? $basePrice : $basePrice * 0.6;
+
+        return $price + $premium;
     }
+
 }
