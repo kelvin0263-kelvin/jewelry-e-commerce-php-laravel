@@ -44,6 +44,28 @@ Route::view('/', 'home')->name('home');
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
+// Product actions for customers (auth required)
+Route::middleware('auth')->group(function () {
+    Route::post('/products/{product}/wishlist', [ProductController::class, 'addToWishlist'])->name('products.wishlist');
+    Route::post('/products/{product}/cart', [ProductController::class, 'addToCart'])->name('products.cart');
+    Route::post('/products/{product}/review', [ProductController::class, 'submitReview'])->name('products.review');
+});
+
+// Review routes (public for now)
+Route::post('/reviews', [App\Http\Controllers\ReviewController::class, 'store'])->name('reviews.store');
+
+// Cart routes
+Route::get('/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add', [App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
+Route::put('/cart/update/{id}', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/remove/{id}', [App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
+Route::get('/checkout', [App\Http\Controllers\CartController::class, 'checkout'])->name('checkout.index');
+
+// Wishlist routes
+Route::get('/wishlist', [App\Http\Controllers\WishlistController::class, 'index'])->name('wishlist.index');
+Route::post('/wishlist/add', [App\Http\Controllers\WishlistController::class, 'add'])->name('wishlist.add');
+Route::delete('/wishlist/remove/{id}', [App\Http\Controllers\WishlistController::class, 'remove'])->name('wishlist.remove');
+
 // FAQ (auth-only as per current app)
 Route::get('/faq', [FaqController::class, 'index'])->name('faq.index')->middleware('auth');
 
@@ -200,9 +222,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
             Route::delete('/{inventory}', 'destroy')->name('destroy');
         });
 
-    // Product publishing workflow
-    Route::prefix('product-management')->group(function () {
+    // Product publishing workflow (with rate limiting)
+    Route::prefix('product-management')->middleware(['rate_limit:30,1', 'secure_error_handling', 'database_security'])->group(function () {
         Route::get('/', [ProductManagementController::class, 'index'])->name('admin.product-management.index');
+        Route::get('/create', [ProductManagementController::class, 'create'])->name('admin.product-management.create');
+        Route::post('/', [ProductManagementController::class, 'store'])->name('admin.product-management.store');
+        Route::get('/{product}', [ProductManagementController::class, 'show'])->name('admin.product-management.show');
         Route::get('/{product}/enhance', [ProductManagementController::class, 'enhance'])->name('admin.product-management.enhance');
         Route::post('/{product}/enhance', [ProductManagementController::class, 'storeEnhancement'])->name('admin.product-management.store-enhancement');
         Route::post('/{product}/approve', [ProductManagementController::class, 'approve'])->name('admin.product-management.approve');
@@ -210,6 +235,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         Route::post('/{product}/unpublish', [ProductManagementController::class, 'unpublish'])->name('admin.product-management.unpublish');
         Route::get('/{product}/edit', [ProductManagementController::class, 'edit'])->name('admin.product-management.edit');
         Route::put('/{product}', [ProductManagementController::class, 'update'])->name('admin.product-management.update');
+        Route::delete('/{product}', [ProductManagementController::class, 'destroy'])->name('admin.product-management.destroy');
+    });
+
+    // Reviews Management
+    Route::prefix('reviews')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\ReviewController::class, 'index'])->name('admin.reviews.index');
+        Route::get('/{review}', [App\Http\Controllers\Admin\ReviewController::class, 'show'])->name('admin.reviews.show');
+        Route::post('/{review}/approve', [App\Http\Controllers\Admin\ReviewController::class, 'approve'])->name('admin.reviews.approve');
+        Route::post('/{review}/reject', [App\Http\Controllers\Admin\ReviewController::class, 'reject'])->name('admin.reviews.reject');
+        Route::delete('/{review}', [App\Http\Controllers\Admin\ReviewController::class, 'destroy'])->name('admin.reviews.destroy');
     });
 
     // Reports

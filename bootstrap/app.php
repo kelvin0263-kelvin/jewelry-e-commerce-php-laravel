@@ -11,12 +11,15 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__ . '/../routes/api.php', 
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias([
-            'is_admin' => \App\Http\Middleware\IsAdmin::class,
-            'admin' => \App\Http\Middleware\IsAdmin::class,
-        ]);
-    })
+        ->withMiddleware(function (Middleware $middleware): void {
+            $middleware->alias([
+                'is_admin' => \App\Http\Middleware\IsAdmin::class,
+                'admin' => \App\Http\Middleware\IsAdmin::class,
+                'rate_limit' => \App\Http\Middleware\RateLimitMiddleware::class,
+                'secure_error_handling' => \App\Http\Middleware\SecureErrorHandling::class,
+                'database_security' => \App\Http\Middleware\DatabaseSecurity::class,
+            ]);
+        })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })

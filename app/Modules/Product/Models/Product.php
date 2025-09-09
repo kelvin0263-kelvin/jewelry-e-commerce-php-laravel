@@ -5,6 +5,7 @@ namespace App\Modules\Product\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory; // ✅ Import HasFactory
 use Illuminate\Database\Eloquent\Model;
 use App\Modules\Inventory\Models\Inventory; // ✅ Import Inventory
+use App\Modules\User\Models\User; // ✅ Import User
 
 class Product extends Model
 {
@@ -15,11 +16,36 @@ class Product extends Model
     protected $fillable = [
         'name',
         'description',
+        'marketing_description',
         'price',
+        'discount_price',
+        'sku',
+        'product_id',
         'inventory_id',
         'image_path',
+        'customer_images',
+        'product_video',
         'status',
+        'category',
+        'features',
+        'published_by',
+        'published_at',
+        'is_visible',
     ];
+
+    protected $casts = [
+        'customer_images' => 'array',
+        'features' => 'array',
+        'published_at' => 'datetime',
+        'price' => 'decimal:2',
+        'discount_price' => 'decimal:2',
+    ];
+
+// 关联发布者 (Admin user)
+public function publisher()
+{
+    return $this->belongsTo(User::class, 'published_by');
+}
 
     // Each product belongs to one inventory
     public function inventory()
