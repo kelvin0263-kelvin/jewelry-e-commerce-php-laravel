@@ -25,7 +25,19 @@ class BraceletItem extends InventoryItem
 
     public function calculateValue(): float
     {
-        $claspPremium = $this->claspType === 'Magnetic' ? 50 : 0;
-        return $this->price + $claspPremium;
+        $basePrice = $this->basePrice ?? 50;
+
+        $claspPremiums = [
+            'Standard' => 0,
+            'Magnetic' => 50,
+            'Toggle' => 30,
+            'Lobster' => 20,
+            'Box' => 25,
+        ];
+
+        $premium = $claspPremiums[$this->claspType] ?? 0;
+
+        return $basePrice + $premium;
     }
+
 }

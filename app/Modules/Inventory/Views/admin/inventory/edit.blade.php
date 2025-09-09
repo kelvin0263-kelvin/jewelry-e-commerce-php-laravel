@@ -23,6 +23,23 @@
                 {{ session('error') }}
             </div>
         @endif
+        @if($errors->any())
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4">
+                <ul class="list-disc list-inside">
+                    @foreach($errors->all() as $message)
+                        <li>{{ $message }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+        @if ($errors->has('variations'))
+            <div class="alert alert-danger mb-3 rounded-lg p-3">
+                <strong>{{ $errors->first('variations') }}</strong>
+            </div>
+        @endif
+        @error('variations.0.stock')
+            <span class="text-red-500 text-sm">{{ $message }}</span>
+        @enderror
 
         <form action="{{ route('admin.inventory.update', $inventory->id) }}" method="POST" enctype="multipart/form-data" class="bg-white p-6 rounded-lg shadow-md">
             @csrf
@@ -37,12 +54,118 @@
 
                 <div>
                     <label class="block font-medium">Type</label>
-                    <select name="type" class="w-full border rounded p-2">
+                    <select name="type" id="type" class="w-full border rounded p-2" onchange="showTypeSpecificFields()">
                         <option value="RingItem" {{ $inventory->type == 'RingItem' ? 'selected' : '' }}>Ring</option>
                         <option value="NecklaceItem" {{ $inventory->type == 'NecklaceItem' ? 'selected' : '' }}>Necklace</option>
                         <option value="EarringsItem" {{ $inventory->type == 'EarringsItem' ? 'selected' : '' }}>Earrings</option>
                         <option value="BraceletItem" {{ $inventory->type == 'BraceletItem' ? 'selected' : '' }}>Bracelet</option>
                     </select>
+                </div>
+            </div>
+
+            <!-- Type-Specific Fields -->
+            <div id="type-specific-fields" class="mb-6">
+                <h3 class="text-lg font-semibold mb-4">Type-Specific Attributes</h3>
+                
+                <!-- Ring Fields -->
+                <div id="ring-fields" class="type-fields" style="display: none;">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-medium">Stone Type</label>
+                            <select name="stone_type" class="w-full border rounded p-2">
+                                <option value="">Select Stone Type</option>
+                                <option value="Diamond" {{ $inventory->stone_type == 'Diamond' ? 'selected' : '' }}>Diamond</option>
+                                <option value="Ruby" {{ $inventory->stone_type == 'Ruby' ? 'selected' : '' }}>Ruby</option>
+                                <option value="Sapphire" {{ $inventory->stone_type == 'Sapphire' ? 'selected' : '' }}>Sapphire</option>
+                                <option value="Emerald" {{ $inventory->stone_type == 'Emerald' ? 'selected' : '' }}>Emerald</option>
+                                <option value="Pearl" {{ $inventory->stone_type == 'Pearl' ? 'selected' : '' }}>Pearl</option>
+                                <option value="Amethyst" {{ $inventory->stone_type == 'Amethyst' ? 'selected' : '' }}>Amethyst</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-medium">Ring Size</label>
+                            <select name="ring_size" class="w-full border rounded p-2">
+                                <option value="">Select Ring Size</option>
+                                @for($i = 4; $i <= 10; $i++)
+                                    <option value="{{ $i }}" {{ $inventory->ring_size == $i ? 'selected' : '' }}>Size {{ $i }}</option>
+                                @endfor
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Necklace Fields -->
+                <div id="necklace-fields" class="type-fields" style="display: none;">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-medium">Necklace Length (cm)</label>
+                            <select name="necklace_length" class="w-full border rounded p-2">
+                                <option value="">Select Length</option>
+                                @foreach([30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80] as $length)
+                                    <option value="{{ $length }}" {{ $inventory->necklace_length == $length ? 'selected' : '' }}>{{ $length }}cm</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-medium">Has Pendant</label>
+                            <select name="has_pendant" class="w-full border rounded p-2">
+                                <option value="">Select Option</option>
+                                <option value="1" {{ $inventory->has_pendant == 1 ? 'selected' : '' }}>Yes</option>
+                                <option value="0" {{ $inventory->has_pendant == 0 ? 'selected' : '' }}>No</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Earrings Fields -->
+                <div id="earrings-fields" class="type-fields" style="display: none;">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-medium">Earring Style</label>
+                            <select name="earring_style" class="w-full border rounded p-2">
+                                <option value="">Select Style</option>
+                                <option value="Stud" {{ $inventory->earring_style == 'Stud' ? 'selected' : '' }}>Stud</option>
+                                <option value="Hoop" {{ $inventory->earring_style == 'Hoop' ? 'selected' : '' }}>Hoop</option>
+                                <option value="Drop" {{ $inventory->earring_style == 'Drop' ? 'selected' : '' }}>Drop</option>
+                                <option value="Chandelier" {{ $inventory->earring_style == 'Chandelier' ? 'selected' : '' }}>Chandelier</option>
+                                <option value="Cluster" {{ $inventory->earring_style == 'Cluster' ? 'selected' : '' }}>Cluster</option>
+                                <option value="Dangle" {{ $inventory->earring_style == 'Dangle' ? 'selected' : '' }}>Dangle</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-medium">Is Pair</label>
+                            <select name="is_pair" class="w-full border rounded p-2">
+                                <option value="">Select Option</option>
+                                <option value="1" {{ $inventory->is_pair == 1 ? 'selected' : '' }}>Yes (Pair)</option>
+                                <option value="0" {{ $inventory->is_pair == 0 ? 'selected' : '' }}>No (Single)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bracelet Fields -->
+                <div id="bracelet-fields" class="type-fields" style="display: none;">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-medium">Clasp Type</label>
+                            <select name="bracelet_clasp" class="w-full border rounded p-2">
+                                <option value="">Select Clasp Type</option>
+                                <option value="Standard" {{ $inventory->bracelet_clasp == 'Standard' ? 'selected' : '' }}>Standard</option>
+                                <option value="Magnetic" {{ $inventory->bracelet_clasp == 'Magnetic' ? 'selected' : '' }}>Magnetic</option>
+                                <option value="Toggle" {{ $inventory->bracelet_clasp == 'Toggle' ? 'selected' : '' }}>Toggle</option>
+                                <option value="Lobster" {{ $inventory->bracelet_clasp == 'Lobster' ? 'selected' : '' }}>Lobster</option>
+                                <option value="Box" {{ $inventory->bracelet_clasp == 'Box' ? 'selected' : '' }}>Box</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-medium">Adjustable</label>
+                            <select name="adjustable" class="w-full border rounded p-2">
+                                <option value="">Select Option</option>
+                                <option value="1" {{ $inventory->adjustable == 1 ? 'selected' : '' }}>Yes</option>
+                                <option value="0" {{ $inventory->adjustable == 0 ? 'selected' : '' }}>No</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -82,7 +205,7 @@
                             <div class="grid grid-cols-2 gap-4 mb-3">
                                 <div>
                                     <label class="block font-medium">Price (RM)</label>
-                                    <input type="number" step="0.01" name="variations[{{ $index }}][price]" value="{{ $variation->price }}" class="w-full border rounded p-2">
+                                    <input type="number" step="0.01" name="variations[{{ $index }}][price]" value="{{ $variation->price }}" class="w-full border rounded p-2" readonly>
                                 </div>
                                 <div>
                                     <label class="block font-medium">Stock</label>
@@ -116,6 +239,35 @@
 </div>
 
 <script>
+function showTypeSpecificFields() {
+    const type = document.getElementById('type').value;
+    const typeFields = document.querySelectorAll('.type-fields');
+    
+    // Hide all type-specific fields
+    typeFields.forEach(field => field.style.display = 'none');
+    
+    // Show fields for selected type
+    switch(type) {
+        case 'RingItem':
+            document.getElementById('ring-fields').style.display = 'block';
+            break;
+        case 'NecklaceItem':
+            document.getElementById('necklace-fields').style.display = 'block';
+            break;
+        case 'EarringsItem':
+            document.getElementById('earrings-fields').style.display = 'block';
+            break;
+        case 'BraceletItem':
+            document.getElementById('bracelet-fields').style.display = 'block';
+            break;
+    }
+}
+
+// Show type-specific fields on page load
+document.addEventListener('DOMContentLoaded', function() {
+    showTypeSpecificFields();
+});
+
 document.getElementById('add-variation').addEventListener('click', function() {
     const container = document.getElementById('variation-container');
     const index = container.children.length;
