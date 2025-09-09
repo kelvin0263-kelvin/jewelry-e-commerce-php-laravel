@@ -9,7 +9,7 @@
     <div style="background: #f0f8ff; padding: 15px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 5px;">
         <h3>Basic Product Info (from Inventory):</h3>
         <p><strong>SKU:</strong> {{ $product->sku }}</p>
-        <p><strong>Base Price:</strong> ${{ number_format($product->price, 2) }}</p>
+        <p><strong>Base Price:</strong> RM{{ number_format($product->price, 2) }}</p>
         <p><strong>Current Stock:</strong> {{ $product->quantity }}</p>
         <p><strong>Basic Description:</strong> {{ $product->description }}</p>
         @if($product->internal_image_path)

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Update Form</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+    <h2>Test Update Form</h2>
+    <form action="/admin/product-management/2" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="_token" value="test-csrf-token">
+        <input type="hidden" name="_method" value="PUT">
+        
+        <div>
+            <label>Product Name:</label>
+            <input type="text" name="name" value="Test Product" required>
+        </div>
+        
+        <div>
+            <label>SKU:</label>
+            <input type="text" name="sku" value="TEST-SKU" required>
+        </div>
+        
+        <div>
+            <label>Description:</label>
+            <textarea name="description" required>Test Description</textarea>
+        </div>
+        
+        <div>
+            <label>Marketing Description:</label>
+            <textarea name="marketing_description" required>Test Marketing Description</textarea>
+        </div>
+        
+        <div>
+            <label>Price:</label>
+            <input type="number" name="price" value="100" required>
+        </div>
+        
+        <div>
+            <label>Category:</label>
+            <select name="category" required>
+                <option value="earring">Earring</option>
+                <option value="bracelet">Bracelet</option>
+                <option value="necklace">Necklace</option>
+                <option value="ring">Ring</option>
+            </select>
+        </div>
+        
+        <button type="submit">Test Update</button>
+    </form>
+    
+    <script>
+        document.querySelector('form').addEventListener('submit', function(e) {
+            console.log('Form submitted!');
+            console.log('Form action:', this.action);
+            console.log('Form method:', this.method);
+        });
+    </script>
+</body>
+</html>

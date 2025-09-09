@@ -24,6 +24,8 @@
     
     <!-- Vite Assets for Echo and real-time functionality -->
     @vite(['resources/js/app.js', 'resources/css/app.css'])
+    
+    @stack('styles')
 </head>
 
 <body
