@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Modules\Inventory\Controllers\InventoryController;
+use App\Modules\Cart\Controllers\CartController;
+use App\Modules\Order\Controllers\OrderController;
 
 
 
@@ -37,7 +39,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('chat/conversations/{conversation}', [App\Modules\Support\Controllers\ChatController::class, 'show'])->name('chat.conversation.show');
     Route::get('chat/conversations/{conversation}/messages', [App\Modules\Support\Controllers\ChatController::class, 'fetchMessages'])->name('chat.messages'); //line 552 
     Route::post('chat/messages', [App\Modules\Support\Controllers\ChatController::class, 'sendMessage'])->name('chat.send'); // line 641
-    
+
     // Ticket routes
     Route::resource('tickets', App\Modules\Support\Controllers\TicketController::class)->except(['edit', 'update', 'destroy']);
     Route::post('tickets/{ticket}/reply', [App\Modules\Support\Controllers\TicketController::class, 'reply'])->name('tickets.reply');
@@ -61,11 +63,11 @@ Route::middleware(['auth'])->group(function () {
 // Custom broadcasting authentication route - override Laravel's default
 Route::post('/broadcasting/auth', function (Request $request) {
     Log::info('=== CUSTOM BROADCAST AUTH ROUTE ===');
-    
+
     // Get app key and secret from config
     $appKey = config('broadcasting.connections.reverb.key', 'reverb-key');
     $appSecret = config('broadcasting.connections.reverb.secret', 'reverb-secret');
-    
+
     Log::info('Custom broadcast auth request', [
         'user_authenticated' => Auth::check(),
         'user_id' => Auth::id(),
@@ -111,10 +113,10 @@ Route::post('/broadcasting/auth', function (Request $request) {
 
             if ($authorized) {
                 Log::info('Channel authorization successful');
-                
+
                 // Generate the auth signature for Reverb (same format as Pusher)
                 $authString = $socketId . ':' . $channelName;
-                
+
                 Log::info('Generating auth signature', [
                     'auth_string' => $authString,
                     'app_key' => $appKey,
@@ -122,15 +124,15 @@ Route::post('/broadcasting/auth', function (Request $request) {
                     'original_channel' => $channelName,
                     'socket_id' => $socketId,
                 ]);
-                
+
                 $authSignature = hash_hmac('sha256', $authString, $appSecret);
                 $authResult = $appKey . ':' . $authSignature;
-                
+
                 Log::info('Auth signature generated', [
                     'auth_result' => $authResult,
                     'signature' => $authSignature,
                 ]);
-                
+
                 return response()->json([
                     'auth' => $authResult
                 ]);
@@ -168,7 +170,7 @@ Route::middleware('auth')->group(function () {
 // Admin routes
 Route::middleware(['auth', 'is_admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-    
+
     // Chat Queue Management Routes
     Route::prefix('chat-queue')->group(function () {
         Route::get('/', [App\Modules\Support\Controllers\ChatQueueController::class, 'index'])->name('admin.chat-queue.index'); //  visit http://127.0.0.1:8000/admin/chat-queue --> ChatQueueController index function --> return view 
@@ -188,7 +190,7 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->group(function () {
     Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('admin.customers.edit');
     Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('admin.customers.update');
     Route::get('/customers/segmentation', [ApiCustomerController::class, 'segmentation'])->name('admin.customers.segmentation');
-    
+
     //Inventory Management (Basic product creation - internal only)
     // Route::get('/inventory', [App\Modules\Inventory\Controllers\InventoryController::class, 'index'])->name('admin.inventory.index');
     // Route::get('/inventory/create', [App\Modules\Inventory\Controllers\InventoryController::class, 'create'])->name('admin.inventory.create');
@@ -198,18 +200,18 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->group(function () {
     // Route::delete('/inventory/{product}', [App\Modules\Inventory\Controllers\InventoryController::class, 'destroy'])->name('admin.inventory.destroy');
 
 
-Route::prefix('admin/inventory')
-    ->name('admin.inventory.')
-    ->controller(InventoryController::class)
-    ->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/create', 'create')->name('create');
-        Route::post('/', 'store')->name('store');
-        Route::get('/{inventory}/edit', 'edit')->name('edit');
-        Route::put('/{inventory}', 'update')->name('update');
-        Route::put('/{inventory}/toggle-status', 'toggleStatus')->name('toggleStatus');
-        Route::delete('/{inventory}', 'destroy')->name('destroy');
-    });
+    Route::prefix('admin/inventory')
+        ->name('admin.inventory.')
+        ->controller(InventoryController::class)
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{inventory}/edit', 'edit')->name('edit');
+            Route::put('/{inventory}', 'update')->name('update');
+            Route::put('/{inventory}/toggle-status', 'toggleStatus')->name('toggleStatus');
+            Route::delete('/{inventory}', 'destroy')->name('destroy');
+        });
 
 
 
@@ -227,15 +229,15 @@ Route::prefix('admin/inventory')
         Route::get('/{product}/edit', [App\Modules\Product\Controllers\ProductManagementController::class, 'edit'])->name('admin.product-management.edit');
         Route::put('/{product}', [App\Modules\Product\Controllers\ProductManagementController::class, 'update'])->name('admin.product-management.update');
     });
-    
+
     Route::get('/reports/product-performance', [ReportController::class, 'productPerformance'])->name('admin.reports.product-performance');
-    
+
     // Chat management routes
     Route::get('/chat', function () {
         return view('support::admin.chat.index');
     })->name('admin.chat.index');
     Route::get('/chat/conversations', [App\Modules\Support\Controllers\ChatController::class, 'conversations'])->name('admin.chat.conversations');
-    
+
     // Admin ticket management routes
     Route::prefix('tickets')->group(function () {
         Route::get('/', [App\Modules\Support\Controllers\AdminTicketController::class, 'index'])->name('admin.tickets.index');
@@ -265,4 +267,20 @@ Route::prefix('self-service')->group(function () {
     Route::post('/escalate', [App\Modules\Support\Controllers\SelfServiceController::class, 'escalate'])->name('self-service.escalate');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
+
+
+
+Route::middleware('auth')->group(function () {
+    Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+    Route::post('/cart/add/{productId}', [CartController::class, 'add'])->name('cart.add');
+    Route::post('/cart/update/{id}', [CartController::class, 'update'])->name('cart.update');
+    Route::post('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
+    Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+    Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+    Route::post('/cart/placeOrder', [CartController::class, 'placeOrder'])->name('cart.placeOrder');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+});
