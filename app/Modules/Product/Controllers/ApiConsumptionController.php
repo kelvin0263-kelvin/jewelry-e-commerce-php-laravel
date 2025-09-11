@@ -154,4 +154,22 @@ class ApiConsumptionController extends Controller
             'conversation_id' => $conversationId,
         ]);
     }
+
+    /**
+     * Browser/XHR demo: uses the chat widget on the client to hit Support APIs.
+     * Route: GET /products/api-demo/support-chat-browser
+     * Optional query params to populate context: product_id, product_name
+     */
+    public function supportChatBrowser(Request $request)
+    {
+        $ctx = [
+            'source' => 'product_page',
+            'product_id' => $request->query('product_id', 'DEMO-123'),
+            'product_name' => $request->query('product_name', 'Demo Product'),
+        ];
+
+        return view('product::products.support-chat-browser', [
+            'ctx' => $ctx,
+        ]);
+    }
 }

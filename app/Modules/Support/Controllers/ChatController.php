@@ -56,6 +56,35 @@ class ChatController extends Controller
     }
 
     /**
+     * List only the authenticated user's conversations (for API route: GET /api/support/chat/conversations)
+     */
+    public function userConversations()
+    {
+        try {
+            $userId = Auth::id();
+            $conversations = Conversation::with(['user', 'agent'])
+                ->select([
+                    'id',
+                    'user_id',
+                    'assigned_agent_id',
+                    'status',
+                    'started_at',
+                    'ended_at',
+                    'end_reason',
+                    'created_at',
+                    'updated_at'
+                ])
+                ->where('user_id', $userId)
+                ->latest()
+                ->get();
+
+            return response()->json($conversations);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to load user conversations: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Get conversation details
      *D:\Desktop\jewelry-e-commerce-php-laravel\app\Modules\Support\Views\admin\chat\index.blade.php
      */

@@ -42,6 +42,7 @@
             <a class="btn btn-primary" href="{{ url()->current() }}?use_api=1">Use HTTP API</a>
             <a class="btn" href="{{ route('products.index') }}">Back to Products</a>
             <a class="btn" href="{{ route('products.api-demo.support-chat') }}">Support Chat API Demo</a>
+            <a class="btn" href="{{ route('products.api-demo.support-chat-browser') }}">Support Chat Browser Demo</a>
         </div>
 
         @if($error)

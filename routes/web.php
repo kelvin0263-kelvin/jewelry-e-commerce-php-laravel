@@ -46,6 +46,7 @@ Route::get('/products', [ProductController::class, 'index'])->name('products.ind
 // Place static routes BEFORE dynamic parameter routes to avoid capture
 Route::get('/products/api-demo', [ApiConsumptionController::class, 'inventory'])->name('products.api-demo');
 Route::get('/products/api-demo/support-chat', [ApiConsumptionController::class, 'supportChat'])->name('products.api-demo.support-chat');
+Route::get('/products/api-demo/support-chat-browser', [ApiConsumptionController::class, 'supportChatBrowser'])->name('products.api-demo.support-chat-browser');
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
 // Product actions for customers (auth required)
