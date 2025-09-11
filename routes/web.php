@@ -149,6 +149,7 @@ Route::post('/broadcasting/auth', function (Request $request) {
     $appKey = config('broadcasting.connections.reverb.key', 'reverb-key');
     $appSecret = config('broadcasting.connections.reverb.secret', 'reverb-secret');
 
+
     Log::info('Custom broadcast auth request', [
         'user_authenticated' => Auth::check(),
         'user_id' => Auth::id(),
@@ -193,6 +194,7 @@ Route::post('/broadcasting/auth', function (Request $request) {
                 $authString = $socketId . ':' . $channelName;
                 $authSignature = hash_hmac('sha256', $authString, $appSecret);
                 $authResult = $appKey . ':' . $authSignature;
+
 
                 Log::info('Auth signature generated', [
                     'auth_result' => $authResult,
@@ -337,4 +339,31 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/factory-demo', [\App\Modules\Inventory\Controllers\FactoryDemoController::class, 'demo'])->name('factory.demo');
     Route::get('/factory-demo/{inventoryId}/enhanced-data', [\App\Modules\Inventory\Controllers\FactoryDemoController::class, 'getEnhancedData'])->name('factory.enhanced-data');
     Route::get('/factory-demo/type-options/{type}', [\App\Modules\Inventory\Controllers\FactoryDemoController::class, 'getTypeOptions'])->name('factory.type-options');
+});
+
+
+
+Route::middleware('auth')->group(function () {
+    Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+    Route::post('/cart/add/{productId}', [CartController::class, 'add'])->name('cart.add');
+    Route::post('/cart/update/{id}', [CartController::class, 'update'])->name('cart.update');
+    Route::post('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
+    Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+    Route::get('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+    Route::post('/cart/placeOrder', [CartController::class, 'placeOrder'])->name('cart.placeOrder');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{id}/complete', [OrderController::class, 'markAsCompleted'])->name('orders.complete');
+    Route::post('/orders/{id}/refund', [OrderController::class, 'markAsRefund'])->name('orders.refund');
+    Route::get('/orders/{id}/items', [OrderItemController::class, 'view'])->name('orderitem.index');
+    Route::post('/orders/{id}/submit-refund-reason', [OrderController::class, 'submitRefundReason'])->name('orders.submitRefundReason');
+});
+
+Route::prefix('admin')->group(function () {
+    Route::get('/ordermanagement', [OrderManagementController::class, 'index'])->name('ordermanagement.index');
+    Route::post('/ordermanagement/ship/{id}', [OrderManagementController::class, 'ship'])->name('ordermanagement.ship');
+    Route::post('/ordermanagement/refund/{id}', [OrderManagementController::class, 'updateRefundStatus'])->name('ordermanagement.updateRefundStatus');
 });
