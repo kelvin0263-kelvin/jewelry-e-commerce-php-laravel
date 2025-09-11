@@ -28,6 +28,21 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+      public function user()
+    {
+        return $this->belongsTo(\App\Modules\User\Models\User::class);
+    }
+
+public function products()
+{
+    return $this->belongsToMany(\App\Modules\Product\Models\Product::class, 'order_items')
+                ->withPivot('quantity', 'price')
+                ->withTimestamps();
+}
+
+
+
 }
 
 ?>

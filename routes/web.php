@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 // Public controllers
 use App\Modules\Product\Controllers\ProductController;
-use App\Modules\Product\Controllers\CartController;
+//use App\Modules\Product\Controllers\CartController;
 use App\Modules\Product\Controllers\WishlistController;
 use App\Modules\Product\Controllers\ReviewController;
 
@@ -29,6 +29,14 @@ use App\Modules\Support\Controllers\ChatQueueController;
 use App\Modules\Support\Controllers\FaqController;
 use App\Modules\Support\Controllers\SelfServiceController;
 use App\Modules\User\Controllers\ProfileController;
+
+
+use App\Modules\Cart\Controllers\CartController;
+use App\Modules\Order\Controllers\OrderController;
+use App\Modules\Order\Controllers\OrderItemController;
+use App\Modules\Order\Controllers\OrderManagementController;
+
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -367,3 +375,5 @@ Route::prefix('admin')->group(function () {
     Route::post('/ordermanagement/ship/{id}', [OrderManagementController::class, 'ship'])->name('ordermanagement.ship');
     Route::post('/ordermanagement/refund/{id}', [OrderManagementController::class, 'updateRefundStatus'])->name('ordermanagement.updateRefundStatus');
 });
+
+

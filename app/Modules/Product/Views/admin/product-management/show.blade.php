@@ -7,6 +7,15 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <style>
+         body a,
+body a:link,
+body a:visited,
+body a:hover,
+body a:active {
+    text-decoration: none;
+    color: black
+}
+
         /* Enhanced Card Design */
         .card {
             border: none;

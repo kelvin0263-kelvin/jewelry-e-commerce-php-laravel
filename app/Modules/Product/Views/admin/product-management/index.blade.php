@@ -345,7 +345,19 @@
     
     <!-- Custom Styles -->
     <style>
+         body a,
+body a:link,
+body a:visited,
+body a:hover,
+body a:active {
+    text-decoration: none;
+    color: black
+}
+
         /* Enhanced Page Header */
+
+
+
         .page-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
