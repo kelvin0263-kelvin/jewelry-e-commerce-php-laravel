@@ -31,8 +31,8 @@ class DatabaseSecurityService
     {
         foreach ($params as $param) {
             if (is_string($param)) {
-                // Check for potential SQL injection patterns
-                $dangerousPatterns = [
+                // Get SQL injection patterns from config
+                $dangerousPatterns = config('product.security.sql_injection_patterns', [
                     '/union\s+select/i',
                     '/drop\s+table/i',
                     '/delete\s+from/i',
@@ -51,7 +51,7 @@ class DatabaseSecurityService
                     '/\*\//',
                     '/\x00/',
                     '/\x1a/'
-                ];
+                ]);
 
                 foreach ($dangerousPatterns as $pattern) {
                     if (preg_match($pattern, $param)) {
@@ -241,3 +241,5 @@ class DatabaseSecurityService
         return false;
     }
 }
+
+

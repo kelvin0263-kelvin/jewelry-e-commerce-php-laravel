@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 
 // Public controllers
 use App\Modules\Product\Controllers\ProductController;
+use App\Modules\Product\Controllers\CartController;
+use App\Modules\Product\Controllers\WishlistController;
+use App\Modules\Product\Controllers\ReviewController;
 
 // Admin controllers
 use App\Modules\Admin\Controllers\DashboardController;
@@ -15,6 +18,7 @@ use App\Modules\Admin\Controllers\ApiCustomerController as ApiCustomerController
 use App\Modules\Admin\Controllers\ReportController;
 use App\Modules\Inventory\Controllers\InventoryController;
 use App\Modules\Product\Controllers\ProductManagementController;
+use App\Modules\Product\Controllers\Admin\ReviewController as AdminReviewController;
 
 // Support controllers (chat/tickets/self-service)
 use App\Modules\Support\Controllers\ChatController;
@@ -42,8 +46,9 @@ Route::view('/', 'home')->name('home');
 
 // Product catalog (read-only for customers)
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-// Place static routes BEFORE dynamic parameter routes to avoid capture
-Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/products/{productOrInventoryId}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/api/products/sku-details', [ProductController::class, 'getSkuDetails'])->name('products.sku-details');
+Route::get('/api/products/check-published/{inventoryId}', [ProductController::class, 'checkPublished'])->name('products.check-published');
 
 // Product actions for customers (auth required)
 Route::middleware('auth')->group(function () {
@@ -53,19 +58,19 @@ Route::middleware('auth')->group(function () {
 });
 
 // Review routes (public for now)
-Route::post('/reviews', [App\Http\Controllers\ReviewController::class, 'store'])->name('reviews.store');
+Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 
 // Cart routes
-Route::get('/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
-Route::post('/cart/add', [App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
-Route::put('/cart/update/{id}', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
-Route::delete('/cart/remove/{id}', [App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
-Route::get('/checkout', [App\Http\Controllers\CartController::class, 'checkout'])->name('checkout.index');
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::put('/cart/update/{id}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
+Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout.index');
 
 // Wishlist routes
-Route::get('/wishlist', [App\Http\Controllers\WishlistController::class, 'index'])->name('wishlist.index');
-Route::post('/wishlist/add', [App\Http\Controllers\WishlistController::class, 'add'])->name('wishlist.add');
-Route::delete('/wishlist/remove/{id}', [App\Http\Controllers\WishlistController::class, 'remove'])->name('wishlist.remove');
+Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+Route::post('/wishlist/add', [WishlistController::class, 'add'])->name('wishlist.add');
+Route::delete('/wishlist/remove/{id}', [WishlistController::class, 'remove'])->name('wishlist.remove');
 
 // FAQ (auth-only as per current app)
 Route::get('/faq', [FaqController::class, 'index'])->name('faq.index')->middleware('auth');
@@ -239,11 +244,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         });
 
     // Product publishing workflow (with rate limiting)
-    Route::prefix('product-management')->middleware(['rate_limit:30,1', 'secure_error_handling', 'database_security'])->group(function () {
+    Route::prefix('product-management')->middleware(['rate_limit:30,1', 'product.secure_error_handling', 'product.database_security'])->group(function () {
         Route::get('/', [ProductManagementController::class, 'index'])->name('admin.product-management.index');
-        Route::get('/create', [ProductManagementController::class, 'create'])->name('admin.product-management.create');
-        Route::post('/', [ProductManagementController::class, 'store'])->name('admin.product-management.store');
-        Route::get('/{product}', [ProductManagementController::class, 'show'])->name('admin.product-management.show');
+        Route::get('/sku-details/{inventoryId}', [ProductManagementController::class, 'showSkuDetails'])->name('admin.product-management.sku-details');
+        Route::get('/create/{variation}', [ProductManagementController::class, 'create'])->name('admin.product-management.create');
+        Route::get('/create-info/{variation}', [ProductManagementController::class, 'createInfo'])->name('admin.product-management.create-info');
+        Route::get('/{variation}', [ProductManagementController::class, 'show'])->name('admin.product-management.show');
         Route::get('/{product}/enhance', [ProductManagementController::class, 'enhance'])->name('admin.product-management.enhance');
         Route::post('/{product}/enhance', [ProductManagementController::class, 'storeEnhancement'])->name('admin.product-management.store-enhancement');
         Route::post('/{product}/approve', [ProductManagementController::class, 'approve'])->name('admin.product-management.approve');
@@ -252,15 +258,20 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         Route::get('/{product}/edit', [ProductManagementController::class, 'edit'])->name('admin.product-management.edit');
         Route::put('/{product}', [ProductManagementController::class, 'update'])->name('admin.product-management.update');
         Route::delete('/{product}', [ProductManagementController::class, 'destroy'])->name('admin.product-management.destroy');
+        Route::delete('/reviews/{review}', [ProductManagementController::class, 'rejectReview'])->name('admin.product-management.rejectReview');
+        
+        // Inventory-level publish/unpublish
+        Route::post('/inventory/{inventoryId}/publish', [ProductManagementController::class, 'publishInventory'])->name('admin.product-management.publish-inventory');
+        Route::post('/inventory/{inventoryId}/unpublish', [ProductManagementController::class, 'unpublishInventory'])->name('admin.product-management.unpublish-inventory');
     });
 
     // Reviews Management
     Route::prefix('reviews')->group(function () {
-        Route::get('/', [App\Http\Controllers\Admin\ReviewController::class, 'index'])->name('admin.reviews.index');
-        Route::get('/{review}', [App\Http\Controllers\Admin\ReviewController::class, 'show'])->name('admin.reviews.show');
-        Route::post('/{review}/approve', [App\Http\Controllers\Admin\ReviewController::class, 'approve'])->name('admin.reviews.approve');
-        Route::post('/{review}/reject', [App\Http\Controllers\Admin\ReviewController::class, 'reject'])->name('admin.reviews.reject');
-        Route::delete('/{review}', [App\Http\Controllers\Admin\ReviewController::class, 'destroy'])->name('admin.reviews.destroy');
+        Route::get('/', [AdminReviewController::class, 'index'])->name('admin.reviews.index');
+        Route::get('/{review}', [AdminReviewController::class, 'show'])->name('admin.reviews.show');
+        Route::post('/{review}/approve', [AdminReviewController::class, 'approve'])->name('admin.reviews.approve');
+        Route::post('/{review}/reject', [AdminReviewController::class, 'reject'])->name('admin.reviews.reject');
+        Route::delete('/{review}', [AdminReviewController::class, 'destroy'])->name('admin.reviews.destroy');
     });
 
     // Reports

@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Edit Product - ' . $product->name)
+@section('title', 'Edit Product Information')
 
 @push('styles')
     <!-- Bootstrap CSS for buttons -->
@@ -15,13 +15,13 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h1 class="h5 mb-1 fw-bold">
-                            <i class="fas fa-edit me-1"></i>Edit Product Details
+                            <i class="fas fa-edit me-1"></i>Edit Product Information
                         </h1>
-                        <p class="mb-0 opacity-75" style="font-size: 0.7rem;">Update product information and settings</p>
+                        <p class="mb-0 opacity-75" style="font-size: 0.7rem;">Update product information and customer-facing content</p>
                     </div>
                     <div class="d-flex gap-1">
-                        <a href="{{ route('admin.product-management.show', $product) }}" class="btn btn-light btn-sm">
-                            <i class="fas fa-arrow-left me-1"></i> Back to Product Details
+                        <a href="{{ route('admin.product-management.sku-details', $product->inventory->id) }}" class="btn btn-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back
                         </a>
                     </div>
                 </div>
@@ -41,235 +41,243 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
+        
+        @if($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Validation Errors:</strong>
+                <ul class="mb-0">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
 
-        <form action="{{ route('admin.product-management.update', $product) }}" method="POST" enctype="multipart/form-data">
-            @csrf
-            @method('PUT')
-            
-            <div class="row">
-                <!-- Basic Information -->
-                <div class="col-md-8">
-                    <div class="card border mb-1">
-                        <div class="card-header bg-white border-bottom">
-                            <h5 class="card-title mb-0">Basic Information</h5>
+        <div class="row">
+            <!-- Left Side: Inventory Information (50%) -->
+            <div class="col-md-6">
+                <div class="card border h-100">
+                    <div class="card-header bg-primary text-white" style="padding: 0.5rem 0.75rem;">
+                        <h5 class="card-title mb-0" style="font-size: 0.85rem;">
+                            <i class="fas fa-box me-2"></i>Inventory Information
+                        </h5>
+                    </div>
+                    <div class="card-body" style="padding: 0.75rem;">
+                        <div class="row mb-2" style="font-size: 0.8rem;">
+                            <div class="col-sm-4">
+                                <strong>SKU:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {{ $product->sku }}
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-2">
-                                        <label for="name" class="form-label">Product Name *</label>
-                                        <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                                               id="name" name="name" value="{{ old('name', $product->name) }}" required>
-                                        @error('name')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-2">
-                                        <label class="form-label">Product ID</label>
-                                        <div class="form-control-plaintext bg-light p-2 rounded">
-                                            {{ $product->id }}
-                                        </div>
-                                        <div class="form-text">Product ID is auto-generated and cannot be changed.</div>
-                                    </div>
+                        
+                        <div class="row mb-2" style="font-size: 0.8rem;">
+                            <div class="col-sm-4">
+                                <strong>Product Name:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {{ $product->inventory->name }}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2" style="font-size: 0.8rem;">
+                            <div class="col-sm-4">
+                                <strong>Type:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {{ str_replace('Item', '', $product->inventory->type) }}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2" style="font-size: 0.8rem;">
+                            <div class="col-sm-4">
+                                <strong>Quantity:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {{ $product->inventory->variations->first()->stock ?? 0 }} units
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2" style="font-size: 0.8rem;">
+                            <div class="col-sm-4">
+                                <strong>Price:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                RM{{ number_format($product->price, 2) }}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2" style="font-size: 0.8rem;">
+                            <div class="col-sm-4">
+                                <strong>Features:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                @foreach($transformedProduct->features ?? [] as $feature)
+                                    <span class="badge bg-light text-dark border me-1 mb-1" style="font-size: 0.65rem;">{{ $feature }}</span>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Edit Product Information Form (50%) -->
+            <div class="col-md-6">
+                <div class="card border h-100">
+                    <div class="card-header bg-success text-white" style="padding: 0.5rem 0.75rem;">
+                        <h5 class="card-title mb-0" style="font-size: 0.85rem;">
+                            <i class="fas fa-edit me-2"></i>Edit Product Information
+                        </h5>
+                    </div>
+                    <div class="card-body" style="padding: 0.75rem;">
+                        <!-- Product Information (Read-only) -->
+                        <div class="mb-3 p-2 bg-light rounded" style="font-size: 0.8rem;">
+                            <h6 class="text-muted mb-2" style="font-size: 0.75rem;">Product Information (Read-only)</h6>
+                            <div class="row mb-1" style="font-size: 0.75rem;">
+                                <div class="col-sm-4"><strong>SKU:</strong></div>
+                                <div class="col-sm-8">{{ $product->sku }}</div>
+                            </div>
+                            <div class="row mb-1" style="font-size: 0.75rem;">
+                                <div class="col-sm-4"><strong>Product Name:</strong></div>
+                                <div class="col-sm-8">{{ $product->name }}</div>
+                            </div>
+                            <div class="row mb-1" style="font-size: 0.75rem;">
+                                <div class="col-sm-4"><strong>Category:</strong></div>
+                                <div class="col-sm-8">{{ ucfirst($product->category) }}</div>
+                            </div>
+                            <div class="row mb-1" style="font-size: 0.75rem;">
+                                <div class="col-sm-4"><strong>Quantity:</strong></div>
+                                <div class="col-sm-8">{{ $product->inventory->variations->first()->stock ?? 0 }}</div>
+                            </div>
+                            <div class="row mb-1" style="font-size: 0.75rem;">
+                                <div class="col-sm-4"><strong>Features:</strong></div>
+                                <div class="col-sm-8">
+                                    @foreach($transformedProduct->features ?? [] as $feature)
+                                        <span class="badge bg-light text-dark border me-1 mb-1" style="font-size: 0.65rem;">{{ $feature }}</span>
+                                    @endforeach
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-2">
-                                        <label for="category" class="form-label">Category *</label>
-                                        <select class="form-select @error('category') is-invalid @enderror" 
-                                                id="category" name="category" required>
-                                            <option value="">Select Category</option>
-                                            <option value="earring" {{ old('category', $product->category) == 'earring' ? 'selected' : '' }}>Earring</option>
-                                            <option value="bracelet" {{ old('category', $product->category) == 'bracelet' ? 'selected' : '' }}>Bracelet</option>
-                                            <option value="necklace" {{ old('category', $product->category) == 'necklace' ? 'selected' : '' }}>Necklace</option>
-                                            <option value="ring" {{ old('category', $product->category) == 'ring' ? 'selected' : '' }}>Ring</option>
-                                        </select>
-                                        @error('category')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mb-2">
-                                <label for="description" class="form-label">Description</label>
-                                <textarea class="form-control @error('description') is-invalid @enderror" 
-                                          id="description" name="description" rows="3">{{ old('description', $product->description) }}</textarea>
-                                @error('description')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-2">
-                                <label for="marketing_description" class="form-label">Marketing Description *</label>
+                        <form action="{{ route('admin.product-management.update', $product) }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            @method('PUT')
+                            
+                            <!-- Hidden fields for required data -->
+                            <input type="hidden" name="description" value="{{ $product->description }}">
+                            <input type="hidden" name="category" value="{{ $product->category }}">
+                            
+                            
+                            <div class="mb-2" style="font-size: 0.8rem;">
+                                <label for="marketing_description" class="form-label" style="font-size: 0.8rem;">
+                                    <strong>Marketing Description for SKU: {{ $product->sku }} *</strong>
+                                </label>
                                 <textarea class="form-control @error('marketing_description') is-invalid @enderror" 
-                                          id="marketing_description" name="marketing_description" rows="4" required>{{ old('marketing_description', $product->marketing_description) }}</textarea>
+                                          id="marketing_description" name="marketing_description" rows="3" required style="font-size: 0.8rem;">{{ old('marketing_description', $product->marketing_description) }}</textarea>
+                                <div class="form-text" style="font-size: 0.7rem;">This description will be shown to customers on the website for this specific SKU only.</div>
                                 @error('marketing_description')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback" style="font-size: 0.7rem;">{{ $message }}</div>
                                 @enderror
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- Pricing -->
-                    <div class="card border mb-1">
-                        <div class="card-header bg-white border-bottom">
-                            <h5 class="card-title mb-0">Pricing</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-2">
-                                        <label for="price" class="form-label">Regular Price *</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">RM</span>
-                                            <input type="number" step="0.01" min="0" 
-                                                   class="form-control @error('price') is-invalid @enderror" 
-                                                   id="price" name="price" value="{{ old('price', $product->price) }}" required>
-                                        </div>
-                                        @error('price')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
+                            <div class="mb-2" style="font-size: 0.8rem;">
+                                <label for="selling_price" class="form-label" style="font-size: 0.8rem;">
+                                    <strong>Selling Price for SKU: {{ $product->sku }} *</strong>
+                                </label>
+                                <div class="input-group" style="font-size: 0.8rem;">
+                                    <span class="input-group-text" style="font-size: 0.8rem;">RM</span>
+                                    <input type="number" step="0.01" min="0" 
+                                           class="form-control @error('selling_price') is-invalid @enderror" 
+                                           id="selling_price" name="selling_price" 
+                                           value="{{ old('selling_price', $product->selling_price) }}" required style="font-size: 0.8rem;">
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="mb-2">
-                                        <label for="discount_price" class="form-label">Discount Price</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">RM</span>
-                                            <input type="number" step="0.01" min="0" 
-                                                   class="form-control @error('discount_price') is-invalid @enderror" 
-                                                   id="discount_price" name="discount_price" value="{{ old('discount_price', $product->discount_price) }}">
-                                        </div>
-                                        @error('discount_price')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
+                                <div class="form-text" style="font-size: 0.7rem;">The price customers will pay for this SKU. *Required</div>
+                                @error('selling_price')
+                                    <div class="invalid-feedback" style="font-size: 0.7rem;">{{ $message }}</div>
+                                @enderror
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- Features -->
-                    <div class="card border mb-1">
-                        <div class="card-header bg-white border-bottom">
-                            <h5 class="card-title mb-0">Features</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-2">
-                                <small class="text-muted">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    At least one feature is required. Add features to describe your product.
-                                </small>
+                            <div class="mb-2" style="font-size: 0.8rem;">
+                                <label for="discount_price" class="form-label" style="font-size: 0.8rem;">
+                                    <strong>Discounted Price</strong>
+                                </label>
+                                <div class="input-group" style="font-size: 0.8rem;">
+                                    <span class="input-group-text" style="font-size: 0.8rem;">RM</span>
+                                    <input type="number" step="0.01" min="0" 
+                                           class="form-control @error('discount_price') is-invalid @enderror" 
+                                           id="discount_price" name="discount_price" 
+                                           value="{{ old('discount_price', $product->discount_price) }}" style="font-size: 0.8rem;">
+                                </div>
+                                <div class="form-text" style="font-size: 0.7rem;">Optional. Leave empty if no discount.</div>
+                                @error('discount_price')
+                                    <div class="invalid-feedback" style="font-size: 0.7rem;">{{ $message }}</div>
+                                @enderror
                             </div>
-                            <div id="features-container">
-                                @if(old('features'))
-                                    @foreach(old('features') as $index => $feature)
-                                        <div class="mb-2 feature-input">
-                                            <div class="input-group">
-                                                <input type="text" class="form-control" name="features[]" value="{{ $feature }}">
-                                                <button type="button" class="btn btn-outline-danger remove-feature">Remove</button>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                @elseif($product->features)
-                                    @foreach($product->features as $feature)
-                                        <div class="mb-2 feature-input">
-                                            <div class="input-group">
-                                                <input type="text" class="form-control" name="features[]" value="{{ $feature }}">
-                                                <button type="button" class="btn btn-outline-danger remove-feature">Remove</button>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                @else
-                                    <div class="mb-2 feature-input">
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" name="features[]" placeholder="Enter a feature">
-                                            <button type="button" class="btn btn-outline-danger remove-feature">Remove</button>
+
+                            <div class="mb-2" style="font-size: 0.8rem;">
+                                <label for="customer_images" class="form-label" style="font-size: 0.8rem;">
+                                    <strong>Images for SKU: {{ $product->sku }}</strong>
+                                </label>
+                                <input type="file" class="form-control @error('customer_images') is-invalid @enderror" 
+                                       id="customer_images" name="customer_images[]" multiple accept="image/*" style="font-size: 0.8rem;">
+                                <div class="form-text" style="font-size: 0.7rem;">Upload up to 5 images for this specific SKU. Supported formats: JPEG, PNG, JPG, GIF, WebP. Max size: 2MB per image.</div>
+                                @error('customer_images')
+                                    <div class="invalid-feedback" style="font-size: 0.7rem;">{{ $message }}</div>
+                                @enderror
+                                
+                                @if($product->customer_images && count($product->customer_images) > 0)
+                                    <div class="mt-2">
+                                        <small class="text-muted">Current images:</small>
+                                        <div class="row mt-1">
+                                            @foreach($product->customer_images as $image)
+                                                <div class="col-md-3 mb-2">
+                                                    <img src="{{ asset('storage/' . $image) }}" alt="Current Image" class="img-thumbnail" style="width: 100%; height: 80px; object-fit: cover;">
+                                                </div>
+                                            @endforeach
                                         </div>
                                     </div>
                                 @endif
                             </div>
-                            <button type="button" class="btn btn-outline-primary" id="add-feature">Add Feature</button>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Media -->
-                <div class="col-md-4">
-                    <div class="card border mb-1">
-                        <div class="card-header bg-white border-bottom">
-                            <h5 class="card-title mb-0">Product Media</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-2">
-                                <label for="customer_images" class="form-label">
-                                    <i class="fas fa-images me-1"></i>Product Images
-                                </label>
-                                <input type="file" class="form-control @error('customer_images') is-invalid @enderror" 
-                                       id="customer_images" name="customer_images[]" multiple accept="image/*">
-                                @error('customer_images')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <div class="form-text">Upload up to 5 images. Supported formats: JPEG, PNG, JPG, GIF, WebP. Max size: 2MB per image.</div>
-                            </div>
-                            
-                            <div class="mb-2">
-                                <label for="product_video" class="form-label">
-                                    <i class="fas fa-video me-1"></i>Product Video
+                            <div class="mb-2" style="font-size: 0.8rem;">
+                                <label for="product_video" class="form-label" style="font-size: 0.8rem;">
+                                    <strong>Video</strong>
                                 </label>
                                 <input type="file" class="form-control @error('product_video') is-invalid @enderror" 
-                                       id="product_video" name="product_video" accept="video/*">
+                                       id="product_video" name="product_video" accept="video/*" style="font-size: 0.8rem;">
+                                <div class="form-text" style="font-size: 0.7rem;">Upload 1 video. Supported formats: MP4, AVI, MOV. Max size: 10MB.</div>
                                 @error('product_video')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback" style="font-size: 0.7rem;">{{ $message }}</div>
                                 @enderror
-                                <div class="form-text">Upload 1 video. Supported formats: MP4, AVI, MOV. Max size: 10MB.</div>
+                                
+                                @if($product->product_video)
+                                    <div class="mt-2">
+                                        <small class="text-muted">Current video:</small>
+                                        <div class="mt-1">
+                                            <video controls style="max-width: 200px; height: 120px;">
+                                                <source src="{{ asset('storage/' . $product->product_video) }}" type="video/mp4">
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
 
-                            @if($product->customer_images && count($product->customer_images) > 0)
-                                <div class="mb-2">
-                                    <label class="form-label">Current Images</label>
-                                    <div class="row">
-                                        @foreach($product->customer_images as $index => $image)
-                                            <div class="col-6 mb-2">
-                                                <div class="position-relative">
-                                                    <img src="{{ asset('storage/' . $image) }}" alt="Product Image" class="img-thumbnail" style="width: 100%; height: 100px; object-fit: cover;">
-                                                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 remove-image" 
-                                                            data-image="{{ $image }}" style="transform: translate(50%, -50%);">
-                                                        ×
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
-                        </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-success" style="font-size: 0.8rem;" onclick="console.log('Form submitted');">
+                                    <i class="fas fa-save me-1"></i>Update Product Information
+                                </button>
+                                <a href="{{ route('admin.product-management.sku-details', $product->inventory->id) }}" class="btn btn-secondary" style="font-size: 0.8rem;">
+                                    <i class="fas fa-times me-1"></i>Cancel
+                                </a>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
-
-            <!-- Actions -->
-            <div class="card border mt-1">
-                <div class="card-header bg-white border-bottom">
-                    <h5 class="card-title mb-0">Actions</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-1">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i>Update Product
-                        </button>
-                        <a href="{{ route('admin.product-management.show', $product) }}" class="btn btn-secondary">
-                            <i class="fas fa-times me-1"></i>Cancel
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </form>
+        </div>
     </div>
 
     <!-- Bootstrap JS for alerts -->
@@ -277,35 +285,6 @@
     
     <!-- Custom Styles -->
     <style>
-        /* Enhanced Cards */
-        .card {
-            transition: all 0.3s ease;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        }
-        
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-        }
-        
-        .card-header {
-            background-color: #f8f9fa;
-            color: #495057;
-            border-bottom: 1px solid #dee2e6;
-            padding: 0.4rem 0.6rem;
-        }
-        
-        .card-header h5 {
-            font-weight: 600;
-            margin: 0;
-            font-size: 0.8rem;
-        }
-        
-        .card-body {
-            padding: 0.6rem;
-        }
-        
         /* Enhanced Page Header */
         .page-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -338,8 +317,39 @@
             z-index: 1;
         }
         
+        /* Enhanced Cards */
+        .card {
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        
+        .card-header {
+            border-bottom: 1px solid #dee2e6;
+            padding: 0.75rem 1rem;
+        }
+        
+        .card-header h5 {
+            font-weight: 600;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
         /* Enhanced Form Controls */
-        .form-control:focus {
+        .form-control, .form-select {
+            border-radius: 8px;
+        }
+        
+        .form-control:focus, .form-select:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
@@ -348,133 +358,28 @@
         .btn {
             border-radius: 5px;
             font-weight: 500;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-        
-        .btn:hover::before {
-            left: 100%;
         }
         
         .btn:hover {
             transform: translateY(-1px);
         }
         
-        .feature-input {
-            animation: fadeIn 0.3s ease-in;
+        .alert {
+            border-radius: 10px;
+            border: none;
         }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.4em 0.6em;
+            border-radius: 6px;
+        }
+        
+        .img-thumbnail {
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
         }
     </style>
-
-    <!-- JavaScript -->
-    <script>
-        // Add feature functionality
-        document.getElementById('add-feature').addEventListener('click', function() {
-            const container = document.getElementById('features-container');
-            const featureInput = document.createElement('div');
-            featureInput.className = 'mb-2 feature-input';
-            featureInput.innerHTML = `
-                <div class="input-group">
-                    <input type="text" class="form-control" name="features[]" placeholder="Enter a feature">
-                    <button type="button" class="btn btn-outline-danger remove-feature">Remove</button>
-                </div>
-            `;
-            container.appendChild(featureInput);
-        });
-
-        // Remove feature functionality
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('remove-feature')) {
-                e.target.closest('.feature-input').remove();
-            }
-        });
-
-        // Remove image functionality
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('remove-image')) {
-                const imagePath = e.target.getAttribute('data-image');
-                // Add hidden input to track removed images
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = 'removed_images[]';
-                hiddenInput.value = imagePath;
-                document.querySelector('form').appendChild(hiddenInput);
-                
-                // Remove the image display
-                e.target.closest('.col-6').remove();
-            }
-        });
-
-        // Form validation before submission
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const requiredFields = [
-                { id: 'name', name: 'Product Name' },
-                { id: 'category', name: 'Category' },
-                { id: 'description', name: 'Description' },
-                { id: 'marketing_description', name: 'Marketing Description' },
-                { id: 'price', name: 'Price' }
-            ];
-            
-            const missingFields = [];
-            
-            // Check if at least one feature is provided
-            const featureInputs = document.querySelectorAll('input[name="features[]"]');
-            const hasFeatures = Array.from(featureInputs).some(input => input.value.trim() !== '');
-            
-            if (!hasFeatures) {
-                missingFields.push('At least one Feature');
-            }
-            
-            requiredFields.forEach(field => {
-                const element = document.getElementById(field.id);
-                if (!element || !element.value.trim()) {
-                    missingFields.push(field.name);
-                    if (element) {
-                        element.classList.add('is-invalid');
-                    }
-                } else {
-                    if (element) {
-                        element.classList.remove('is-invalid');
-                    }
-                }
-            });
-            
-            if (missingFields.length > 0) {
-                e.preventDefault();
-                
-                // Show alert
-                alert('Please fill in the following required fields:\n\n• ' + missingFields.join('\n• '));
-                
-                // Scroll to first missing field
-                const firstMissingField = document.getElementById(requiredFields.find(f => missingFields.includes(f.name)).id);
-                if (firstMissingField) {
-                    firstMissingField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    firstMissingField.focus();
-                }
-                
-                return false;
-            }
-            
-            console.log('Form is being submitted...');
-            console.log('Form action:', this.action);
-            console.log('Form method:', this.method);
-        });
-    </script>
 @endsection

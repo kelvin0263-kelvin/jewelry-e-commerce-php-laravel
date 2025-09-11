@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Middleware;
+namespace App\Modules\Product\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
@@ -60,15 +60,15 @@ class SecureErrorHandling
 
         // 根据错误类型选择日志级别
         if ($e instanceof \Illuminate\Database\QueryException) {
-            Log::error('Database Error', $errorData);
+            Log::error('Product Module Database Error', $errorData);
         } elseif ($e instanceof \Illuminate\Validation\ValidationException) {
-            Log::warning('Validation Error', $errorData);
+            Log::warning('Product Module Validation Error', $errorData);
         } elseif ($e instanceof \Illuminate\Auth\AuthenticationException) {
-            Log::warning('Authentication Error', $errorData);
+            Log::warning('Product Module Authentication Error', $errorData);
         } elseif ($e instanceof \Illuminate\Auth\Access\AuthorizationException) {
-            Log::warning('Authorization Error', $errorData);
+            Log::warning('Product Module Authorization Error', $errorData);
         } else {
-            Log::error('Application Error', $errorData);
+            Log::error('Product Module Application Error', $errorData);
         }
     }
 

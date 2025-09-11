@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Modules\Product\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -21,6 +21,6 @@ class Review extends Model
 
     public function product()
     {
-        return $this->belongsTo(\App\Modules\Product\Models\Product::class);
+        return $this->belongsTo(Product::class);
     }
 }

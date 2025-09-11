@@ -5,9 +5,9 @@ namespace App\Modules\Product\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Product\Models\Product;
 use App\Modules\Product\Decorators\AdminProductDecorator;
-use App\Modules\Product\Services\DatabaseSecurityService;
-use App\Http\Requests\ProductStoreRequest;
 use App\Http\Requests\ProductUpdateRequest;
+use App\Modules\Inventory\Models\Inventory;
+use App\Modules\Inventory\Models\InventoryVariation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
@@ -15,181 +15,572 @@ use Illuminate\Support\Facades\Auth;
 class ProductManagementController extends Controller
 {
     /**
-     * Display all products.
+     * Display all products based on inventory variations (SKU-based).
      */
     public function index(Request $request)
     {
-        $query = Product::with(['inventory', 'publisher']);
+        // Check if we're viewing SKU details for a specific inventory
+        if ($request->has('inventory_id') && !empty($request->inventory_id)) {
+            return $this->showSkuDetails($request->inventory_id);
+        }
 
-        // Filter by status
-        if ($request->has('status') && $request->status !== 'all') {
-            if ($request->status === 'published') {
-                $query->where('is_visible', true)->whereNotNull('published_at');
-            } elseif ($request->status === 'pending') {
-                $query->where('is_visible', false)->whereNull('published_at');
+        // Default: Show inventory summary table
+        return $this->showInventorySummary($request);
+    }
+
+    /**
+     * Show inventory summary table
+     */
+    private function showInventorySummary(Request $request)
+    {
+        // Only process messages if this is a fresh visit (not from internal navigation)
+        // Check if there's a referer that indicates internal navigation within product management
+        $referer = $request->header('referer');
+        $isInternalNavigation = $referer && str_contains($referer, 'admin.product-management');
+        
+        // Clear messages after they are displayed to prevent repeated display
+        $messages = [];
+        
+        // Only process messages if not coming from internal navigation
+        if (!$isInternalNavigation) {
+            if (session('new_product_added')) {
+                $messages['new_product_added'] = session('new_product_added');
+                session()->forget('new_product_added');
+            }
+            if (session('inventory_unpublished')) {
+                $messages['inventory_unpublished'] = session('inventory_unpublished');
+                session()->forget('inventory_unpublished');
+            }
+            if (session('inventory_republished')) {
+                $messages['inventory_republished'] = session('inventory_republished');
+                session()->forget('inventory_republished');
+            }
+            if (session('inventory_changes')) {
+                $messages['inventory_changes'] = session('inventory_changes');
+                session()->forget('inventory_changes');
             }
         }
 
-        // Filter by category
-        if ($request->has('category') && $request->category !== 'all') {
-            $query->where('category', $request->category);
-        }
+        $query = \App\Modules\Inventory\Models\Inventory::with(['variations.product']);
 
-        // Search functionality with input sanitization
+        // Inventory Summary Page Independent Search functionality
         if ($request->has('search') && $request->search) {
             $sanitizedSearch = $this->sanitizeSearchInput($request->search);
             if (!empty($sanitizedSearch)) {
                 $query->where(function($q) use ($sanitizedSearch) {
                     $q->where('name', 'like', '%' . $sanitizedSearch . '%')
-                      ->orWhere('sku', 'like', '%' . $sanitizedSearch . '%')
-                      ->orWhere('description', 'like', '%' . $sanitizedSearch . '%');
+                      ->orWhere('type', 'like', '%' . $sanitizedSearch . '%')
+                      ->orWhere('description', 'like', '%' . $sanitizedSearch . '%')
+                      ->orWhereHas('variations', function($variationQuery) use ($sanitizedSearch) {
+                          $variationQuery->where('sku', 'like', '%' . $sanitizedSearch . '%')
+                                         ->orWhere('color', 'like', '%' . $sanitizedSearch . '%')
+                                         ->orWhere('material', 'like', '%' . $sanitizedSearch . '%');
+                      });
                 });
                 
-                // 记录搜索活动
-                $this->logSecurityEvent('Product search performed', [
+                // 记录Inventory搜索活动
+                $this->logSecurityEvent('Inventory search performed', [
                     'search_term' => $sanitizedSearch,
                     'original_term' => $request->search
                 ]);
             }
         }
 
-        $products = $query->paginate(15);
-        
-        // Decorate products for admin display
-        $decoratedProducts = $products->getCollection()->map(function($product) {
-            return new AdminProductDecorator($product);
-        });
-
-        $products->setCollection($decoratedProducts);
-
-        return view('product::admin.product-management.index', compact('products'));
-    }
-
-    /**
-     * Show the form for creating a new product.
-     */
-    public function create()
-    {
-        return view('product::admin.product-management.create');
-    }
-
-    /**
-     * Display the specified product.
-     */
-    public function show(Product $product)
-    {
-        // 验证产品数据完整性
-        if (!$this->validateProductData($product)) {
-            \Log::error('Invalid product data detected', ['product_id' => $product->id]);
-            abort(500, 'Invalid product data.');
+        // Inventory Summary Page Independent Category filter
+        if ($request->has('category') && $request->category !== 'all') {
+            $query->where('type', 'like', '%' . $request->category . '%');
         }
 
-        $product->load(['inventory', 'publisher']);
-        $decoratedProduct = new AdminProductDecorator($product);
+
+        // Show inventories that are either published or were previously published (now draft)
+        // This ensures we can show rejected status for unpublished inventories
+        $query->where(function($q) {
+            $q->where('status', 'published') // Currently published inventories
+              ->orWhereHas('variations.product', function($subQ) {
+                  $subQ->whereNotNull('published_at'); // Previously published inventories (now draft)
+              });
+        });
+
+        // Get paginated results
+        $inventories = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        // Get issued products (products with status = 'issued' that were previously published and had customer info)
+        $issuedProducts = \App\Modules\Product\Models\Product::with(['variation.inventory', 'issuer'])
+            ->where('status', 'issued')
+            ->whereNotNull('published_at') // Only show products that were previously published
+            ->whereNotNull('issued_at') // Only show products that have been issued
+            ->where('marketing_description', '!=', 'None') // Only show products that had customer info created
+            ->whereNotNull('marketing_description') // Ensure marketing description exists
+            ->orderBy('issued_at', 'desc')
+            ->get();
+
+        // Transform inventories to summary data
+        $inventorySummaries = $inventories->getCollection()->map(function($inventory) {
+            $totalStock = $inventory->variations->sum('stock');
+            $publishedCount = $inventory->variations->where('product.is_visible', true)
+                ->where('product.status', 'published')
+                ->count();
+            $totalVariations = $inventory->variations->count();
+            
+            // Check if at least one SKU has user-facing information
+            $hasUserFacingInfo = $inventory->variations->where('product.marketing_description', '!=', 'None')
+                ->where('product.marketing_description', '!=', null)
+                ->count() > 0;
+            
+            // Get inventory status based on inventory module status and product visibility
+            if ($inventory->status === 'draft') {
+                // If inventory is unpublished in inventory module, show as rejected
+                $status = 'rejected';
+            } else {
+                // Check if there are any products that are visible but pending or issued (republished products)
+                $pendingProducts = $inventory->variations->where('product.is_visible', true)
+                    ->whereIn('product.status', ['pending', 'issued'])
+                    ->count();
+                
+                if ($publishedCount > 0 && $pendingProducts === 0) {
+                    // If inventory has published products and no pending products
+                    $status = 'published';
+                } else if ($pendingProducts > 0) {
+                    // If there are pending or issued products (republished), show as pending
+                    $status = 'pending';
+                } else {
+                    // If inventory is published but no visible products yet
+                    $status = 'pending';
+                }
+            }
+            
+            // Get published info from the first published product
+            $publishedProduct = $inventory->variations->where('product.is_visible', true)->first()?->product;
+            $publishedBy = $publishedProduct?->publisher?->email ?? 'System';
+            $publishedAt = $publishedProduct?->published_at;
+            
+            return (object) [
+                'id' => $inventory->id,
+                'name' => $inventory->name,
+                'type' => $inventory->type,
+                'total_stock' => $totalStock,
+                'published_count' => $publishedCount,
+                'total_variations' => $totalVariations,
+                'status' => $status,
+                'published_by' => $publishedBy,
+                'published_at' => $publishedAt,
+                'has_user_facing_info' => $hasUserFacingInfo,
+                'inventory' => $inventory,
+            ];
+        });
+
+        // Create a new paginator with the transformed data
+        $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
+            $inventorySummaries,
+            $inventories->total(),
+            $inventories->perPage(),
+            $inventories->currentPage(),
+            [
+                'path' => $inventories->path(),
+                'pageName' => $inventories->getPageName(),
+            ]
+        );
+
+        // Check for inventory changes and add notifications
+        if (session('inventory_republished')) {
+            $republishedData = session('inventory_republished');
+            if (is_array($republishedData)) {
+                // Show detailed republished message
+                session()->flash('inventory_republished', $republishedData);
+            } else {
+                // Show general inventory changes message
+                $recentInventory = $inventories->getCollection()->first();
+                if ($recentInventory && $recentInventory->inventory) {
+                    session()->flash('inventory_changes', [
+                        'sku' => $recentInventory->inventory->variations->first()?->sku ?? 'N/A',
+                        'name' => $recentInventory->name,
+                        'updated_at' => $recentInventory->inventory->updated_at->format('M d, Y H:i'),
+                        'changes' => $this->getInventoryChanges($recentInventory->inventory)
+                    ]);
+                }
+            }
+            // Clear the flag so it only shows once
+            session()->forget('inventory_republished');
+        }
         
-        return view('product::admin.product-management.show', compact('product', 'decoratedProduct'));
+        // Check for inventory unpublish and add notifications
+        if (session('inventory_unpublished')) {
+            $unpublishedData = session('inventory_unpublished');
+            if (is_array($unpublishedData)) {
+                // Show detailed unpublished message
+                session()->flash('inventory_unpublished', $unpublishedData);
+            } else {
+                // Show general unpublished message
+                $recentInventory = $inventories->getCollection()->first();
+                if ($recentInventory && $recentInventory->inventory) {
+                    session()->flash('inventory_unpublished', [
+                        'sku' => $recentInventory->inventory->variations->first()?->sku ?? 'N/A',
+                        'name' => $recentInventory->name,
+                        'updated_at' => $recentInventory->inventory->updated_at->format('M d, Y H:i'),
+                        'changes' => 'Products have been delisted and marked as issued'
+                    ]);
+                }
+            }
+            // Clear the flag so it only shows once
+            session()->forget('inventory_unpublished');
+        }
+        
+        // Check for new product added and add notifications
+        if (session('new_product_added')) {
+            // Find the most recently updated inventory
+            $recentInventory = $inventories->getCollection()->first();
+            if ($recentInventory && $recentInventory->inventory) {
+                session()->flash('new_product_added', [
+                    'sku' => $recentInventory->inventory->variations->first()?->sku ?? 'N/A',
+                    'name' => $recentInventory->name,
+                    'updated_at' => $recentInventory->inventory->updated_at->format('M d, Y H:i'),
+                    'changes' => 'New product created and published from inventory module'
+                ]);
+            }
+            // Clear the flag so it only shows once
+            session()->forget('new_product_added');
+        }
+
+        // Get unique categories for filter
+        $categories = \App\Modules\Inventory\Models\Inventory::pluck('type')
+            ->unique()
+            ->map(function($type) {
+                return str_replace('Item', '', strtolower($type));
+            })
+            ->unique()
+            ->sort()
+            ->values();
+
+        // Get all reviews with product information
+        $reviews = \App\Modules\Product\Models\Review::with('product')
+            ->latest()
+            ->paginate(10);
+
+        return view('product::admin.product-management.inventory-summary', compact('inventories', 'categories', 'issuedProducts', 'messages', 'reviews'));
     }
 
     /**
-     * Store a newly created product in storage.
+     * Show SKU details for a specific inventory
      */
-    public function store(ProductStoreRequest $request)
+    public function showSkuDetails($inventoryId)
     {
-        try {
-            $data = $request->validated();
+        $inventory = \App\Modules\Inventory\Models\Inventory::findOrFail($inventoryId);
+        
+        $query = InventoryVariation::with(['inventory', 'product'])
+            ->where('inventory_id', $inventoryId);
 
-            // Handle customer images upload with error handling
-            if ($request->hasFile('customer_images')) {
-                $customerImages = [];
-                foreach ($request->file('customer_images') as $image) {
-                    try {
-                        $customerImages[] = $image->store('products/customer', 'public');
-                    } catch (\Exception $e) {
-                        \Log::error('Image upload failed', [
-                            'error' => $e->getMessage(),
-                            'user_id' => auth()->id(),
-                            'filename' => $image->getClientOriginalName()
-                        ]);
-                        return redirect()->back()
-                            ->withInput()
-                            ->with('error', 'Failed to upload one or more images. Please try again.');
-                    }
-                }
-                $data['customer_images'] = $customerImages;
-            }
+        $variations = $query->paginate(15);
+        
+        // Transform variations to product-like data for display
+        $transformedProducts = $variations->getCollection()->map(function($variation) {
+            return $this->transformVariationToProductData($variation);
+        });
 
-            // Handle product video upload with error handling
-            if ($request->hasFile('product_video')) {
-                try {
-                    $data['product_video'] = $request->file('product_video')->store('products/videos', 'public');
-                } catch (\Exception $e) {
-                    \Log::error('Video upload failed', [
-                        'error' => $e->getMessage(),
-                        'user_id' => auth()->id(),
-                        'filename' => $request->file('product_video')->getClientOriginalName()
-                    ]);
-                    return redirect()->back()
-                        ->withInput()
-                        ->with('error', 'Failed to upload video. Please try again.');
-                }
-            }
+        // Create a new paginator with the transformed data
+        $products = new \Illuminate\Pagination\LengthAwarePaginator(
+            $transformedProducts,
+            $variations->total(),
+            $variations->perPage(),
+            $variations->currentPage(),
+            [
+                'path' => $variations->path(),
+                'pageName' => $variations->getPageName(),
+            ]
+        );
 
-            // Generate unique SKU and Product ID with error handling
-            try {
-                $data['sku'] = 'PROD-' . strtoupper(uniqid());
-                $data['product_id'] = 'PD' . date('y') . str_pad(Product::count() + 1, 3, '0', STR_PAD_LEFT);
-            } catch (\Exception $e) {
-                \Log::error('ID generation failed', [
-                    'error' => $e->getMessage(),
-                    'user_id' => auth()->id()
-                ]);
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', 'Failed to generate product identifiers. Please try again.');
-            }
+        // Check for inventory changes and add notifications
+        $this->checkInventoryChanges($transformedProducts);
+
+        return view('product::admin.product-management.sku-details', compact('products', 'inventory'));
+    }
+
+    /**
+     * Publish entire inventory (all SKUs with user-facing info)
+     */
+    public function publishInventory($inventoryId)
+    {
+        $inventory = \App\Modules\Inventory\Models\Inventory::with(['variations.product'])->findOrFail($inventoryId);
+        
+        // Check if at least one SKU has user-facing information
+        $skusWithUserFacingInfo = $inventory->variations->where('product.marketing_description', '!=', 'None')
+            ->where('product.marketing_description', '!=', null);
             
-            // Set default values
-            $data['status'] = 'draft';
-            $data['is_visible'] = false;
-
-            // Create the product with secure transaction
-            $product = DatabaseSecurityService::secureTransaction(function () use ($data) {
-                return Product::create($data);
-            }, ['operation' => 'product_creation', 'product_name' => $data['name']]);
-
-            \Log::info('Product created successfully', [
-                'product_id' => $product->id,
-                'user_id' => auth()->id(),
-                'product_name' => $product->name
-            ]);
-
+        if ($skusWithUserFacingInfo->count() == 0) {
             return redirect()->route('admin.product-management.index')
-                ->with('success', 'Product created successfully.');
+                ->with('error', 'Please create user-facing information for at least one SKU before publishing.');
+        }
 
-        } catch (\Illuminate\Database\QueryException $e) {
-            \Log::error('Database error during product creation', [
-                'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
-                'sql_state' => $e->getSqlState(),
-                'error_code' => $e->getCode()
-            ]);
-            
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'A database error occurred. Please try again.');
-                
-        } catch (\Exception $e) {
-            \Log::error('Unexpected error during product creation', [
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
+        // Publish all SKUs that have user-facing information
+        $publishedCount = 0;
+        foreach ($skusWithUserFacingInfo as $variation) {
+            if ($variation->product) {
+                $variation->product->update([
+                    'status' => 'published',
+                    'is_visible' => true,
+                    'published_at' => now(),
+                    'published_by' => Auth::id(),
+                ]);
+                $publishedCount++;
+            }
+        }
+
+        \Log::info('Inventory published', [
+            'inventory_id' => $inventory->id,
+            'inventory_name' => $inventory->name,
+            'published_skus' => $publishedCount,
+            'published_by' => Auth::user()->email,
+            'published_at' => now(),
+            'user_id' => Auth::id()
+        ]);
+
+        return redirect()->route('admin.product-management.index')
+            ->with('success', "Inventory '{$inventory->name}' published successfully! {$publishedCount} SKU(s) published.");
+    }
+
+    /**
+     * Unpublish entire inventory (all SKUs)
+     */
+    public function unpublishInventory($inventoryId)
+    {
+        $inventory = \App\Modules\Inventory\Models\Inventory::with(['variations.product'])->findOrFail($inventoryId);
+        
+        // Unpublish all SKUs and mark as issued
+        $unpublishedCount = 0;
+        foreach ($inventory->variations as $variation) {
+            if ($variation->product) {
+                // Mark all products as pending (regardless of their current visibility status)
+                $variation->product->update([
+                    'is_visible' => false,
+                    'status' => 'pending',
+                    'issued_at' => now(),
+                    'issued_by' => Auth::id(),
+                ]);
+                $unpublishedCount++;
+            }
+        }
+
+        \Log::info('Inventory unpublished', [
+            'inventory_id' => $inventory->id,
+            'inventory_name' => $inventory->name,
+            'unpublished_skus' => $unpublishedCount,
+            'unpublished_by' => Auth::user()->email,
+            'unpublished_at' => now(),
+            'user_id' => Auth::id()
+        ]);
+
+        return redirect()->route('admin.product-management.index')
+            ->with('success', "Inventory '{$inventory->name}' unpublished successfully! {$unpublishedCount} SKU(s) marked as issued.");
+    }
+
+
+    /**
+     * Check for inventory changes and add notifications.
+     */
+    private function checkInventoryChanges($products)
+    {
+        // Only show notification if inventory was recently republished
+        // Check if there's a flag indicating inventory was just republished
+        if (session('inventory_republished')) {
+            foreach ($products as $product) {
+                if ($product->inventory) {
+                    // Add notification to session
+                    session()->flash('inventory_changes', [
+                        'sku' => $product->sku,
+                        'name' => $product->name,
+                        'updated_at' => $product->inventory->updated_at->format('M d, Y H:i'),
+                        'changes' => $this->getInventoryChanges($product->inventory)
+                    ]);
+                    break; // Only show one notification per page
+                }
+            }
+            // Clear the flag so it only shows once
+            session()->forget('inventory_republished');
+        }
+    }
+
+    /**
+     * Get inventory changes for notification.
+     */
+    private function getInventoryChanges($inventory)
+    {
+        $changes = [];
+        
+        // Check for common changes
+        if ($inventory->wasChanged('name')) {
+            $changes[] = 'Product name updated';
+        }
+        if ($inventory->wasChanged('price')) {
+            $changes[] = 'Price updated';
+        }
+        if ($inventory->wasChanged('description')) {
+            $changes[] = 'Description updated';
+        }
+        if ($inventory->wasChanged('quantity')) {
+            $changes[] = 'Quantity updated';
+        }
+        if ($inventory->wasChanged('status')) {
+            $changes[] = 'Status changed to ' . $inventory->status;
+        }
+        
+        return empty($changes) ? ['General inventory updates'] : $changes;
+    }
+
+    /**
+     * Transform inventory variation to product data for display.
+     */
+    private function transformVariationToProductData($variation)
+    {
+        $inventory = $variation->inventory;
+        $product = $variation->product; // Now get product directly from variation
+        
+        // Build features array from variation data
+        $features = [];
+        if ($variation->color) {
+            $features[] = "Color: " . $variation->color;
+        }
+        if ($variation->size) {
+            $features[] = "Size: " . $variation->size;
+        }
+        if ($variation->material) {
+            $features[] = "Material: " . $variation->material;
+        }
+        
+        // Ensure features is always an array
+        $features = $features ?: [];
+        
+        // Get category from inventory type
+        $category = str_replace('Item', '', strtolower($inventory->type));
+        
+        // Determine completion status
+        $isComplete = $product && 
+                     $product->is_visible && 
+                     $product->marketing_description && 
+                     $product->marketing_description !== 'None';
+        
+        return (object) [
+            'id' => $variation->id,
+            'sku' => $variation->sku,
+            'name' => $inventory->name,
+            'price' => $variation->price,
+            'selling_price' => $product ? $product->selling_price : null,
+            'discount_price' => $product ? $product->discount_price : null,
+            'quantity' => $variation->stock,
+            'category' => $category,
+            'features' => $features,
+            'description' => $product ? $product->marketing_description : 'None',
+            'status' => $isComplete ? 'complete' : 'incomplete',
+            'is_visible' => $product ? $product->is_visible : false,
+            'published_at' => $product ? $product->published_at : null,
+            'published_by' => $product ? ($product->publisher ? $product->publisher->email : 'System') : 'System',
+            'customer_images' => $product ? ($product->customer_images ?? []) : [],
+            'product_video' => $product ? $product->product_video : null,
+            'variation' => $variation,
+            'inventory' => $inventory,
+            'product_record' => $product, // Renamed to avoid confusion
+        ];
+    }
+
+    /**
+     * Display the specified product variation.
+     */
+    public function show($variationId)
+    {
+        $variation = InventoryVariation::with(['inventory.product.publisher'])->findOrFail($variationId);
+        
+        // Transform variation to product data
+        $product = $this->transformVariationToProductData($variation);
+        
+        // Check if customer information is created
+        if (!$product->product_record || 
+            !$product->product_record->marketing_description || 
+            $product->product_record->marketing_description === 'None') {
+            return redirect()->route('admin.product-management.index')
+                ->with('error', 'Please create customer information first before viewing.');
+        }
+        
+        return view('product::admin.product-management.show', compact('product', 'variation'));
+    }
+
+
+    /**
+     * Create a new product from inventory variation.
+     */
+    public function create($variationId)
+    {
+        $variation = InventoryVariation::with(['inventory', 'product'])->findOrFail($variationId);
+        
+        // Check if product already exists for this SKU
+        if ($variation->product) {
+            return redirect()->route('admin.product-management.index')
+                ->with('error', 'Product already exists for this SKU.');
+        }
+        
+        // Create product from inventory variation (SKU-specific)
+        $product = Product::create([
+            'inventory_id' => $variation->inventory->id,
+            'inventory_variation_id' => $variation->id,
+            'name' => $variation->inventory->name,
+            'price' => $variation->price,
+            'description' => $variation->inventory->description ?? '',
+            'marketing_description' => 'None', // Default as per requirement
+            'sku' => $variation->sku,
+            'product_id' => $variation->sku, // Use SKU as product ID
+            'category' => str_replace('Item', '', strtolower($variation->inventory->type)),
+            'status' => 'draft',
+            'is_visible' => false,
+        ]);
+        
+        \Log::info('Product created from inventory variation', [
+            'product_id' => $product->id,
+            'variation_id' => $variation->id,
+            'sku' => $variation->sku,
                 'user_id' => auth()->id()
             ]);
             
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'An unexpected error occurred. Please try again.');
+        return redirect()->route('admin.product-management.index')
+            ->with('success', 'Product created successfully for SKU: ' . $variation->sku);
+    }
+
+    /**
+     * Create customer information directly (creates product if not exists)
+     */
+    public function createInfo($variationId)
+    {
+        $variation = InventoryVariation::with(['inventory', 'product'])->findOrFail($variationId);
+
+        // If product doesn't exist, create it first
+        if (!$variation->product) {
+            $product = Product::create([
+                'inventory_id' => $variation->inventory->id,
+                'inventory_variation_id' => $variation->id,
+                'name' => $variation->inventory->name,
+                'price' => $variation->price,
+                'description' => $variation->inventory->description ?? '',
+                'marketing_description' => 'None',
+                'sku' => $variation->sku,
+                'product_id' => $variation->sku,
+                'category' => str_replace('Item', '', strtolower($variation->inventory->type)),
+                'status' => 'draft',
+                'is_visible' => false,
+            ]);
+
+            \Log::info('Product auto-created for customer information', [
+                'product_id' => $product->id,
+                'variation_id' => $variation->id,
+                'sku' => $variation->sku,
+                'created_by' => Auth::user()->email,
+                'user_id' => Auth::id()
+            ]);
+            
+            // Use the newly created product
+            $productToEnhance = $product;
+        } else {
+            // Use the existing product
+            $productToEnhance = $variation->product;
         }
+
+        // Redirect to enhance page to create customer information
+        return redirect()->route('admin.product-management.enhance', $productToEnhance);
     }
 
     /**
@@ -197,7 +588,18 @@ class ProductManagementController extends Controller
      */
     public function enhance(Product $product)
     {
-        return view('product::admin.product-management.enhance', compact('product'));
+        // Load the inventory variation and inventory relationship
+        $variation = $product->variation;
+        
+        if (!$variation) {
+            return redirect()->route('admin.product-management.index')
+                ->with('error', 'No inventory variation found for this product.');
+        }
+        
+        // Transform the variation to product data format
+        $transformedProduct = $this->transformVariationToProductData($variation);
+        
+        return view('product::admin.product-management.enhance', compact('product', 'transformedProduct'));
     }
 
     /**
@@ -207,11 +609,9 @@ class ProductManagementController extends Controller
     {
         $data = $request->validate([
             'marketing_description' => 'required|string',
-            'category' => 'required|string|max:255|in:earring,bracelet,necklace,ring',
-            'features' => 'nullable|array|max:10',
-            'features.*' => 'string|max:255',
-            'discount_price' => 'nullable|numeric|min:0|lt:price',
-            'customer_images' => 'nullable|array|max:5',
+            'selling_price' => 'required|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0',
+            'customer_images' => 'required|array|min:1|max:5',
             'customer_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'product_video' => 'nullable|file|mimes:mp4,avi,mov|max:10240',
         ]);
@@ -237,14 +637,14 @@ class ProductManagementController extends Controller
         // Update product with enhanced details
         $product->update([
             'marketing_description' => $data['marketing_description'],
-            'category' => $data['category'],
-            'features' => $data['features'],
+            'selling_price' => $data['selling_price'],
             'discount_price' => $data['discount_price'],
-            'customer_images' => $data['customer_images'] ?? [],
+            'customer_images' => $data['customer_images'] ?? $product->customer_images,
             'product_video' => $data['product_video'] ?? $product->product_video,
         ]);
 
-        return redirect()->route('admin.product-management.index')
+        // Redirect back to SKU product info page with inventory_id
+        return redirect()->route('admin.product-management.index', ['inventory_id' => $product->inventory_id])
             ->with('success', 'Product enhanced successfully.');
     }
 
@@ -253,10 +653,24 @@ class ProductManagementController extends Controller
      */
     public function publish(Product $product)
     {
+        // Check if customer information is created
+        if (!$product->marketing_description || $product->marketing_description === 'None') {
+            return redirect()->route('admin.product-management.index')
+                ->with('error', 'Please create customer information first before publishing.');
+        }
+
         $product->update([
+            'status' => 'published',
             'is_visible' => true,
             'published_at' => now(),
             'published_by' => Auth::id(),
+        ]);
+
+        \Log::info('Product published', [
+            'product_id' => $product->id,
+            'published_by' => Auth::user()->email,
+            'published_at' => now(),
+            'user_id' => Auth::id()
         ]);
 
         return redirect()->back()->with('success', 'Product published successfully!');
@@ -268,6 +682,7 @@ class ProductManagementController extends Controller
     public function unpublish(Product $product)
     {
         $product->update([
+            'status' => 'pending',
             'is_visible' => false,
         ]);
 
@@ -279,7 +694,24 @@ class ProductManagementController extends Controller
      */
     public function edit(Product $product)
     {
-        return view('product::admin.product-management.edit', compact('product'));
+        // Check if customer information is created
+        if (!$product->marketing_description || $product->marketing_description === 'None') {
+            return redirect()->route('admin.product-management.index')
+                ->with('error', 'Please create customer information first before editing.');
+        }
+
+        // Load the inventory variation and inventory relationship
+        $variation = $product->variation;
+        
+        if (!$variation) {
+            return redirect()->route('admin.product-management.index')
+                ->with('error', 'No inventory variation found for this product.');
+        }
+        
+        // Transform the variation to product data format (same as enhance page)
+        $transformedProduct = $this->transformVariationToProductData($variation);
+
+        return view('product::admin.product-management.edit', compact('product', 'transformedProduct'));
     }
 
     /**
@@ -288,9 +720,17 @@ class ProductManagementController extends Controller
     public function update(ProductUpdateRequest $request, Product $product)
     {
         try {
-            \Log::info('Update method called for product: ' . $product->id);
+            \Log::info('=== UPDATE METHOD CALLED ===');
+            \Log::info('Product ID: ' . $product->id);
+            \Log::info('Product Name: ' . $product->name);
+            \Log::info('Request data: ', $request->all());
+            
             $data = $request->validated();
             \Log::info('Validated data: ', $data);
+            
+            \Log::info('Before update - selling_price: ' . ($product->selling_price ?? 'NULL'));
+            \Log::info('Before update - discount_price: ' . ($product->discount_price ?? 'NULL'));
+            \Log::info('Before update - marketing_description: ' . substr($product->marketing_description ?? 'NULL', 0, 50));
 
             // Handle customer images upload with error handling
             if ($request->hasFile('customer_images')) {
@@ -341,18 +781,33 @@ class ProductManagementController extends Controller
                 }
             }
 
-            // Update product with secure transaction
-            DatabaseSecurityService::secureTransaction(function () use ($product, $data) {
-                $product->update($data);
-            }, ['operation' => 'product_update', 'product_id' => $product->id, 'product_name' => $data['name'] ?? $product->name]);
+            // Update only marketing-related fields
+            $marketingData = [
+                'marketing_description' => $data['marketing_description'],
+                'selling_price' => $data['selling_price'],
+                'discount_price' => $data['discount_price'] ?? null,
+                'customer_images' => $data['customer_images'] ?? null,
+                'product_video' => $data['product_video'] ?? null,
+            ];
+            
+            \Log::info('About to update product with marketing data: ', $marketingData);
+            $updateResult = $product->update($marketingData);
+            \Log::info('Update result: ' . ($updateResult ? 'SUCCESS' : 'FAILED'));
+
+            // Refresh product to get updated data
+            $product->refresh();
+            \Log::info('After update - selling_price: ' . ($product->selling_price ?? 'NULL'));
+            \Log::info('After update - discount_price: ' . ($product->discount_price ?? 'NULL'));
+            \Log::info('After update - marketing_description: ' . substr($product->marketing_description ?? 'NULL', 0, 50));
 
             \Log::info('Product updated successfully', [
                 'product_id' => $product->id,
                 'user_id' => auth()->id(),
-                'product_name' => $product->name
+                'product_name' => $product->name,
+                'update_result' => $updateResult
             ]);
 
-            return redirect()->route('admin.product-management.show', $product)
+            return redirect()->route('admin.product-management.sku-details', $product->inventory->id)
                 ->with('success', 'Product updated successfully.');
 
         } catch (\Illuminate\Database\QueryException $e) {
@@ -523,12 +978,25 @@ class ProductManagementController extends Controller
         // 移除危险字符
         $input = preg_replace('/[<>"\']/', '', $input);
         
-        // 限制长度
-        $input = mb_substr($input, 0, 100, 'UTF-8');
+        // 限制长度 - 从配置获取
+        $maxLength = config('product.security.input_validation.max_search_length', 100);
+        $input = mb_substr($input, 0, $maxLength, 'UTF-8');
         
         // 转义特殊字符
         $input = addslashes($input);
         
         return $input;
+    }
+
+    /**
+     * Reject review
+     */
+    public function rejectReview($id)
+    {
+        $review = \App\Modules\Product\Models\Review::findOrFail($id);
+        $review->delete();
+
+        return redirect()->route('admin.product-management.index')
+            ->with('success', 'Review has been rejected and deleted successfully');
     }
 }

@@ -13,6 +13,8 @@ class CustomerProductDecorator extends BaseProductDecorator
         return array_merge($baseData, [
             'display_price' => $this->getDisplayPrice(),
             'original_price' => $this->product->price,
+            'selling_price' => $this->product->selling_price,
+            'discount_price' => $this->product->discount_price,
             'has_discount' => !is_null($this->product->discount_price),
             'discount_percentage' => $this->getDiscountPercentage(),
             'main_image' => $this->getMainImage(),

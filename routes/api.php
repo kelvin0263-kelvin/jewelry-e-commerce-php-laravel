@@ -33,3 +33,8 @@ if (file_exists(app_path('Modules/Support/Routes/api.php'))) {
 if (file_exists(app_path('Modules/Inventory/Routes/api.php'))) {
     include app_path('Modules/Inventory/Routes/api.php');
 }
+
+// Product API routes
+if (file_exists(app_path('Modules/Product/Routes/api.php'))) {
+    include app_path('Modules/Product/Routes/api.php');
+}

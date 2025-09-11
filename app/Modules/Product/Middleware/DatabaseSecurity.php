@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Middleware;
+namespace App\Modules\Product\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
@@ -43,7 +43,7 @@ class DatabaseSecurity
             $suspiciousQueries = $this->detectSuspiciousQueries($queries);
             
             if (!empty($suspiciousQueries)) {
-                Log::warning('Suspicious database queries detected', [
+                Log::warning('Product Module Suspicious database queries detected', [
                     'queries' => $suspiciousQueries,
                     'user_id' => auth()->id(),
                     'ip' => $request->ip(),
@@ -126,11 +126,11 @@ class DatabaseSecurity
 
         // 根据错误类型记录不同级别的日志
         if ($e instanceof \Illuminate\Database\QueryException) {
-            Log::error('Database Query Exception', $errorData);
+            Log::error('Product Module Database Query Exception', $errorData);
         } elseif ($e instanceof \Illuminate\Database\ConnectionException) {
-            Log::error('Database Connection Exception', $errorData);
+            Log::error('Product Module Database Connection Exception', $errorData);
         } else {
-            Log::error('Database Related Error', $errorData);
+            Log::error('Product Module Database Related Error', $errorData);
         }
     }
 }

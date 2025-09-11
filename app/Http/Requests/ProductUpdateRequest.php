@@ -23,15 +23,19 @@ class ProductUpdateRequest extends FormRequest
     {
         $productId = $this->route('product')->id ?? null;
         
+        // Debug logging
+        \Log::info('ProductUpdateRequest validation', [
+            'product_id' => $productId,
+            'product_name' => $this->input('name'),
+            'route_name' => $this->route()->getName(),
+            'route_parameters' => $this->route()->parameters()
+        ]);
+        
         return [
-            'name' => 'required|string|max:255|unique:products,name,' . $productId . '|regex:/^[a-zA-Z0-9\s\-_.,!?]+$/',
-            'description' => 'required|string|min:10|max:5000',
+            // Only validate marketing-related fields for edit page
             'marketing_description' => 'required|string|min:10|max:2000',
-            'price' => 'required|numeric|min:0.01|max:9999999999999.99|regex:/^\d+(\.\d{1,2})?$/',
-            'discount_price' => 'nullable|numeric|min:0.01|max:9999999999999.99|lt:price|regex:/^\d+(\.\d{1,2})?$/',
-            'category' => 'required|string|max:255|in:earring,bracelet,necklace,ring',
-            'features' => 'nullable|array|max:10',
-            'features.*' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s\-_.,!?]+$/',
+            'selling_price' => 'required|numeric|min:0.01|max:9999999999999.99|regex:/^\d+(\.\d{1,2})?$/',
+            'discount_price' => 'nullable|numeric|min:0.01|max:9999999999999.99|lt:selling_price|regex:/^\d+(\.\d{1,2})?$/',
             'customer_images' => 'nullable|array|max:5',
             'customer_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'product_video' => 'nullable|file|mimes:mp4,avi,mov|max:10240',
@@ -107,16 +111,16 @@ class ProductUpdateRequest extends FormRequest
             'marketing_description.required' => 'Marketing description is required.',
             'marketing_description.min' => 'Marketing description must be at least 10 characters.',
             'marketing_description.max' => 'Marketing description must not exceed 2000 characters.',
-            'price.required' => 'Product price is required.',
-            'price.numeric' => 'Price must be a valid number.',
-            'price.min' => 'Price must be at least 0.01.',
-            'price.regex' => 'Price must be a valid decimal number with up to 2 decimal places.',
+            'selling_price.required' => 'Selling price is required.',
+            'selling_price.numeric' => 'Selling price must be a valid number.',
+            'selling_price.min' => 'Selling price must be at least 0.01.',
+            'selling_price.regex' => 'Selling price must be a valid decimal number with up to 2 decimal places.',
             'discount_price.numeric' => 'Discount price must be a valid number.',
             'discount_price.min' => 'Discount price must be at least 0.01.',
-            'discount_price.lt' => 'Discount price must be less than regular price.',
+            'discount_price.lt' => 'Discount price must be less than selling price.',
             'discount_price.regex' => 'Discount price must be a valid decimal number with up to 2 decimal places.',
             'category.required' => 'Product category is required.',
-            'category.in' => 'Category must be one of: earring, bracelet, necklace, ring.',
+            'category.in' => 'Category must be one of: earring, bracelet, necklace, ring, ringitem.',
             'features.array' => 'Features must be an array.',
             'features.max' => 'Maximum 10 features allowed.',
             'features.*.required' => 'Each feature is required.',
