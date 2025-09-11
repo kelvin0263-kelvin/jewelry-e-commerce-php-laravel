@@ -4,6 +4,10 @@
         <symbol id="icon-account" viewBox="0 0 24 24">
             <path fill="currentColor" d="M12 12c2.761 0 5-2.239 5-5S14.761 2 12 2 7 4.239 7 7s2.239 5 5 5Zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5Z"/>
         </symbol>
+        <symbol id="icon-bag" viewBox="0 0 24 24">
+            <path d="M6 7h12l-1 12H7L6 7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M9 7a3 3 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="2"/>
+        </symbol>
     </svg>
     <div class="max-w-7xl mx-auto flex flex-col items-center relative">
         {{-- Logo --}}
@@ -203,7 +207,39 @@
 
 
             @guest
-                <div class="w-20 flex justify-end">
+                @php
+                    // Derive cart count for guests and logged-in users (supports both cart implementations)
+                    $cartCount = 0;
+                    try {
+                        $sessionId = session()->getId();
+                        $cartCount += \App\Modules\Product\Models\Cart::where('session_id', $sessionId)
+                            ->when(auth()->check(), function ($q) {
+                                $q->orWhere('user_id', auth()->id());
+                            })
+                            ->sum('quantity');
+                    } catch (\Throwable $e) {}
+                    try {
+                        if (auth()->check()) {
+                            $cartCount += \App\Modules\Cart\Models\CartItem::where('user_id', auth()->id())->sum('quantity');
+                        }
+                    } catch (\Throwable $e) {}
+                @endphp
+                <div class="w-28 flex items-center justify-end space-x-3">
+                    <a href="{{ route('cart.index') }}" aria-label="Shopping Bag"
+                       class="inline-flex items-center px-2 pb-3 relative text-sm font-medium text-black transition 
+                       after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
+                       after:transition-all after:duration-300 hover:after:w-full hover:text-black 
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
+                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                             aria-hidden="true" focusable="false">
+                            <use href="#icon-bag"></use>
+                        </svg>
+                        @if(($cartCount ?? 0) > 0)
+                            <span class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-400 text-white text-[10px] leading-4 text-center">
+                                {{ $cartCount }}
+                            </span>
+                        @endif
+                    </a>
                     <a href="{{ route('login') }}" aria-label="Account"
                         class="inline-flex items-center px-2 pb-3 relative text-sm font-medium text-black transition 
                   after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
@@ -220,13 +256,42 @@
 
             {{-- Customer (always right aligned) --}}
             @auth
-                <div class="w-auto flex justify-end">
+                @php
+                    // Derive cart count for the authenticated user (supports both implementations)
+                    $cartCount = 0;
+                    try {
+                        $cartCount += \App\Modules\Product\Models\Cart::where('user_id', auth()->id())->sum('quantity');
+                    } catch (\Throwable $e) {}
+                    try {
+                        $cartCount += \App\Modules\Cart\Models\CartItem::where('user_id', auth()->id())->sum('quantity');
+                    } catch (\Throwable $e) {}
+                @endphp
+                <div class="w-auto flex items-center justify-end space-x-3">
+                    <a href="{{ route('cart.index') }}" aria-label="Shopping Bag"
+                       class="inline-flex items-center px-2 pb-3 relative text-sm font-medium text-black transition 
+                       after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
+                       after:transition-all after:duration-300 hover:after:w-full hover:text-black 
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
+                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                             aria-hidden="true" focusable="false">
+                            <use href="#icon-bag"></use>
+                        </svg>
+                        @if(($cartCount ?? 0) > 0)
+                            <span class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-400 text-white text-[10px] leading-4 text-center">
+                                {{ $cartCount }}
+                            </span>
+                        @endif
+                    </a>
                     <x-dropdown align="right" width="48">
                         <x-slot name="trigger">
                             <button id="customerTrigger"
                                 class="flex items-center space-x-1 px-2 pb-3 relative text-sm font-medium text-black 
                        transition after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 
                        after:bg-black after:transition-all after:duration-300 hover:after:w-full">
+                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                            aria-hidden="true" focusable="false">
+                            <use href="#icon-account"></use>
+                        </svg>
                                 <span>Hello, {{ auth()->user()->name }}</span>
                                 <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
@@ -245,6 +310,8 @@
                                     {{ __('Log Out') }}
                                 </x-dropdown-link>
                             </form>
+                            <x-dropdown-link :href="route('orders.index')">{{ __('Orders') }}</x-dropdown-link>
+
                         </x-slot>
                     </x-dropdown>
                 </div>

@@ -20,6 +20,10 @@
             <path fill="currentColor"
                 d="M12 12c2.761 0 5-2.239 5-5S14.761 2 12 2 7 4.239 7 7s2.239 5 5 5Zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5Z" />
         </symbol>
+        <symbol id="icon-bag" viewBox="0 0 24 24">
+            <path d="M6 7h12l-1 12H7L6 7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M9 7a3 3 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="2"/>
+        </symbol>
     </svg>
 
     <header id="mainNav" class="fixed top-0 left-0 w-full z-50 transition-colors duration-300 ease-in-out bg-white">
@@ -275,54 +279,115 @@
 
                 </ul>
 
-                {{-- Guest account icon (keeps center aligned) --}}
-                @guest
-                    <div class="w-20 flex justify-end">
-                        <a id="customerTrigger" href="{{ route('login') }}" aria-label="Account"
-                            class="inline-flex items-center px-2 pb-3 relative text-sm font-medium text-white transition 
-                                  after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
-                                  after:transition-all after:duration-300 hover:after:w-full hover:text-black 
-                                  focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
+            @guest
+                @php
+                    // Derive cart count for guests and logged-in users (supports both cart implementations)
+                    $cartCount = 0;
+                    try {
+                        $sessionId = session()->getId();
+                        $cartCount += \App\Modules\Product\Models\Cart::where('session_id', $sessionId)
+                            ->when(auth()->check(), function ($q) {
+                                $q->orWhere('user_id', auth()->id());
+                            })
+                            ->sum('quantity');
+                    } catch (\Throwable $e) {}
+                    try {
+                        if (auth()->check()) {
+                            $cartCount += \App\Modules\Cart\Models\CartItem::where('user_id', auth()->id())->sum('quantity');
+                        }
+                    } catch (\Throwable $e) {}
+                @endphp
+                <div class="w-28 flex items-center justify-end space-x-3">
+                    <a id="bagLink" href="{{ route('cart.index') }}" aria-label="Shopping Bag"
+                       class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
+                       text-white after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
+                       after:transition-all after:duration-300 hover:after:w-full 
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
+                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                             aria-hidden="true" focusable="false">
+                            <use href="#icon-bag"></use>
+                        </svg>
+                        @if(($cartCount ?? 0) > 0)
+                            <span class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-400 text-white text-[10px] leading-4 text-center">
+                                {{ $cartCount }}
+                            </span>
+                        @endif
+                    </a>
+                    <a href="{{ route('login') }}" aria-label="Account"
+                        class="inline-flex items-center px-2 pb-3 relative text-sm font-medium text-black transition 
+                  after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
+                  after:transition-all after:duration-300 hover:after:w-full hover:text-black 
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
 
-                            <svg class="h-5 w-5 transition-transform duration-200 will-change-transform"
-                                aria-hidden="true" focusable="false">
-                                <use href="#icon-account"></use>
-                            </svg>
-                        </a>
-                    </div>
-                @endguest
+                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                            aria-hidden="true" focusable="false">
+                            <use href="#icon-account"></use>
+                        </svg>
+                    </a>
+                </div>
+            @endguest
 
-                {{-- Customer (always right aligned) --}}
-                @auth
-                    <div class="w-auto flex justify-end">
-                        <x-dropdown align="right" width="48">
-                            <x-slot name="trigger">
-                                <button id="customerTrigger"
-                                    class="flex items-center space-x-1 px-2 pb-3 relative text-sm font-medium text-white 
+            @auth
+                @php
+                    // Derive cart count for the authenticated user (supports both implementations)
+                    $cartCount = 0;
+                    try {
+                        $cartCount += \App\Modules\Product\Models\Cart::where('user_id', auth()->id())->sum('quantity');
+                    } catch (\Throwable $e) {}
+                    try {
+                        $cartCount += \App\Modules\Cart\Models\CartItem::where('user_id', auth()->id())->sum('quantity');
+                    } catch (\Throwable $e) {}
+                @endphp
+                <div class="w-auto flex items-center justify-end space-x-3">
+                    <a id="bagLink" href="{{ route('cart.index') }}" aria-label="Shopping Bag"
+                       class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
+                       text-white after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
+                       after:transition-all after:duration-300 hover:after:w-full 
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
+                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                             aria-hidden="true" focusable="false">
+                            <use href="#icon-bag"></use>
+                        </svg>
+                        @if(($cartCount ?? 0) > 0)
+                            <span class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-400 text-white text-[10px] leading-4 text-center">
+                                {{ $cartCount }}
+                            </span>
+                        @endif
+                    </a>
+                    <x-dropdown align="right" width="48">
+                        <x-slot name="trigger">
+                            <button id="customerTrigger"
+                                class="flex items-center space-x-1 px-2 pb-3 relative text-sm font-medium text-black 
                        transition after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 
                        after:bg-black after:transition-all after:duration-300 hover:after:w-full">
-                                    <span>Hello, {{ auth()->user()->name }}</span>
-                                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd"
-                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                                    </svg>
-                                </button>
-                            </x-slot>
+                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                            aria-hidden="true" focusable="false">
+                            <use href="#icon-account"></use>
+                        </svg>
+                                <span>Hello, {{ auth()->user()->name }}</span>
+                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                                </svg>
+                            </button>
+                        </x-slot>
 
-                            <x-slot name="content">
-                                <x-dropdown-link :href="route('dashboard')">{{ __('Dashboard') }}</x-dropdown-link>
-                                <x-dropdown-link :href="route('profile.edit')">{{ __('Profile') }}</x-dropdown-link>
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <x-dropdown-link :href="route('logout')"
-                                        onclick="event.preventDefault(); this.closest('form').submit();">
-                                        {{ __('Log Out') }}
-                                    </x-dropdown-link>
-                                </form>
-                            </x-slot>
-                        </x-dropdown>
-                    </div>
-                @endauth
+                        <x-slot name="content">
+                            <x-dropdown-link :href="route('dashboard')">{{ __('Dashboard') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('profile.edit')">{{ __('Profile') }}</x-dropdown-link>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <x-dropdown-link :href="route('logout')"
+                                    onclick="event.preventDefault(); this.closest('form').submit();">
+                                    {{ __('Log Out') }}
+                                </x-dropdown-link>
+                            </form>
+                            <x-dropdown-link :href="route('orders.index')">{{ __('Orders') }}</x-dropdown-link>
+
+                        </x-slot>
+                    </x-dropdown>
+                </div>
+            @endauth
             </div>
         </div>
     </header>
@@ -535,6 +600,7 @@
             const links = document.getElementById("navLinks");
             const logo = document.getElementById("logoText");
             const customer = document.getElementById("customerTrigger");
+            const bag = document.getElementById("bagLink");
 
             function setSolid() {
                 nav?.classList.add("bg-white", "shadow-md");
@@ -548,6 +614,8 @@
 
                 customer?.classList.add("text-gray-800");
                 customer?.classList.remove("text-white");
+                bag?.classList.add("text-gray-800");
+                bag?.classList.remove("text-white");
             }
 
             function setTransparent() {
@@ -562,6 +630,8 @@
 
                 customer?.classList.add("text-white");
                 customer?.classList.remove("text-gray-800");
+                bag?.classList.add("text-white");
+                bag?.classList.remove("text-gray-800");
             }
 
             function handleScroll() {
