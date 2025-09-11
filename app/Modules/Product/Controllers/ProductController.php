@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Modules\Product\Models\Product;
 use App\Modules\Product\Decorators\CustomerProductDecorator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
@@ -14,6 +16,52 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
+        // Optional: trigger a server-to-server HTTP call to Support API to demonstrate potential timeout
+        $httpTestResult = null; // array|string|null
+        $httpTestEndpoint = null;
+        if ($request->boolean('http_test')) {
+            try {
+                $base = rtrim((string) (config('services.support.base_url') ?: url('/')), '/');
+                $httpTestEndpoint = $base . '/api/support/chat/conversations';
+
+                // Determine token for auth:sanctum routes
+                $token = null;
+                $createdToken = null;
+                if ($request->filled('token')) {
+                    $token = (string) $request->query('token');
+                } elseif (Auth::check()) {
+                    // Create a short-lived token for this test
+                    $createdToken = Auth::user()->createToken('products-index-http-test');
+                    $token = $createdToken->plainTextToken;
+                } elseif (config('services.support.api_token')) {
+                    $token = (string) config('services.support.api_token');
+                } else {
+                    throw new \RuntimeException('Auth token required: login first or append ?token=YOUR_TOKEN');
+                }
+
+                try {
+                    $resp = Http::timeout(10)
+                        ->withToken($token)
+                        ->get($httpTestEndpoint);
+                } finally {
+                    if ($createdToken && isset($createdToken->accessToken)) {
+                        try { $createdToken->accessToken->delete(); } catch (\Throwable $e) { /* ignore */ }
+                    }
+                }
+
+                if ($resp->failed()) {
+                    throw new \RuntimeException('HTTP status ' . $resp->status() . ' body: ' . $resp->body());
+                }
+
+                $json = $resp->json() ?? [];
+                $httpTestResult = [
+                    'ok' => true,
+                    'count' => is_array($json) ? count($json) : 0,
+                ];
+            } catch (\Throwable $e) {
+                $httpTestResult = 'ERROR: ' . $e->getMessage();
+            }
+        }
         $query = Product::where('is_visible', true)
                        ->whereNotNull('published_at');
 
@@ -48,7 +96,9 @@ class ProductController extends Controller
                             ->filter()
                             ->values();
 
-        return view('product::products.index', compact('products', 'categories'));
+        return view('product::products.index', compact('products', 'categories'))
+            ->with('httpTestResult', $httpTestResult)
+            ->with('httpTestEndpoint', $httpTestEndpoint);
     }
 
     /**

@@ -73,7 +73,8 @@ class AdminTicketController extends Controller
         // Get agents for assignment
         $agents = User::where('is_admin', true)->get();
 
-        return view('support::admin.index', compact('tickets', 'stats', 'agents'));
+        // Adjusted to new admin/tickets view folder
+        return view('support::admin.tickets.index', compact('tickets', 'stats', 'agents'));
     }
 
     /**
@@ -91,7 +92,8 @@ class AdminTicketController extends Controller
 
         $agents = User::where('is_admin', true)->get();
 
-        return view('support::admin.show', compact('ticket', 'agents'));
+        // Adjusted to new admin/tickets view folder
+        return view('support::admin.tickets.show', compact('ticket', 'agents'));
     }
 
     /**

@@ -24,6 +24,9 @@ class ChatQueueController extends Controller
      */
     public function index()
     {
+        // Ensure current user has an agent status record
+        $this->ensureAgentStatus();
+        
         $pendingChats = $this->queueService->getPendingChats();
         $stats = $this->queueService->getQueueStats();
         $agents = AgentStatus::with('user')->get();
@@ -32,16 +35,67 @@ class ChatQueueController extends Controller
     }
 
     /**
+     * Ensure the current user has an agent status record
+     */
+    private function ensureAgentStatus()
+    {
+        $agentStatus = AgentStatus::firstOrCreate(
+            ['user_id' => Auth::id()],
+            [
+                'status' => 'online',
+                'max_concurrent_chats' => 3,
+                'current_active_chats' => 0,
+                'accepting_chats' => true,
+                'last_activity_at' => now(),
+                'status_changed_at' => now()
+            ]
+        );
+
+        // If this is a newly created record or status is offline, set to online
+        if ($agentStatus->wasRecentlyCreated || $agentStatus->status === 'offline') {
+            $agentStatus->setAvailable(true);
+        }
+
+        return $agentStatus;
+    }
+
+    /**
      * Get queue data for AJAX updates
      * Route line 174
      */
     public function getData()
     {
+        // Ensure agent status and sync active chats
+        $this->ensureAgentStatus();
+        $this->syncActiveChatsCount();
+        
         return response()->json([
             'pending_chats' => $this->queueService->getPendingChats(),
             'stats' => $this->queueService->getQueueStats(),
             'agents' => AgentStatus::with('user')->get()
         ]);
+    }
+
+    /**
+     * Sync the current agent's active chats count with actual database state
+     */
+    private function syncActiveChatsCount()
+    {
+        $agentStatus = AgentStatus::where('user_id', Auth::id())->first();
+        if (!$agentStatus) return;
+
+        // Count actual active conversations for this agent
+        $actualActiveChats = \App\Modules\Support\Models\Conversation::where('assigned_agent_id', Auth::id())
+            ->whereIn('status', ['active', 'waiting'])
+            ->count();
+
+        // Update if count is different
+        if ($agentStatus->current_active_chats !== $actualActiveChats) {
+            $agentStatus->update(['current_active_chats' => $actualActiveChats]);
+            
+            // Update status based on workload
+            $agentStatus->checkAndUpdateStatus();
+        }
     }
 
     /**
@@ -52,18 +106,34 @@ class ChatQueueController extends Controller
     {
         $queueItem = ChatQueue::findOrFail($queueId);
         
+        // Ensure agent status exists and sync active chats
+        $agentStatus = $this->ensureAgentStatus();
+        $this->syncActiveChatsCount();
+        
+        // Refresh agent status to get latest data
+        $agentStatus->refresh();
+        
         // Check if current user can accept chats
-        $agentStatus = AgentStatus::where('user_id', Auth::id())->first();
-        if (!$agentStatus || !$agentStatus->canAcceptChats()) {
+        if (!$agentStatus->canAcceptChats()) {
             return response()->json([
                 'success' => false,
-                'message' => 'You cannot accept chats at this time. Check your status.'
+                'message' => sprintf(
+                    'Cannot accept chats. Status: %s, Accepting: %s, Active: %d/%d',
+                    $agentStatus->status,
+                    $agentStatus->accepting_chats ? 'Yes' : 'No',
+                    $agentStatus->current_active_chats,
+                    $agentStatus->max_concurrent_chats
+                )
             ], 400);
         }
 
         $success = $this->queueService->assignChatToAgent($queueItem, Auth::id());
 
         if ($success) {
+            // Update the agent's active chat count
+            $agentStatus->increment('current_active_chats');
+            $agentStatus->updateActivity();
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Chat accepted successfully',

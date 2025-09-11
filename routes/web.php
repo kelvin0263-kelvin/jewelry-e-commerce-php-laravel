@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 
 // Public controllers
 use App\Modules\Product\Controllers\ProductController;
+use App\Modules\Product\Controllers\ApiConsumptionController;
 
 // Admin controllers
 use App\Modules\Admin\Controllers\DashboardController;
@@ -42,6 +43,9 @@ Route::view('/', 'home')->name('home');
 
 // Product catalog (read-only for customers)
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+// Place static routes BEFORE dynamic parameter routes to avoid capture
+Route::get('/products/api-demo', [ApiConsumptionController::class, 'inventory'])->name('products.api-demo');
+Route::get('/products/api-demo/support-chat', [ApiConsumptionController::class, 'supportChat'])->name('products.api-demo.support-chat');
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
 // Product actions for customers (auth required)

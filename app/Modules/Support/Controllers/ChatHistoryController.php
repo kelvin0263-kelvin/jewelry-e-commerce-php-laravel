@@ -26,7 +26,8 @@ class ChatHistoryController extends Controller
             ->orderBy('updated_at', 'desc')
             ->paginate(10);
 
-        return view('chat-history.index', compact('conversations'));
+        // Use the Support module's view namespace
+        return view('support::chat-history.index', compact('conversations'));
     }
 
     /**
@@ -48,7 +49,8 @@ class ChatHistoryController extends Controller
             ->where('user_id', '!=', $user->id) // Only mark messages from others as read
             ->update(['read_at' => now()]);
 
-        return view('chat-history.show', compact('conversation'));
+        // Use the Support module's view namespace
+        return view('support::chat-history.show', compact('conversation'));
     }
 
     /**
@@ -96,7 +98,8 @@ class ChatHistoryController extends Controller
             ->orderBy('updated_at', 'desc')
             ->paginate(10);
 
-        return view('chat-history.index', compact('conversations', 'query'));
+        // Use the Support module's view namespace
+        return view('support::chat-history.index', compact('conversations', 'query'));
     }
 
     /**

@@ -297,8 +297,39 @@
 <script>
 let currentQueueId = null;
 
-// Auto-refresh every 30 seconds
-setInterval(refreshQueue, 5000);
+// Auto-refresh every 10 seconds with better error handling
+let refreshInterval;
+let isRefreshing = false;
+
+function startAutoRefresh() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+    
+    refreshInterval = setInterval(() => {
+        if (!isRefreshing) {
+            refreshQueue();
+        }
+    }, 10000);
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    initializeChatQueue();
+});
+
+function initializeChatQueue() {
+    // Ensure agent is online when page loads
+    updateMyStatus('online');
+    
+    // Initial refresh
+    refreshQueue();
+    
+    // Start auto-refresh
+    startAutoRefresh();
+    
+    console.log('Chat queue initialized');
+}
 
 function toggleDropdown(chatId) {
     const dropdown = document.getElementById(`dropdown-${chatId}`);
@@ -329,14 +360,46 @@ function closeModal() {
 
 //done button trigger
 function refreshQueue() {
+    if (isRefreshing) return;
+    
+    isRefreshing = true;
+    
+    // Show loading indicator
+    const refreshBtn = document.querySelector('[onclick="refreshQueue()"]');
+    if (refreshBtn) {
+        const originalText = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<svg class="w-4 h-4 animate-spin inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Refreshing...';
+        refreshBtn.disabled = true;
+    }
+    
     fetch('/admin/chat-queue/data')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             updateStats(data.stats);
             updatePendingQueue(data.pending_chats);
             updateAgentsList(data.agents);
+            
+            // Show success message briefly
+            //showStatusMessage('✅ Queue refreshed successfully', 'success');
         })
-        .catch(error => console.error('Error refreshing queue:', error));
+        .catch(error => {
+            console.error('Error refreshing queue:', error);
+            showStatusMessage('❌ Failed to refresh queue', 'error');
+        })
+        .finally(() => {
+            isRefreshing = false;
+            
+            // Restore refresh button
+            if (refreshBtn) {
+                refreshBtn.innerHTML = '<svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Refresh';
+                refreshBtn.disabled = false;
+            }
+        });
 }
 
 function updateStats(stats) {
@@ -506,6 +569,14 @@ function updateAgentsList(agents) {
 //done button trigger
 function acceptChat(queueId) {
     if (confirm('Accept this chat?')) {
+        // Disable the accept button to prevent double-clicks
+        const acceptBtn = document.querySelector(`[onclick="acceptChat(${queueId})"]`);
+        if (acceptBtn) {
+            acceptBtn.disabled = true;
+            acceptBtn.textContent = 'Accepting...';
+            acceptBtn.classList.add('opacity-50');
+        }
+        
         fetch(`/admin/chat-queue/${queueId}/accept`, {
             method: 'POST',
             headers: {
@@ -516,15 +587,32 @@ function acceptChat(queueId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Chat accepted! Redirecting to conversation...');
-                window.location.href = `/admin/chat#conversation-${data.conversation_id}`;
+                showStatusMessage('✅ Chat accepted! Redirecting to conversation...', 'success');
+                // Refresh queue before redirecting
+                refreshQueue();
+                // Redirect after a short delay
+                setTimeout(() => {
+                    window.location.href = `/admin/chat#conversation-${data.conversation_id}`;
+                }, 1000);
             } else {
-                alert('Error: ' + data.message);
+                showStatusMessage('❌ Error: ' + data.message, 'error');
+                // Re-enable button on error
+                if (acceptBtn) {
+                    acceptBtn.disabled = false;
+                    acceptBtn.innerHTML = '<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Accept';
+                    acceptBtn.classList.remove('opacity-50');
+                }
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Failed to accept chat');
+            showStatusMessage('❌ Failed to accept chat', 'error');
+            // Re-enable button on error
+            if (acceptBtn) {
+                acceptBtn.disabled = false;
+                acceptBtn.innerHTML = '<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Accept';
+                acceptBtn.classList.remove('opacity-50');
+            }
         });
     }
 }
@@ -645,7 +733,7 @@ function fixAgentStatus() {
     if (fixBtn) {
         fixBtn.disabled = true;
         fixBtn.classList.add('opacity-50');
-        fixBtn.textContent = 'Fixing...';
+        fixBtn.innerHTML = '<svg class="w-4 h-4 inline mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>Fixing...';
     }
     
     fetch('/admin/chat-queue/agent-status', {
@@ -679,7 +767,7 @@ function fixAgentStatus() {
         if (fixBtn) {
             fixBtn.disabled = false;
             fixBtn.classList.remove('opacity-50');
-            fixBtn.textContent = 'Fix Status';
+            fixBtn.innerHTML = '<svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>Fix Status';
         }
     });
 }

@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'support' => [
+        // Optional: set SUPPORT_API_TOKEN in .env to use Support APIs from server-side HTTP calls
+        'api_token' => env('SUPPORT_API_TOKEN'),
+        // Optional: override base URL if Support module is hosted separately
+        'base_url' => env('SUPPORT_API_BASE_URL'),
+    ],
+
 ];

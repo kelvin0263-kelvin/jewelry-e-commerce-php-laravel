@@ -439,6 +439,29 @@
         <p class="products-subtitle">Discover our beautiful collection of jewelry</p>
     </div>
     
+    {{-- Server-to-server HTTP self-call demo (optional) --}}
+    @if(isset($httpTestResult))
+        <div style="margin: 1rem 0; padding: 12px 16px; border-radius: 8px; border: 1px solid #eee; background:#fff;">
+            <div style="font-weight:700; margin-bottom:6px;">Server HTTP self-call test</div>
+            <div style="font-size: 0.95rem;">
+                Endpoint: <code>{{ $httpTestEndpoint ?? (config('services.support.base_url') ? rtrim(config('services.support.base_url'), '/') . '/api/support/chat/conversations' : url('/api/support/chat/conversations')) }}</code>
+            </div>
+            <div style="margin-top:6px;">
+                @if(is_array($httpTestResult) && ($httpTestResult['ok'] ?? false))
+                    <span style="color:#2b7a0b;">Success.</span>
+                    Conversations returned: <strong>{{ $httpTestResult['count'] }}</strong>
+                @else
+                    <span style="color:#c53030;">{{ is_string($httpTestResult) ? $httpTestResult : 'Unknown error' }}</span>
+                    <div class="small" style="color:#666; margin-top:4px;">Tip: On single-threaded dev server (php artisan serve), this may show cURL error 28 after ~10s. On multi-worker stacks, it often succeeds. You may pass <code>?http_test=1&token=YOUR_TOKEN</code> if not logged in.</div>
+                @endif
+            </div>
+        </div>
+    @else
+        <div style="margin: 1rem 0;">
+            <a href="{{ request()->fullUrlWithQuery(['http_test' => 1]) }}" class="view-details-btn">Run server HTTP self-call test</a>
+        </div>
+    @endif
+    
     <!-- Search and Filter Section -->
     <div class="search-filter-section">
         <form method="GET" action="{{ route('products.index') }}" class="search-filter-form">
@@ -540,8 +563,27 @@
         <span>BAG</span>
     </a>
     </div>
+     <button id="ask-support" class="btn btn-primary">Chat with us</button>
+
 
 <script>
+    document.getElementById('ask-support')?.addEventListener('click', async () => {
+  const ctx = {
+    source: 'product_page',
+    product_id: '{{ $product->id ?? null }}',
+    product_name: '{{ $product->name ?? null }}'
+  };
+  try {
+    await window.SupportChat.open({
+      autoStart: true,
+      initial_message: 'Hi, I need help with this product.',
+      escalation_context: ctx
+    });
+  } catch (e) {
+    console.error(e);
+    alert('Unable to start chat right now.');
+  }
+});
 function addToCart(productId) {
     fetch('/cart/add', {
         method: 'POST',
