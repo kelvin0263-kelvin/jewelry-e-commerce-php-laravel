@@ -221,7 +221,89 @@
         text-decoration: none;
     }
     
+    /* Floating Action Buttons */
+    .floating-buttons {
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 1000;
+    }
+    
+    .floating-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        min-width: 120px;
+        justify-content: center;
+        text-decoration: none;
+    }
+    
+    .wishlist-btn {
+        background: #fff;
+        color: #d4af37;
+        border: 2px solid #d4af37;
+    }
+    
+    .wishlist-btn:hover {
+        background: #d4af37;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+        text-decoration: none;
+    }
+    
+    .bag-btn {
+        background: #d4af37;
+        color: white;
+        border: 2px solid #d4af37;
+    }
+    
+    .bag-btn:hover {
+        background: #b8941f;
+        border-color: #b8941f;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+        text-decoration: none;
+    }
+    
+    .floating-btn i {
+        font-size: 1.1rem;
+    }
+    
+    .floating-btn span {
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Mobile responsiveness for floating buttons */
     @media (max-width: 768px) {
+        .floating-buttons {
+            bottom: 20px;
+            left: 20px;
+            gap: 12px;
+        }
+        
+        .floating-btn {
+            padding: 10px 16px;
+            font-size: 0.8rem;
+            min-width: 100px;
+        }
+        
+        .floating-btn i {
+            font-size: 1rem;
+        }
+        
         .cart-container {
             padding: 1rem;
         }
@@ -310,6 +392,18 @@
             </div>
         @endif
     </div>
+</div>
+
+<!-- Floating Action Buttons -->
+<div class="floating-buttons">
+    <a href="{{ route('wishlist.index') }}" class="floating-btn wishlist-btn" title="View Wishlist">
+        <i class="fas fa-heart"></i>
+        <span>Wishlist</span>
+    </a>
+    <a href="{{ route('cart.index') }}" class="floating-btn bag-btn" title="View Cart">
+        <i class="fas fa-shopping-bag"></i>
+        <span>BAG</span>
+    </a>
 </div>
 
 <script>

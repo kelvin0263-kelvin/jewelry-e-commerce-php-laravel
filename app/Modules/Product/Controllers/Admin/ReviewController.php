@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Modules\Product\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Review;
+use App\Modules\Product\Models\Review;
 use App\Modules\Product\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

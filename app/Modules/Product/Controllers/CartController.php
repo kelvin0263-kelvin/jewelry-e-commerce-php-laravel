@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Modules\Product\Controllers;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Cart;
+use App\Modules\Product\Models\Cart;
 use App\Modules\Product\Models\Product;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -24,12 +25,20 @@ class CartController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1|max:99'
+            'quantity' => 'required|integer|min:1|max:99',
+            'price' => 'nullable|numeric|min:0'
         ]);
 
         $product = Product::findOrFail($request->product_id);
         $quantity = $request->quantity;
-        $price = $product->discount_price ?? $product->price;
+        
+        // Use the price from frontend if provided, otherwise fallback to product logic
+        if ($request->has('price') && $request->price > 0) {
+            $price = $request->price;
+        } else {
+            // Fallback to original logic: discount_price or selling_price or price
+            $price = $product->discount_price ?? $product->selling_price ?? $product->price;
+        }
 
         // Check if item already exists in cart
         $existingItem = $this->getExistingCartItem($request->product_id);

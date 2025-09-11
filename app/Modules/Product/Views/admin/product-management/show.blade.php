@@ -254,11 +254,17 @@
                 </div>
                 <div class="d-flex gap-1">
                     <a href="{{ route('admin.product-management.index') }}" class="btn btn-light btn-sm">
-                        <i class="fas fa-arrow-left me-1"></i> Back to Products
+                        <i class="fas fa-arrow-left me-1"></i> Back
                     </a>
-                    <a href="{{ route('admin.product-management.edit', $product) }}" class="btn btn-warning btn-sm">
-                        <i class="fas fa-edit me-1"></i> Edit Product
-                    </a>
+                    @if($product->product_record)
+                        <a href="{{ route('admin.product-management.edit', $product->product_record) }}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit me-1"></i> Edit Product
+                        </a>
+                    @else
+                        <a href="{{ route('admin.product-management.create', $product->id) }}" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus me-1"></i> Create Product
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
@@ -280,31 +286,9 @@
                         <h5 class="card-title mb-0">Product Information</h5>
                     </div>
                     <div class="card-body">
-                        @php
-                            $data = $decoratedProduct->getDecoratedData();
-                        @endphp
-                        
                         <div class="row mb-2">
                             <div class="col-sm-3">
-                                <strong>Product ID:</strong>
-                            </div>
-                            <div class="col-sm-9">
-                                #{{ $data['id'] }}
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-2">
-                            <div class="col-sm-3">
-                                <strong>Product Name:</strong>
-                            </div>
-                            <div class="col-sm-9">
-                                {{ $data['name'] }}
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-2">
-                            <div class="col-sm-3">
-                                <strong>SKU:</strong>
+                                <strong>ID (SKU):</strong>
                             </div>
                             <div class="col-sm-9">
                                 {{ $product->sku }}
@@ -313,10 +297,48 @@
                         
                         <div class="row mb-2">
                             <div class="col-sm-3">
+                                <strong>Product Name:</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                {{ $product->name }}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-sm-3">
                                 <strong>Category:</strong>
                             </div>
                             <div class="col-sm-9">
-                                <span class="badge bg-light text-dark border">{{ ucfirst($data['category']) }}</span>
+                                <span class="badge bg-light text-dark border">{{ ucfirst($product->category) }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-sm-3">
+                                <strong>Quantity:</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                {{ $product->quantity }}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-sm-3">
+                                <strong>Features:</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                @foreach($product->features as $feature)
+                                    <span class="badge bg-light text-dark border me-1 mb-1">{{ $feature }}</span>
+                                @endforeach
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-sm-3">
+                                <strong>Description:</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                {{ $product->description ?: 'None' }}
                             </div>
                         </div>
                         
@@ -325,7 +347,7 @@
                                 <strong>Status:</strong>
                             </div>
                             <div class="col-sm-9">
-                                @if($data['status'] === 'published')
+                                @if($product->status === 'published')
                                     <span class="status-published">Published</span>
                                 @else
                                     <span class="status-pending">Pending</span>
@@ -339,9 +361,9 @@
                             </div>
                             <div class="col-sm-9">
                                 RM{{ number_format($product->price, 2) }}
-                                @if($product->discount_price)
+                                @if($product->product_record && $product->product_record->discount_price)
                                     <span class="text-success ms-2">
-                                        (Discounted: RM{{ number_format($product->discount_price, 2) }})
+                                        (Discounted: RM{{ number_format($product->product_record->discount_price, 2) }})
                                     </span>
                                 @endif
                             </div>
@@ -352,17 +374,17 @@
                                 <strong>Description:</strong>
                             </div>
                             <div class="col-sm-9">
-                                {{ $product->description }}
+                                {{ $product->description ?: 'None' }}
                             </div>
                         </div>
                         
-                        @if($product->marketing_description)
+                        @if($product->product_record && $product->product_record->marketing_description)
                         <div class="row mb-2">
                             <div class="col-sm-3">
                                 <strong>Marketing Description:</strong>
                             </div>
                             <div class="col-sm-9">
-                                {{ $product->marketing_description }}
+                                {{ $product->product_record->marketing_description }}
                             </div>
                         </div>
                         @endif
@@ -389,13 +411,13 @@
                             </div>
                             <div class="col-sm-9">
                                 <!-- Product Images -->
-                                @if($product->customer_images && count($product->customer_images) > 0)
+                                @if($product->product_record && $product->product_record->customer_images && count($product->product_record->customer_images) > 0)
                                     <div class="mb-2">
                                             <h6 class="text-muted mb-1">
-                                            <i class="fas fa-images me-1"></i>Product Images ({{ count($product->customer_images) }})
+                                            <i class="fas fa-images me-1"></i>Product Images ({{ count($product->product_record->customer_images) }})
                                         </h6>
                                         <div class="row">
-                                            @foreach($product->customer_images as $index => $image)
+                                            @foreach($product->product_record->customer_images as $index => $image)
                                                 <div class="col-md-3 col-sm-4 col-6 mb-2">
                                                     <div class="position-relative">
                                                         <img src="{{ asset('storage/' . $image) }}" 
@@ -422,14 +444,14 @@
                                 @endif
                                 
                                 <!-- Product Video -->
-                                @if($product->product_video)
+                                @if($product->product_record && $product->product_record->product_video)
                                     <div class="mb-2">
                                             <h6 class="text-muted mb-1">
                                             <i class="fas fa-video me-1"></i>Product Video
                                         </h6>
                                         <div class="video-container">
                                             <video controls class="w-100" style="max-height: 250px; border-radius: 8px;">
-                                                <source src="{{ asset('storage/' . $product->product_video) }}" type="video/mp4">
+                                                <source src="{{ asset('storage/' . $product->product_record->product_video) }}" type="video/mp4">
                                                 Your browser does not support the video tag.
                                             </video>
                                         </div>
@@ -459,7 +481,7 @@
                                 <strong>Published By:</strong>
                             </div>
                             <div>
-                                {{ $data['publish_info']['published_by'] }}
+                                {{ $product->published_by ?: 'Not published' }}
                             </div>
                         </div>
                         
@@ -468,11 +490,7 @@
                                 <strong>Published At:</strong>
                             </div>
                             <div>
-                                @if($data['publish_info']['published_at'] !== 'Not published')
-                                    {{ $product->published_at ? $product->published_at->format('M d, Y H:i') : 'Not published' }}
-                                @else
-                                    Not published
-                                @endif
+                                {{ $product->published_at ? $product->published_at->format('M d, Y H:i') : 'Not published' }}
                             </div>
                         </div>
                     </div>
@@ -484,12 +502,18 @@
                     </div>
                     <div class="card-body">
                         <div class="d-grid gap-1">
-                            <a href="{{ route('products.show', $product) }}" class="btn btn-info w-100" target="_blank">
-                                <i class="fas fa-eye me-1"></i> View Product
-                            </a>
+                            @if($product->product_record)
+                                <a href="{{ route('products.show', $product->product_record) }}" class="btn btn-info w-100" target="_blank">
+                                    <i class="fas fa-eye me-1"></i> View Product
+                                </a>
+                            @else
+                                <button class="btn btn-outline-info w-100" disabled>
+                                    <i class="fas fa-eye me-1"></i> View Product
+                                </button>
+                            @endif
                             
-                            @if($data['can_publish'])
-                                <form action="{{ route('admin.product-management.publish', $product) }}" method="POST">
+                            @if($product->product_record && $product->status === 'pending')
+                                <form action="{{ route('admin.product-management.publish', $product->product_record) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-success w-100" 
                                             onclick="return confirm('Are you sure you want to publish this product?')">
@@ -498,8 +522,8 @@
                                 </form>
                             @endif
                             
-                            @if($data['can_unpublish'])
-                                <form action="{{ route('admin.product-management.unpublish', $product) }}" method="POST">
+                            @if($product->product_record && $product->status === 'published')
+                                <form action="{{ route('admin.product-management.unpublish', $product->product_record) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-warning w-100" 
                                             onclick="return confirm('Are you sure you want to unpublish this product?')">
@@ -508,14 +532,20 @@
                                 </form>
                             @endif
                             
-                            <form action="{{ route('admin.product-management.destroy', $product) }}" method="POST"
-                                  onsubmit="return confirm('Are you sure you want to delete this product? This action cannot be undone.')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger w-100">
+                            @if($product->product_record)
+                                <form action="{{ route('admin.product-management.destroy', $product->product_record) }}" method="POST"
+                                      onsubmit="return confirm('Are you sure you want to delete this product? This action cannot be undone.')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger w-100">
+                                        <i class="fas fa-trash me-1"></i> Delete Product
+                                    </button>
+                                </form>
+                            @else
+                                <button class="btn btn-outline-danger w-100" disabled>
                                     <i class="fas fa-trash me-1"></i> Delete Product
                                 </button>
-                            </form>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -525,8 +555,8 @@
 
 
     <!-- Image Modals -->
-    @if($product->customer_images && count($product->customer_images) > 0)
-        @foreach($product->customer_images as $index => $image)
+    @if($product->product_record && $product->product_record->customer_images && count($product->product_record->customer_images) > 0)
+        @foreach($product->product_record->customer_images as $index => $image)
             <div class="modal fade" id="imageModal{{ $index }}" tabindex="-1" aria-labelledby="imageModalLabel{{ $index }}" aria-hidden="true">
                 <div class="modal-dialog modal-lg modal-dialog-centered">
                     <div class="modal-content">

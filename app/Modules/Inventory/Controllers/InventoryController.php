@@ -285,22 +285,37 @@ public function store(Request $request)
         $inventory->update($data);
 
         // ------------------------
-        // Update or create product
+        // Update or create product (only sync when inventory is published)
         // ------------------------
-        if ($inventory->product) {
-            $inventory->product->update([
-                'name' => $data['name'],
-                'price' => $data['price'] ?? 0,
-                'description' => $data['description'] ?? '',
-                'status' => $data['status'] ?? 'draft',
-            ]);
+        if ($inventory->status === 'published') {
+            if ($inventory->product) {
+                $inventory->product->update([
+                    'name' => $data['name'],
+                    'price' => $data['price'] ?? 0,
+                    'description' => $data['description'] ?? '',
+                    'status' => $data['status'] ?? 'draft',
+                ]);
+            } else {
+                $inventory->product()->create([
+                    'name' => $data['name'],
+                    'price' => $data['price'] ?? 0,
+                    'description' => $data['description'] ?? '',
+                    'status' => $data['status'] ?? 'draft',
+                ]);
+            }
         } else {
-            $inventory->product()->create([
-                'name' => $data['name'],
-                'price' => $data['price'] ?? 0,
-                'description' => $data['description'] ?? '',
-                'status' => $data['status'] ?? 'draft',
-            ]);
+            // For draft inventories, do NOT sync data to product module
+            // Data will only be synced when inventory is published
+            // Only create product if it doesn't exist (for new inventories)
+            if (!$inventory->product) {
+                $inventory->product()->create([
+                    'name' => $data['name'],
+                    'price' => $data['price'] ?? 0,
+                    'description' => $data['description'] ?? '',
+                    'status' => 'draft',
+                ]);
+            }
+            // If product already exists, do NOT update it during draft updates
         }
 
         // ------------------------
@@ -377,27 +392,56 @@ public function store(Request $request)
      *  ========================================= */
     public function destroy($id)
     {
-        $inventory = Inventory::with('variations', 'product')->findOrFail($id);
+        $inventory = Inventory::with('variations.product', 'product')->findOrFail($id);
 
         if ($inventory->status === 'published') {
             return redirect()->route('admin.inventory.index')
                 ->with('error', 'You cannot delete a published inventory. Please set it to draft first.');
         }
 
+        // Delete all products associated with inventory variations first
         foreach ($inventory->variations as $variation) {
+            if ($variation->product) {
+                // Delete associated images for variation products
+                if ($variation->product->customer_images) {
+                    foreach ($variation->product->customer_images as $image) {
+                        Storage::disk('public')->delete($image);
+                    }
+                }
+                if ($variation->product->image_path) {
+                    Storage::disk('public')->delete($variation->product->image_path);
+                }
+                $variation->product->delete();
+            }
+            
+            // Delete variation images
             if ($variation->image_path) {
                 Storage::disk('public')->delete($variation->image_path);
             }
         }
 
-        $inventory->variations()->delete();
+        // Delete the main product associated with the inventory
         if ($inventory->product) {
+            // Delete associated images for main product
+            if ($inventory->product->customer_images) {
+                foreach ($inventory->product->customer_images as $image) {
+                    Storage::disk('public')->delete($image);
+                }
+            }
+            if ($inventory->product->image_path) {
+                Storage::disk('public')->delete($inventory->product->image_path);
+            }
             $inventory->product->delete();
         }
+
+        // Delete all variations
+        $inventory->variations()->delete();
+        
+        // Finally delete the inventory
         $inventory->delete();
 
         return redirect()->route('admin.inventory.index')
-            ->with('success', 'Inventory deleted successfully');
+            ->with('success', 'Inventory and all associated products deleted successfully');
     }
 
     /** =========================================
@@ -405,20 +449,113 @@ public function store(Request $request)
      *  ========================================= */
     public function toggleStatus($id)
     {
-        $inventory = Inventory::with('product')->findOrFail($id);
+        $inventory = Inventory::with(['product', 'variations.product'])->findOrFail($id);
 
         $inventory->status = $inventory->status === 'published' ? 'draft' : 'published';
         $inventory->save();
 
-        if ($inventory->product) {
-            $inventory->product->update(['status' => $inventory->status]);
+        if ($inventory->status === 'draft') {
+            // When unpublishing inventory, mark all related products as issued
+            $unpublishedProducts = [];
+            foreach ($inventory->variations as $variation) {
+                if ($variation->product) {
+                    $variation->product->update([
+                        'is_visible' => false,
+                        'status' => 'issued',
+                        'issued_at' => now(),
+                        'issued_by' => auth()->id(),
+                    ]);
+                    $unpublishedProducts[] = $variation->product->name;
+                }
+            }
+            
+            // Set flag to show inventory unpublish notification with product details
+            if (!empty($unpublishedProducts)) {
+                session(['inventory_unpublished' => [
+                    'inventory_name' => $inventory->name,
+                    'products' => $unpublishedProducts,
+                    'message' => 'Products have been delisted: ' . implode(', ', $unpublishedProducts)
+                ]]);
+            }
         } else {
-            Product::create([
-                'inventory_id' => $inventory->id,
-                'name' => $inventory->name,
-                'price' => 0,
-                'status' => $inventory->status,
-            ]);
+            // When publishing inventory, reset issued products back to normal
+            $hasIssuedProducts = false;
+            $republishedProducts = [];
+            foreach ($inventory->variations as $variation) {
+                if ($variation->product && $variation->product->status === 'issued') {
+                    $hasIssuedProducts = true;
+                    $republishedProducts[] = $variation->product->name;
+                    // Reset issued products back to pending status
+                    $variation->product->update([
+                        'status' => 'pending',
+                        'is_visible' => true, // Make visible again when republished
+                        'issued_at' => null,
+                        'issued_by' => null,
+                        // Clear user-facing information to force recreation
+                        'marketing_description' => null,
+                        'customer_images' => null,
+                        'product_video' => null,
+                        'discount_price' => null,
+                    ]);
+                }
+            }
+            
+            // Update the main product status and sync data
+            if ($inventory->product) {
+                // Check if product was previously draft (new product)
+                if ($inventory->product->status === 'draft') {
+                    $inventory->product->update([
+                        'name' => $inventory->name,
+                        'price' => $inventory->price,
+                        'description' => $inventory->description,
+                        'status' => $inventory->status,
+                        'published_at' => now(), // Set published_at when inventory is published
+                        'published_by' => auth()->id(),
+                    ]);
+                    // Set flag to show new product added notification with product details
+                    session(['new_product_added' => [
+                        'sku' => $inventory->variations->first()?->sku ?? $inventory->id,
+                        'name' => $inventory->name,
+                        'changes' => 'New product added to inventory'
+                    ]]);
+                } else {
+                    $inventory->product->update([
+                        'name' => $inventory->name,
+                        'price' => $inventory->price,
+                        'description' => $inventory->description,
+                        'status' => $inventory->status,
+                        'published_at' => now(), // Update published_at when inventory is republished
+                        'published_by' => auth()->id(),
+                    ]);
+                    // Set flag to show inventory changes notification
+                    if ($hasIssuedProducts && !empty($republishedProducts)) {
+                        session(['inventory_republished' => [
+                            'inventory_name' => $inventory->name,
+                            'products' => $republishedProducts,
+                            'message' => 'Products have been relisted: ' . implode(', ', $republishedProducts)
+                        ]]);
+                    } else {
+                        // For regular republish without issued products
+                        session(['inventory_republished' => [
+                            'inventory_name' => $inventory->name,
+                            'message' => 'Inventory has been republished'
+                        ]]);
+                    }
+                }
+            } else {
+                $newProduct = Product::create([
+                    'inventory_id' => $inventory->id,
+                    'name' => $inventory->name,
+                    'price' => 0,
+                    'status' => 'draft', // New products start as draft, not published
+                ]);
+                // Set flag to show new product added notification with product details
+                session(['new_product_added' => [
+                    'sku' => $inventory->variations->first()?->sku ?? $inventory->id,
+                    'name' => $inventory->name,
+                    'changes' => 'New product added to inventory'
+                ]]);
+            }
         }
 
         return redirect()->route('admin.inventory.index')
@@ -448,8 +585,5 @@ public function dashboard()
         'totalVariations'
     ));
 }
-
-
-
 
 }

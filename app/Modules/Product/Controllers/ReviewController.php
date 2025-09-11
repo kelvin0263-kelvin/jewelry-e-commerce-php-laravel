@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Modules\Product\Controllers;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Review;
+use App\Modules\Product\Models\Review;
 use Illuminate\Support\Facades\Validator;
 
 class ReviewController extends Controller

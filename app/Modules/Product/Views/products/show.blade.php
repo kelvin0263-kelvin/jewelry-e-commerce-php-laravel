@@ -157,6 +157,74 @@
         word-wrap: break-word;
         overflow-wrap: break-word;
         word-break: break-all;
+    }
+    
+    /* SKU Selection Styles */
+    .sku-image-selection {
+        margin-bottom: 1.5rem;
+    }
+    
+    .sku-image-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .sku-image-option {
+        position: relative;
+        cursor: pointer;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        padding: 5px;
+        transition: all 0.3s ease;
+        width: 60px;
+        height: 60px;
+    }
+    
+    .sku-image-option:hover {
+        border-color: #ddd;
+    }
+    
+    .sku-image-option.selected {
+        border-color: #333;
+    }
+    
+    .sku-image-option.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .sku-image-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .sku-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    
+    .out-of-stock-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 8px;
+        text-align: center;
+        line-height: 1.2;
+    }
         hyphens: auto;
         max-width: 100%;
         overflow: hidden;
@@ -166,7 +234,7 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 15rem;
     }
     
     .quantity-label {
@@ -178,7 +246,6 @@
     .quantity-controls {
         display: flex;
         align-items: center;
-        border: 1px solid #ddd;
         border-radius: 4px;
         overflow: hidden;
     }
@@ -209,6 +276,13 @@
         color: #2c2c2c;
         width: 60px;
         outline: none;
+        box-shadow: none;
+    }
+    
+    .quantity-input:focus {
+        outline: none;
+        box-shadow: none;
+        border: none;
     }
     
     .quantity-input::-webkit-outer-spin-button,
@@ -228,22 +302,6 @@
         margin-bottom: 0.5rem;
     }
     
-    .buy-now-btn {
-        background: #d4af37;
-        color: white;
-        border: none;
-        padding: 0.4rem 0.8rem;
-        border-radius: 4px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        width: 100%;
-    }
-    
-    .buy-now-btn:hover {
-        background: #b8941f;
-    }
     
     .add-to-bag-btn {
         background: transparent;
@@ -285,13 +343,13 @@
         text-decoration: underline;
     }
     
-    .wishlist-btn {
+    .additional-actions .wishlist-btn {
         background: transparent;
         color: #d4af37;
         border: 1px solid #d4af37;
-        padding: 0.5rem 1rem;
+        padding: 0.4rem 0.8rem;
         border-radius: 4px;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s ease;
@@ -299,7 +357,7 @@
         text-transform: uppercase;
     }
     
-    .wishlist-btn:hover {
+    .additional-actions .wishlist-btn:hover {
         background: #d4af37;
         color: white;
     }
@@ -917,15 +975,46 @@
                             @foreach($data['features'] as $feature)
                                 <div class="feature-item">• {{ $feature }}</div>
                             @endforeach
-                        @else
-                            <div class="feature-item">• Premium Quality</div>
-                            <div class="feature-item">• Handcrafted Design</div>
                         @endif
                     </div>
                 </div>
                 
+                <!-- SKU Selection with Images -->
+                @if(isset($allVariations) && $allVariations->count() > 0)
+                <div class="sku-image-selection">
+                    <div class="features-label">Options:</div>
+                    <div class="sku-image-options" id="skuImageOptions">
+                        @foreach($allVariations as $index => $variation)
+                            @php
+                                $productData = $variation['productData'];
+                                $mainImage = $productData['main_image'] ?? '/images/placeholder.jpg';
+                            @endphp
+                            <div class="sku-image-option {{ $index === 0 ? 'selected' : '' }} {{ $variation['stock'] <= 0 ? 'disabled' : '' }}"
+                                 data-sku="{{ $variation['sku'] }}"
+                                 data-product-id="{{ $variation['product']->product->id }}"
+                                 data-price="{{ $productData['price'] }}"
+                                 data-selling-price="{{ $productData['selling_price'] ?? $productData['price'] }}"
+                                 data-discount-price="{{ $productData['discount_price'] ?? null }}"
+                                 data-stock="{{ $variation['stock'] }}"
+                                 data-features="{{ json_encode($productData['features']) }}"
+                                 data-marketing-description="{{ $productData['marketing_description'] }}"
+                                 data-image="{{ $mainImage }}"
+                                 data-gallery="{{ json_encode($productData['gallery_images']) }}"
+                                 onclick="selectSKUImage(this)">
+                                <div class="sku-image-container">
+                                    <img src="{{ $mainImage }}" alt="{{ $variation['sku'] }}" class="sku-image">
+                                    @if($variation['stock'] <= 0)
+                                        <div class="out-of-stock-overlay">Out of Stock</div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+                
                 <!-- Quantity Selection -->
-                <div class="quantity-selection">
+                <div class="quantity-selection" style="margin-bottom: 2rem !important;">
                     <div class="quantity-label">Quantity:</div>
                     <div class="quantity-controls">
                         <button class="quantity-btn" onclick="decreaseQuantity()">-</button>
@@ -936,9 +1025,6 @@
                 
                 <!-- Action Buttons -->
                 <div class="action-buttons">
-                    <button class="buy-now-btn" onclick="buyNow({{ $decoratedProduct->product->id }})">
-                        BUY NOW
-                    </button>
                     <button class="add-to-bag-btn" onclick="addToCart({{ $decoratedProduct->product->id }})">
                         ADD TO BAG
                     </button>
@@ -1155,9 +1241,153 @@
         }
     }
     
+    // SKU Selection functionality
+    let selectedSKU = null;
+    let maxStock = 99;
+    
+    // Initialize with default SKU
+    document.addEventListener('DOMContentLoaded', function() {
+        const defaultImageOption = document.querySelector('.sku-image-option.selected');
+        if (defaultImageOption) {
+            selectedSKU = {
+                sku: defaultImageOption.dataset.sku,
+                productId: defaultImageOption.dataset.productId,
+                price: parseFloat(defaultImageOption.dataset.price),
+                sellingPrice: parseFloat(defaultImageOption.dataset.sellingPrice),
+                discountPrice: defaultImageOption.dataset.discountPrice ? parseFloat(defaultImageOption.dataset.discountPrice) : null,
+                stock: parseInt(defaultImageOption.dataset.stock),
+                features: JSON.parse(defaultImageOption.dataset.features),
+                marketingDescription: defaultImageOption.dataset.marketingDescription
+            };
+            maxStock = selectedSKU.stock;
+            updateQuantityControls();
+            updatePrice();
+            updateFeatures();
+            updateMarketingDescription();
+        }
+    });
+    
+    function selectSKUImage(element) {
+        if (element.classList.contains('disabled')) return;
+        
+        // Update selected state
+        document.querySelectorAll('.sku-image-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+        element.classList.add('selected');
+        
+        // Update selected SKU data
+        selectedSKU = {
+            sku: element.dataset.sku,
+            productId: element.dataset.productId,
+            price: parseFloat(element.dataset.price),
+            sellingPrice: parseFloat(element.dataset.sellingPrice),
+            discountPrice: element.dataset.discountPrice ? parseFloat(element.dataset.discountPrice) : null,
+            stock: parseInt(element.dataset.stock),
+            features: JSON.parse(element.dataset.features),
+            marketingDescription: element.dataset.marketingDescription
+        };
+        
+        // Update main image and gallery
+        updateMainImage(element.dataset.image, JSON.parse(element.dataset.gallery));
+        
+        // Update content
+        updatePrice();
+        updateFeatures();
+        updateMarketingDescription();
+        updateStockDisplay();
+        
+        // Update quantity controls
+        maxStock = selectedSKU.stock;
+        updateQuantityControls();
+    }
+    
+    function updateMainImage(imageSrc, galleryImages) {
+        // Update main product image
+        const mainImage = document.querySelector('.main-image');
+        if (mainImage) {
+            mainImage.src = imageSrc;
+        }
+        
+        // Update thumbnail gallery
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        if (galleryImages && galleryImages.length > 0) {
+            galleryImages.forEach((image, index) => {
+                if (thumbnails[index]) {
+                    thumbnails[index].src = image;
+                }
+            });
+        }
+    }
+    
+    function updatePrice() {
+        const priceElement = document.querySelector('.price-display');
+        if (priceElement && selectedSKU) {
+            if (selectedSKU.discountPrice && selectedSKU.discountPrice > 0) {
+                // Show discounted price with strikethrough original price
+                priceElement.innerHTML = `
+                    <span style="text-decoration: line-through; color: #999; margin-right: 10px;">RM ${selectedSKU.sellingPrice.toFixed(2)}</span>
+                    <span style="color: #d4af37; font-weight: bold;">RM ${selectedSKU.discountPrice.toFixed(2)}</span>
+                `;
+            } else {
+                // Show selling price only
+                priceElement.innerHTML = `RM ${selectedSKU.sellingPrice.toFixed(2)}`;
+            }
+        }
+    }
+    
+    function updateFeatures() {
+        const featuresElement = document.querySelector('.features-list');
+        if (featuresElement && selectedSKU) {
+            featuresElement.innerHTML = selectedSKU.features.map(feature =>
+                `<div class="feature-item">• ${feature}</div>`
+            ).join('');
+        }
+    }
+    
+    function updateMarketingDescription() {
+        const marketingElement = document.querySelector('.marketing-description');
+        if (marketingElement && selectedSKU) {
+            marketingElement.innerHTML = `<p>${selectedSKU.marketingDescription}</p>`;
+        }
+    }
+    
+    function updateStockDisplay() {
+        // Update any stock-related display if needed
+        console.log('Stock updated:', selectedSKU.stock);
+    }
+    
+    function updateQuantityControls() {
+        const quantityInput = document.getElementById('quantity');
+        if (quantityInput && selectedSKU) {
+            quantityInput.max = selectedSKU.stock;
+            if (parseInt(quantityInput.value) > selectedSKU.stock) {
+                quantityInput.value = selectedSKU.stock;
+            }
+        }
+    }
+    
     
     function addToCart(productId) {
         const quantity = document.getElementById('quantity').value;
+        
+        // Determine the correct price to use
+        let priceToUse;
+        if (selectedSKU && selectedSKU.discountPrice && selectedSKU.discountPrice > 0) {
+            priceToUse = selectedSKU.discountPrice;
+        } else if (selectedSKU && selectedSKU.sellingPrice) {
+            priceToUse = selectedSKU.sellingPrice;
+        } else {
+            // Fallback to the displayed price
+            const priceElement = document.querySelector('.price-display');
+            if (priceElement) {
+                const priceText = priceElement.textContent;
+                const priceMatch = priceText.match(/RM\s+([\d,]+\.?\d*)/);
+                if (priceMatch) {
+                    priceToUse = parseFloat(priceMatch[1].replace(',', ''));
+                }
+            }
+        }
         
         fetch('/cart/add', {
             method: 'POST',
@@ -1167,7 +1397,8 @@
             },
             body: JSON.stringify({
                 product_id: productId,
-                quantity: parseInt(quantity)
+                quantity: parseInt(quantity),
+                price: priceToUse
             })
         })
         .then(response => response.json())
@@ -1184,34 +1415,6 @@
         });
     }
     
-    function buyNow(productId) {
-        // First add to cart, then redirect to checkout
-        const quantity = document.getElementById('quantity').value;
-        
-        fetch('/cart/add', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                product_id: productId,
-                quantity: parseInt(quantity)
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                window.location.href = '/checkout';
-            } else {
-                alert('Error: ' + (data.message || 'Failed to add product to cart'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
-        });
-    }
     
     function sendWithSmartGift() {
         alert('SmartGift feature coming soon!');

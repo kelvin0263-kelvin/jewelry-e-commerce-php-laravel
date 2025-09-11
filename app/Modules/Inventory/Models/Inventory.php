@@ -72,12 +72,34 @@ class Inventory extends Model
         static::created(function ($inventory) {
             if ($inventory->status === 'published') {
                 $inventory->createProductIfNotExists();
+                
+                // Set session flag for new product notification
+                session(['new_product_added' => [
+                    'sku' => $inventory->variations->first()?->sku ?? 'N/A',
+                    'name' => $inventory->name,
+                    'updated_at' => $inventory->created_at->format('M d, Y H:i'),
+                    'changes' => 'New product created and published from inventory module'
+                ]]);
             }
         });
 
         static::updated(function ($inventory) {
             if ($inventory->wasChanged('status') && $inventory->status === 'published') {
                 $inventory->createProductIfNotExists();
+            }
+        });
+
+        static::deleting(function ($inventory) {
+            // Delete all products associated with inventory variations
+            foreach ($inventory->variations as $variation) {
+                if ($variation->product) {
+                    $variation->product->delete();
+                }
+            }
+            
+            // Delete the main product associated with the inventory
+            if ($inventory->product) {
+                $inventory->product->delete();
             }
         });
     }

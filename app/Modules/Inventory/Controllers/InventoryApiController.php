@@ -9,11 +9,13 @@ use Illuminate\Http\Request;
 
 class InventoryApiController extends Controller
 {
-    // GET /api/inventory
     public function index()
     {
-        $inventories = Inventory::with('variations')->latest()->get();
-        return response()->json($inventories);
+        $inventories = Inventory::with('variations')->latest()->get()->map(function($inv) {
+            return $this->formatInventory($inv);
+        });
+
+        return response()->json(['success' => true, 'data' => $inventories]);
     }
 
     // GET /api/inventory/{id}
