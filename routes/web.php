@@ -13,8 +13,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Modules\Inventory\Controllers\InventoryController;
+
+
 use App\Modules\Cart\Controllers\CartController;
 use App\Modules\Order\Controllers\OrderController;
+use App\Modules\Order\Controllers\OrderItemController;
+use App\Modules\Order\Controllers\OrderManagementController;
 
 
 
@@ -283,4 +287,15 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{id}/complete', [OrderController::class, 'markAsCompleted'])->name('orders.complete');
+    Route::post('/orders/{id}/refund', [OrderController::class, 'markAsRefund'])->name('orders.refund');
+    Route::get('/orders/{id}/items', [OrderItemController::class, 'view'])->name('orderitem.index');
+    Route::post('/orders/{id}/submit-refund-reason', [OrderController::class, 'submitRefundReason'])->name('orders.submitRefundReason');
+});
+
+Route::prefix('admin')->group(function () {
+    Route::get('/ordermanagement', [OrderManagementController::class, 'index'])->name('ordermanagement.index');
+    Route::post('/ordermanagement/ship/{id}', [OrderManagementController::class, 'ship'])->name('ordermanagement.ship');
+    Route::post('/ordermanagement/refund/{id}', [OrderManagementController::class, 'updateRefundStatus'])->name('ordermanagement.updateRefundStatus');
 });

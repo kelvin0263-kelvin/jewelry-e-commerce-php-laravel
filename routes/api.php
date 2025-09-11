@@ -29,3 +29,7 @@ if (file_exists(app_path('Modules/Admin/Routes/api.php'))) {
 if (file_exists(app_path('Modules/Support/Routes/api.php'))) {
     include app_path('Modules/Support/Routes/api.php');
 }
+
+if (file_exists(app_path('Modules/Cart/Routes/api.php'))) {
+    include app_path('Modules/Cart/Routes/api.php');
+}

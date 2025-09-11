@@ -22,24 +22,29 @@ return new class extends Migration {
 
             // Promo & Payment
             $table->string('promo_code')->nullable();
-            $table->string('payment_method');           // credit_card, online_banking, etc.
-            $table->enum('payment_status', ['completed'])->default('completed'); // only completed
+            $table->string('payment_method');           
+            $table->enum('payment_status', ['completed'])->default('completed'); 
 
             // Shipping
             $table->string('shipping_address');
             $table->string('shipping_postal_code')->nullable();
-            $table->string('shipping_method');          // fast, normal
+            $table->string('shipping_method');          
             $table->string('tracking_number')->nullable();
 
             // Order lifecycle
-            $table->enum('status', ['pending', 'processing', 'completed', 'refunded'])
+            $table->enum('status', ['pending', 'shipped', 'delivered', 'completed', 'refund'])
                 ->default('pending');
+
+            // Refund status
+            $table->enum('refund_status', ['refunding', 'rejected', 'refunded'])
+                ->nullable();
+
+            $table->string('refund_reason')->nullable();
 
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
-
     }
 
     /**
@@ -50,3 +55,6 @@ return new class extends Migration {
         Schema::dropIfExists('orders');
     }
 };
+
+
+?>
