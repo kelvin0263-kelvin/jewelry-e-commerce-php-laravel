@@ -541,6 +541,7 @@
     </a>
     </div>
 
+
 <script>
 function addToCart(productId) {
     fetch('/cart/add', {

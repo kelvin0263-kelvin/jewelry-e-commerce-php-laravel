@@ -12,13 +12,23 @@ class CustomerController extends Controller
     /**
      * Display a listing of all customers.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Get all users who are not admins, along with a count of their orders
+        // Get all non-admin users, with optional search and pagination
+        $perPage = max(1, (int) $request->get('per_page', 20));
+        $search = trim((string) $request->get('q', ''));
+
         $customers = User::where('is_admin', false)
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
             ->withCount('orders')
             ->latest()
-            ->paginate(20); // Paginate the results
+            ->paginate($perPage)
+            ->withQueryString(); // Preserve query params across pagination
 
         return view('admin::customers.index', compact('customers'));
     }
@@ -26,30 +36,26 @@ class CustomerController extends Controller
     /**
      * Display the specified customer's details and order history.
      */
-    public function show(User $user)
+    public function show(User $customer)
     {
         // Eager load the user's orders and the products within those orders
-        $user->load(['orders.products']);
+        $customer->load(['orders.products']);
 
-        return view('admin::customers.show', ['customer' => $user]);
+        return view('admin::customers.show', ['customer' => $customer]);
     }
 
-    public function edit(User $user)
+    public function edit(User $customer)
     {
-        return view('admin::customers.edit', ['customer' => $user]);
+        return view('admin::customers.edit', ['customer' => $customer]);
     }
-    public function update(Request $request, User $user)
+    public function update(Request $request, User $customer)
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id, // Ensure email is unique, except for this user
-            'is_admin' => 'sometimes|boolean',
+            'email' => 'required|email|max:255|unique:users,email,' . $customer->id, // Ensure email is unique, except for this user
         ]);
 
-        // Handle the is_admin checkbox
-        $data['is_admin'] = $request->has('is_admin');
-
-        $user->update($data);
+        $customer->update($data);
 
         // Return JSON response for API calls
         if ($request->expectsJson()) {
@@ -57,16 +63,15 @@ class CustomerController extends Controller
                 'status' => 'success',
                 'message' => 'Customer updated successfully',
                 'data' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'is_admin' => $user->is_admin,
-                    'updated_at' => $user->updated_at
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'email' => $customer->email,
+                    'updated_at' => $customer->updated_at
                 ]
             ]);
         }
 
-        return redirect()->route('admin.customers.show', $user->id)->with('success', 'Customer updated successfully.');
+        return redirect()->route('admin.customers.show', $customer)->with('success', 'Customer updated successfully.');
     }
 
     /**

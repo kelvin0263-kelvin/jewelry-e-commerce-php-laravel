@@ -42,6 +42,7 @@ Route::view('/', 'home')->name('home');
 
 // Product catalog (read-only for customers)
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+// Place static routes BEFORE dynamic parameter routes to avoid capture
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
 // Product actions for customers (auth required)
