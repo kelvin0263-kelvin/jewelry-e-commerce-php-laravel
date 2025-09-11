@@ -200,20 +200,25 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('admin.customers.update');
     Route::get('/customers/segmentation', [ApiCustomerController::class, 'segmentation'])->name('admin.customers.segmentation');
 
-    // Inventory management
-    Route::prefix('inventory')
-        ->name('admin.inventory.')
-        ->controller(InventoryController::class)
-        ->group(function () {
-            Route::get('/dashboard', 'dashboard')->name('dashboard');
-            Route::get('/', 'index')->name('index');
-            Route::get('/create', 'create')->name('create');
-            Route::post('/', 'store')->name('store');
-            Route::get('/{inventory}/edit', 'edit')->name('edit');
-            Route::put('/{inventory}', 'update')->name('update');
-            Route::put('/{inventory}/toggle-status', 'toggleStatus')->name('toggleStatus');
-            Route::delete('/{inventory}', 'destroy')->name('destroy');
-        });
+
+// Inventory management
+
+// Inventory management with parameters
+Route::prefix('inventory')->name('admin.inventory.')->controller(InventoryController::class)->group(function () {
+    Route::get('/dashboard', 'dashboard')->name('dashboard');
+    Route::get('/', 'index')->name('index');
+    Route::get('/create', 'create')->name('create');
+    Route::post('/', 'store')->name('store');
+    Route::get('/{inventory}/edit', 'edit')->name('edit');
+    Route::put('/{inventory}', 'update')->name('update');
+    Route::put('/{inventory}/toggle-status', 'toggleStatus')->name('toggleStatus');
+    Route::delete('/{inventory}', 'destroy')->name('destroy');
+    Route::get('/list', 'list')->name('list');
+});
+
+
+
+
 
     // Product publishing workflow
     Route::prefix('product-management')->group(function () {
