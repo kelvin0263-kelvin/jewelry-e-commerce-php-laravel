@@ -9,6 +9,8 @@ use App\Modules\Product\Models\Product;
 use App\Modules\Inventory\Factories\InventoryItemFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\log;
+
 
 class InventoryController extends Controller
 {
@@ -114,13 +116,39 @@ public function store(Request $request)
         // ✅ Create main inventory
         $inventory = Inventory::create($data);
 
+        Log::info('Inventory created', [
+            'inventory_id' => $inventory->id,
+            'name' => $inventory->name,
+            'user_id' => auth()->id(),
+            'time' => now()->toDateTimeString(),
+        ]);
+
+
         // ✅ Handle variations
         if (!empty($data['variations'])) {
             foreach ($data['variations'] as $variation) {
                 $imagePath = null;
+
                 if (isset($variation['image_path']) && $variation['image_path'] instanceof \Illuminate\Http\UploadedFile) {
-                    $imagePath = $variation['image_path']->store('variations', 'public');
+                    $file = $variation['image_path'];
+
+                    // ✅ Secure: Check MIME type
+                    $allowedMimes = ['image/jpeg', 'image/png'];
+                    if (!in_array($file->getMimeType(), $allowedMimes)) {
+                        return back()->withInput()->with('error', 'Uploaded file must be a valid image (JPG, PNG).');
+                    }
+
+                    // ✅ Secure: Sanitize filename
+                    $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $file->getClientOriginalName());
+
+                    // Move the file
+                    $file->move(public_path('images'), $filename);
+
+                    // ✅ Save only relative path
+                    $imagePath = 'images/' . $filename;
                 }
+
+
 
                 // ✅ Generate SKU if missing
                 $sku = !empty($variation['sku']) ? strtoupper($variation['sku']) : null;
@@ -284,6 +312,14 @@ public function store(Request $request)
         // ------------------------
         $inventory->update($data);
 
+        Log::info('Inventory updated', [
+            'inventory_id' => $inventory->id,
+            'name' => $inventory->name,
+            'user_id' => auth()->id(),
+            'time' => now()->toDateTimeString(),
+        ]);
+
+
         // ------------------------
         // Update or create product (only sync when inventory is published)
         // ------------------------
@@ -321,14 +357,20 @@ public function store(Request $request)
         // ------------------------
         // Delete removed variations
         // ------------------------
-        if ($request->has('delete_variations') && !empty($request->delete_variations)) {
-            $variationsToDelete = InventoryVariation::whereIn('id', $request->delete_variations)->get();
-            foreach ($variationsToDelete as $variation) {
-                if ($variation->image_path) {
-                    Storage::disk('public')->delete($variation->image_path);
+        if ($request->has('variations')) {
+            foreach ($request->variations as $variationData) {
+                if (!empty($variationData['id']) && !empty($variationData['delete'])) {
+                    $variation = InventoryVariation::find($variationData['id']);
+                    if ($variation) {
+                        // Delete image
+                        if ($variation->image_path) {
+                            Storage::disk('public')->delete($variation->image_path);
+                        }
+                        // Delete from DB
+                        $variation->delete();
+                    }
                 }
             }
-            InventoryVariation::whereIn('id', $request->delete_variations)->delete();
         }
 
         // ------------------------
@@ -336,19 +378,48 @@ public function store(Request $request)
         // ------------------------
         if (!empty($data['variations'])) {
             foreach ($data['variations'] as $variation) {
-                $imagePath = null;
-                if (isset($variation['image_path']) && $variation['image_path'] instanceof \Illuminate\Http\UploadedFile) {
-                    $imagePath = $variation['image_path']->store('variations', 'public');
+                // If variation already exists, get it, else create a new one
+                $variationModel = isset($variation['id'])
+                    ? InventoryVariation::find($variation['id'])
+                    : new InventoryVariation(['inventory_id' => $inventory->id]);
+
+                 // ✅ Ensure SKU
+                if (!empty($variation['sku'])) {
+                    $sku = strtoupper(trim($variation['sku']));
+                } elseif (!empty($variation['id']) && $variationModel) {
+                    $sku = $variationModel->sku; // reuse existing SKU
+                } else {
+                    do {
+                        $sku = 'INV-' . strtoupper(substr(md5(uniqid('', true)), 0, 6));
+                    } while (InventoryVariation::where('sku', $sku)->exists());
                 }
 
-                $sku = !empty($variation['sku']) ? strtoupper($variation['sku']) : null;
-                if (!$sku) {
-                    do {
-                        $sku = 'INV-' . strtoupper(substr(md5(uniqid()), 0, 6));
-                    } while (
-                        InventoryVariation::where('sku', $sku)->exists()
-                    );
+                $imagePath = $variationModel->image_path ?? null;
+
+                if (isset($variation['image_path']) && $variation['image_path'] instanceof \Illuminate\Http\UploadedFile) {
+                    $file = $variation['image_path'];
+
+                    // ✅ Delete old image if it exists
+                    if (!empty($variationModel->image_path) && file_exists(public_path($variationModel->image_path))) {
+                        unlink(public_path($variationModel->image_path));
+                    }
+
+                    // ✅ Secure: Check MIME type
+                    $allowedMimes = ['image/jpeg', 'image/png'];
+                    if (!in_array($file->getMimeType(), $allowedMimes)) {
+                        return back()->withInput()->with('error', 'Uploaded file must be a valid image (JPG, PNG).');
+                    }
+
+                    // ✅ Secure: Sanitize filename
+                    $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $file->getClientOriginalName());
+
+                    // Move the file
+                    $file->move(public_path('images'), $filename);
+
+                    // Save new image path
+                    $imagePath = 'images/' . $filename;
                 }
+
 
                 $item = $inventory->createInventoryItem($variation);
 
@@ -392,7 +463,16 @@ public function store(Request $request)
      *  ========================================= */
     public function destroy($id)
     {
+        
+
         $inventory = Inventory::with('variations.product', 'product')->findOrFail($id);
+
+        Log::warning('Inventory deleted', [
+            'inventory_id' => $inventory->id,
+            'name' => $inventory->name,
+            'user_id' => auth()->id(),
+            'time' => now()->toDateTimeString(),
+        ]);
 
         if ($inventory->status === 'published') {
             return redirect()->route('admin.inventory.index')
@@ -558,6 +638,15 @@ public function store(Request $request)
             }
         }
 
+        Log::info('Inventory status changed', [
+            'inventory_id' => $inventory->id,
+            'name' => $inventory->name,
+            'new_status' => $inventory->status,
+            'user_id' => auth()->id(),
+            'time' => now()->toDateTimeString(),
+        ]);
+
+
         return redirect()->route('admin.inventory.index')
             ->with('success', "Inventory status updated to {$inventory->status}");
     }
@@ -585,5 +674,21 @@ public function dashboard()
         'totalVariations'
     ));
 }
+
+// InventoryController.php
+
+public function list()
+{
+    // Get only edited inventories
+    $inventories = Inventory::with('variations')
+        ->whereColumn('updated_at', '!=', 'created_at') // only edited
+        ->orderBy('updated_at', 'desc')
+        ->get();
+
+    // Pass data to Blade view
+    return view('inventory::admin.inventory.list', compact('inventories'));
+}
+
+
 
 }

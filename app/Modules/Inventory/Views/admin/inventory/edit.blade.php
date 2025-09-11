@@ -67,32 +67,11 @@
             <div id="type-specific-fields" class="mb-6">
                 <h3 class="text-lg font-semibold mb-4">Type-Specific Attributes</h3>
                 
-                <!-- Ring Fields -->
-                <div id="ring-fields" class="type-fields" style="display: none;">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block font-medium">Stone Type</label>
-                            <select name="stone_type" class="w-full border rounded p-2">
-                                <option value="">Select Stone Type</option>
-                                <option value="Diamond" {{ $inventory->stone_type == 'Diamond' ? 'selected' : '' }}>Diamond</option>
-                                <option value="Ruby" {{ $inventory->stone_type == 'Ruby' ? 'selected' : '' }}>Ruby</option>
-                                <option value="Sapphire" {{ $inventory->stone_type == 'Sapphire' ? 'selected' : '' }}>Sapphire</option>
-                                <option value="Emerald" {{ $inventory->stone_type == 'Emerald' ? 'selected' : '' }}>Emerald</option>
-                                <option value="Pearl" {{ $inventory->stone_type == 'Pearl' ? 'selected' : '' }}>Pearl</option>
-                                <option value="Amethyst" {{ $inventory->stone_type == 'Amethyst' ? 'selected' : '' }}>Amethyst</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block font-medium">Ring Size</label>
-                            <select name="ring_size" class="w-full border rounded p-2">
-                                <option value="">Select Ring Size</option>
-                                @for($i = 4; $i <= 10; $i++)
-                                    <option value="{{ $i }}" {{ $inventory->ring_size == $i ? 'selected' : '' }}>Size {{ $i }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                    </div>
-                </div>
+               <!-- Ring Fields (HIDDEN) -->
+            
+            <div id="ring-fields" class="type-fields hidden">
+                <p class="text-gray-500 italic">Ring attributes are managed per variation (size & stone type).</p>
+            </div>
 
                 <!-- Necklace Fields -->
                 <div id="necklace-fields" class="type-fields" style="display: none;">
@@ -176,40 +155,76 @@
                 <div id="variation-container" class="space-y-4">
                     @foreach($inventory->variations as $index => $variation)
                         <div class="variation-item border rounded-lg p-4 bg-gray-50 relative">
+                            <!-- Hidden ID so controller can detect existing record -->
                             <input type="hidden" name="variations[{{ $index }}][id]" value="{{ $variation->id }}">
-                            <!-- Hidden input for delete -->
-                            <input type="hidden" name="delete_variations[]" value="{{ $variation->id }}" class="delete-variation-id" disabled>
 
                             <div class="grid grid-cols-2 gap-4 mb-3">
                                 <div>
                                     <label class="block font-medium">SKU</label>
-                                    <input type="text" name="variations[{{ $index }}][sku]" value="{{ $variation->sku }}" class="w-full border rounded p-2 sku-input">
+                                    <input type="text" name="variations[{{ $index }}][sku]" 
+                                        value="{{ $variation->sku }}" 
+                                        class="w-full border rounded p-2 sku-input">
                                 </div>
                                 <div>
                                     <label class="block font-medium">Color</label>
-                                    <input type="text" name="variations[{{ $index }}][color]" value="{{ $variation->color }}" class="w-full border rounded p-2">
+                                    <input type="text" name="variations[{{ $index }}][color]" 
+                                        value="{{ $variation->color }}" 
+                                        class="w-full border rounded p-2">
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4 mb-3">
-                                <div>
-                                    <label class="block font-medium">Size</label>
-                                    <input type="text" name="variations[{{ $index }}][size]" value="{{ $variation->size }}" class="w-full border rounded p-2">
+                            <!-- Type-specific attributes repeated -->
+                            {{-- For Ring (dropdowns) --}}
+                            @if($inventory->type === 'RingItem')
+                                <div class="grid grid-cols-2 gap-4 mb-3">
+                                    <div>
+                                        <label class="block font-medium">Ring Size</label>
+                                        <select name="variations[{{ $index }}][size]" class="w-full border rounded p-2">
+                                            <option value="">Select Ring Size</option>
+                                            @for($i = 4; $i <= 10; $i++)
+                                                <option value="{{ $i }}" {{ $variation->size == $i ? 'selected' : '' }}>Size {{ $i }}</option>
+                                            @endfor
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium">Stone Type</label>
+                                        <select name="variations[{{ $index }}][material]" class="w-full border rounded p-2">
+                                            <option value="">Select Stone</option>
+                                            @foreach(['Diamond','Ruby','Sapphire','Emerald','Pearl','Amethyst'] as $stone)
+                                                <option value="{{ $stone }}" {{ $variation->material == $stone ? 'selected' : '' }}>{{ $stone }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block font-medium">Material</label>
-                                    <input type="text" name="variations[{{ $index }}][material]" value="{{ $variation->material }}" class="w-full border rounded p-2">
+
+                            {{-- For all other types (text inputs) --}}
+                            @else
+                                <div class="grid grid-cols-2 gap-4 mb-3">
+                                    <div>
+                                        <label class="block font-medium">Size</label>
+                                        <input type="text" name="variations[{{ $index }}][size]" value="{{ $variation->size }}" class="w-full border rounded p-2">
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium">Material</label>
+                                        <input type="text" name="variations[{{ $index }}][material]" value="{{ $variation->material }}" class="w-full border rounded p-2">
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
 
                             <div class="grid grid-cols-2 gap-4 mb-3">
                                 <div>
                                     <label class="block font-medium">Price (RM)</label>
-                                    <input type="number" step="0.01" name="variations[{{ $index }}][price]" value="{{ $variation->price }}" class="w-full border rounded p-2" readonly>
+                                    <input type="number" step="0.01" 
+                                        name="variations[{{ $index }}][price]" 
+                                        value="{{ $variation->price }}" 
+                                        class="w-full border rounded p-2">
                                 </div>
                                 <div>
                                     <label class="block font-medium">Stock</label>
-                                    <input type="number" name="variations[{{ $index }}][stock]" value="{{ $variation->stock }}" class="w-full border rounded p-2">
+                                    <input type="number" 
+                                        name="variations[{{ $index }}][stock]" 
+                                        value="{{ $variation->stock }}" 
+                                        class="w-full border rounded p-2">
                                 </div>
                             </div>
 
@@ -217,19 +232,28 @@
                                 <label class="block font-medium">Image</label>
                                 <input type="file" name="variations[{{ $index }}][image_path]" class="w-full border rounded p-2">
                                 @if($variation->image_path)
-                                    <img src="{{ asset('storage/' . $variation->image_path) }}" class="mt-2 w-20 h-20 object-cover rounded">
+                                    <img src="{{ asset('storage/' . $variation->image_path) }}" 
+                                        class="mt-2 w-24 h-24 object-cover rounded">
                                 @endif
                             </div>
 
-                            <button type="button" class="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded remove-variation">
+                            <!-- Delete marker -->
+                            <input type="hidden" name="variations[{{ $index }}][delete]" value="0" class="delete-variation-flag">
+
+                            <button type="button" 
+                                    class="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded remove-variation">
                                 Remove
                             </button>
                         </div>
                     @endforeach
                 </div>
+                
+
 
                 <!-- Add Variation Button -->
-                <button type="button" id="add-variation" class="mt-4 px-4 py-2 bg-green-600 text-white rounded">+ Add Variation</button>
+                <button type="button" id="add-variation" class="mt-4 px-4 py-2 bg-green-600 text-white rounded">
+                    + Add Variation
+                </button>
             </div>
 
             <!-- Submit Button -->
@@ -243,10 +267,10 @@ function showTypeSpecificFields() {
     const type = document.getElementById('type').value;
     const typeFields = document.querySelectorAll('.type-fields');
     
-    // Hide all type-specific fields
+    // Hide all
     typeFields.forEach(field => field.style.display = 'none');
     
-    // Show fields for selected type
+    // Show selected
     switch(type) {
         case 'RingItem':
             document.getElementById('ring-fields').style.display = 'block';
@@ -263,6 +287,7 @@ function showTypeSpecificFields() {
     }
 }
 
+
 // Show type-specific fields on page load
 document.addEventListener('DOMContentLoaded', function() {
     showTypeSpecificFields();
@@ -271,20 +296,36 @@ document.addEventListener('DOMContentLoaded', function() {
 document.getElementById('add-variation').addEventListener('click', function() {
     const container = document.getElementById('variation-container');
     const index = container.children.length;
+    const type = document.getElementById('type').value;
 
-    const template = `
-        <div class="variation-item border rounded-lg p-4 bg-gray-50 relative">
+    // Build type-specific fields dynamically
+    let typeSpecificFields = '';
+    if (type === 'RingItem') {
+        typeSpecificFields = `
             <div class="grid grid-cols-2 gap-4 mb-3">
                 <div>
-                    <label class="block font-medium">SKU</label>
-                    <input type="text" name="variations[${index}][sku]" class="w-full border rounded p-2 sku-input">
+                    <label class="block font-medium">Ring Size</label>
+                    <select name="variations[${index}][size]" class="w-full border rounded p-2">
+                        <option value="">Select Ring Size</option>
+                        ${[...Array(7)].map((_, i) => {
+                            const size = i + 4;
+                            return `<option value="${size}">Size ${size}</option>`;
+                        }).join('')}
+                    </select>
                 </div>
                 <div>
-                    <label class="block font-medium">Color</label>
-                    <input type="text" name="variations[${index}][color]" class="w-full border rounded p-2">
+                    <label class="block font-medium">Stone Type</label>
+                    <select name="variations[${index}][material]" class="w-full border rounded p-2">
+                        <option value="">Select Stone</option>
+                        ${['Diamond','Ruby','Sapphire','Emerald','Pearl','Amethyst'].map(stone =>
+                            `<option value="${stone}">${stone}</option>`
+                        ).join('')}
+                    </select>
                 </div>
             </div>
-
+        `;
+    } else {
+        typeSpecificFields = `
             <div class="grid grid-cols-2 gap-4 mb-3">
                 <div>
                     <label class="block font-medium">Size</label>
@@ -295,39 +336,80 @@ document.getElementById('add-variation').addEventListener('click', function() {
                     <input type="text" name="variations[${index}][material]" class="w-full border rounded p-2">
                 </div>
             </div>
+        `;
+    }
 
-            <div class="grid grid-cols-2 gap-4 mb-3">
-                <div>
-                    <label class="block font-medium">Price (RM)</label>
-                    <input type="number" step="0.01" name="variations[${index}][price]" class="w-full border rounded p-2">
-                </div>
-                <div>
-                    <label class="block font-medium">Stock</label>
-                    <input type="number" name="variations[${index}][stock]" class="w-full border rounded p-2">
-                </div>
+    // Final template
+    const template = `
+    <div class="variation-item border rounded-lg p-4 bg-gray-50 relative">
+        <input type="hidden" name="variations[${index}][delete]" value="0" class="delete-variation-flag">
+        
+        <div class="grid grid-cols-2 gap-4 mb-3">
+            <div>
+                <label class="block font-medium">SKU</label>
+                <input type="text" name="variations[${index}][sku]" class="w-full border rounded p-2 sku-input">
             </div>
-
-            <div class="mb-3">
-                <label class="block font-medium">Image</label>
-                <input type="file" name="variations[${index}][image_path]" class="w-full border rounded p-2">
+            <div>
+                <label class="block font-medium">Color</label>
+                <input type="text" name="variations[${index}][color]" class="w-full border rounded p-2">
             </div>
-
-            <button type="button" class="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded remove-variation">Remove</button>
         </div>
-    `;
+
+        ${typeSpecificFields}
+
+        <div class="grid grid-cols-2 gap-4 mb-3">
+            <div>
+                <label class="block font-medium">Price (RM)</label>
+                <input type="number" step="0.01" name="variations[${index}][price]" class="w-full border rounded p-2">
+            </div>
+            <div>
+                <label class="block font-medium">Stock</label>
+                <input type="number" name="variations[${index}][stock]" class="w-full border rounded p-2">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="block font-medium">Image</label>
+            <input type="file" name="variations[${index}][image_path]" class="w-full border rounded p-2">
+        </div>
+
+        <button type="button" class="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded remove-variation">
+            Remove
+        </button>
+    </div>
+`;
 
     container.insertAdjacentHTML('beforeend', template);
 });
 
-// Remove variation
+
 document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('remove-variation')) {
-        const variationItem = e.target.closest('.variation-item');
-        const hiddenInput = variationItem.querySelector('.delete-variation-id');
-        if (hiddenInput) hiddenInput.disabled = false; // will be sent to controller
-        variationItem.style.display = 'none';
+    // Look for remove button even if click inside icon/span
+    const btn = e.target.closest('.remove-variation');
+    if (!btn) return;
+
+    const variationItem = btn.closest('.variation-item');
+    if (!variationItem) return;
+
+    // Get the delete flag
+    const deleteFlag = variationItem.querySelector('input.delete-variation-flag');
+    if (!deleteFlag) {
+        console.error('Delete flag not found!');
+        return;
+    }
+
+    // Mark for deletion if existing, otherwise remove completely
+    const idField = variationItem.querySelector('input[name*="[id]"]');
+    if (idField) {
+        deleteFlag.value = 1; // mark for deletion
+        variationItem.style.display = 'none'; // hide visually
+    } else {
+        variationItem.remove(); // remove new variation completely
     }
 });
+
+
+
 
 // Prevent duplicate SKUs instantly
 document.addEventListener('input', function(e) {
@@ -343,6 +425,31 @@ document.addEventListener('input', function(e) {
                 skuValues.push(val);
             }
         });
+    }
+});
+
+document.addEventListener('change', function (e) {
+    // Check if the file input belongs to variations
+    if (e.target.matches('input[type="file"][name^="variations"]')) {
+        const fileInput = e.target;
+        const previewImg = fileInput.closest('div').querySelector('img');
+        const file = fileInput.files[0];
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                if (previewImg) {
+                    previewImg.src = event.target.result; // Update existing preview
+                } else {
+                    // If there’s no preview, create one
+                    const newImg = document.createElement('img');
+                    newImg.src = event.target.result;
+                    newImg.classList.add('w-12', 'h-12', 'rounded', 'border', 'object-cover', 'mt-2');
+                    fileInput.insertAdjacentElement('afterend', newImg);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
     }
 });
 </script>

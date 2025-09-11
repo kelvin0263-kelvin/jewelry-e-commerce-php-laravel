@@ -3,22 +3,28 @@
 @section('title', 'Inventory Management')
 
 @section('content')
+
 <div class="container mx-auto px-4 py-6">
     <div class="max-w-6xl mx-auto">
 
         <!-- Header -->
-        <div class="bg-white rounded-lg shadow-md mb-6">
-            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800">Inventory Management</h1>
-                    <p class="text-gray-600 mt-1">Manage all inventories and their variations here.</p>
-                </div>
-                <a href="{{ route('admin.inventory.create') }}"
-                   class="px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700">
+        <div class="bg-white rounded-lg shadow-md mb-6 p-6 border-b border-gray-200 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Edit Inventory</h1>
+
+            <div class="flex gap-2">
+                <a href="{{ route('admin.inventory.dashboard') }}" 
+                class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
+                    ← Back
+                </a>
+
+                <a href="{{ route('admin.inventory.create') }}" 
+                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                     + Add Inventory
                 </a>
             </div>
         </div>
+
+
 
         <!-- Flash Messages -->
         @if(session('success'))
@@ -116,12 +122,14 @@
                                                         <td class="px-3 py-2">{{ $var->stock }}</td>
                                                         <td class="px-3 py-2">RM{{ number_format($var->price, 2) }}</td>
                                                         <td class="px-3 py-2">
-                                                            @if($var->image_path)
-                                                                <img src="{{ asset('storage/' . $var->image_path) }}"
-                                                                     alt="Variation Image"
-                                                                     class="w-12 h-12 rounded border object-cover">
+                                                             @if($var->image_path)
+                                                                <img src="{{ asset($var->image_path) }}"
+                                                                    alt="Variation Image"
+                                                                    class="mt-2 w-20 h-20 rounded border object-cover">
                                                             @else
-                                                                <span class="text-gray-400 italic">No image</span>
+                                                                <img src="{{ asset('images/no-image.png') }}"
+                                                                    alt="No Image"
+                                                                    class="mt-2 w-20 h-20 rounded border object-cover">
                                                             @endif
                                                         </td>
                                                     </tr>
@@ -212,5 +220,30 @@ function confirmDelete(id) {
         document.getElementById('delete-form-' + id).submit();
     }
 }
+
+document.addEventListener('change', function (e) {
+    // Check if the file input belongs to variations
+    if (e.target.matches('input[type="file"][name^="variations"]')) {
+        const fileInput = e.target;
+        const previewImg = fileInput.closest('div').querySelector('img');
+        const file = fileInput.files[0];
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                if (previewImg) {
+                    previewImg.src = event.target.result; // Update existing preview
+                } else {
+                    // If there’s no preview, create one
+                    const newImg = document.createElement('img');
+                    newImg.src = event.target.result;
+                    newImg.classList.add('w-12', 'h-12', 'rounded', 'border', 'object-cover', 'mt-2');
+                    fileInput.insertAdjacentElement('afterend', newImg);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+});
 </script>
 @endsection
