@@ -59,6 +59,6 @@ class RegisterAdminController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('dashboard')->with('status', 'Admin registration successful!');
+        return redirect()->route('admin.dashboard')->with('status', 'Admin registration successful!');
     }
 }

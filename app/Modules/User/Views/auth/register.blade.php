@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.auth')
 @section('content')
     <div class="max-w-md mx-auto">
         <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Create your account</h1>

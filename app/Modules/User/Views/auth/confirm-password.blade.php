@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.auth')
 
 @section('content')
     <h2 class="text-2xl font-semibold text-black mb-4">{{ __('Confirm Your Password') }}</h2>

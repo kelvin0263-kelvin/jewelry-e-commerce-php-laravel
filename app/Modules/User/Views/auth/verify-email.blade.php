@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.auth')
 @section('content')
     <div class="mb-4 text-sm text-gray-700">
         {{ __('Thanks for signing up! Please verify your email address using the link we sent. If you didn\'t receive it, you can request another email below.') }}

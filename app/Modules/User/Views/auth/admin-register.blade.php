@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 @section('content')
     <div class="max-w-md mx-auto">
         <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Admin Registration</h1>
@@ -70,11 +70,11 @@
             </div>
 
             {{-- Actions --}}
-            <div class="flex items-center justify-between mt-6">
-                <a href="{{ route('login') }}" 
+            <div class="flex items-center justify-center mt-6">
+                {{-- <a href="{{ route('login') }}" 
                    class="px-5 py-2 rounded-xl bg-black text-white text-sm font-medium shadow-md hover:bg-gray-800 transition-all duration-300">
                     Back to login
-                </a>
+                </a> --}}
                 <button type="submit" 
                     class="px-6 py-3 rounded-xl bg-black text-white font-semibold shadow-md hover:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-400 transition-all duration-300">
                     Register Admin
