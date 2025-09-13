@@ -38,3 +38,13 @@ if (file_exists(app_path('Modules/Inventory/Routes/api.php'))) {
 if (file_exists(app_path('Modules/Product/Routes/api.php'))) {
     include app_path('Modules/Product/Routes/api.php');
 }
+
+// Cart API routes
+if (file_exists(app_path('Modules/Cart/Routes/api.php'))) {
+    include app_path('Modules/Cart/Routes/api.php');
+}
+
+// Order API routes
+if (file_exists(app_path('Modules/Order/Routes/api.php'))) {
+    include app_path('Modules/Order/Routes/api.php');
+}

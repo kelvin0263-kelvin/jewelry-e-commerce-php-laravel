@@ -4,6 +4,7 @@ namespace App\Modules\Order\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Order\Models\Order;
+use App\Modules\Inventory\Models\InventoryVariation;
 use Illuminate\Support\Facades\Auth;
 
 class OrderItemController extends Controller
@@ -23,14 +24,23 @@ class OrderItemController extends Controller
     public function createItems($order, $cartItems)
     {
         foreach ($cartItems as $item) {
+            $unitPrice = $item->product->discount_price ?? $item->product->selling_price;
+
+            // Save the order item
             $order->items()->create([
                 'product_id' => $item->product_id,
                 'quantity' => $item->quantity,
-                'price' => $item->product->price,
-                'subtotal' => $item->product->price * $item->quantity,
+                'price' => $unitPrice,
+                'subtotal' => $unitPrice * $item->quantity,
             ]);
+
+            // ✅ Reduce stock (check variation first, then inventory)
+            if ($item->product->variation) {
+                $item->product->variation->decrement('stock', $item->quantity);
+            } elseif ($item->product->inventory) {
+                $item->product->inventory->decrement('quantity', $item->quantity);
+            }
         }
     }
-}
 
-?>
+}

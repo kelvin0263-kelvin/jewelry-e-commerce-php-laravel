@@ -49,10 +49,13 @@
                                 @foreach($cartItems as $item)
                                     <tr class="hover:bg-gray-50">
                                         <td class="p-3 font-medium text-gray-900">{{ $item->product->name }}</td>
-                                        <td class="p-3 text-gray-700">RM {{ number_format($item->product->price, 2) }}</td>
+                                        @php
+                                            $unitPrice = $item->product->discount_price ?? $item->product->selling_price;
+                                        @endphp
+                                        <td class="p-3 text-gray-700">RM {{ number_format($unitPrice, 2) }}</td>
                                         <td class="p-3 text-gray-700">{{ $item->quantity }}</td>
                                         <td class="p-3 font-semibold text-green-600">
-                                            RM {{ number_format($item->product->price * $item->quantity, 2) }}
+                                            RM {{ number_format($unitPrice * $item->quantity, 2) }}
                                         </td>
                                     </tr>
                                 @endforeach
@@ -164,7 +167,7 @@
                                 Total: RM <span id="totalDisplay">{{ number_format($total, 2) }}</span>
                             </h2>
                             <p id="originalPrice" class="text-sm text-red-500 line-through hidden">
-                                Original Price: RM <span id="originalPriceValue"></span>
+                                Original Price: RM <span id="originalPriceValue" class="line-through"></span>
                             </p>
                         </div>
                         <button type="submit" onclick="return confirmOrder()"

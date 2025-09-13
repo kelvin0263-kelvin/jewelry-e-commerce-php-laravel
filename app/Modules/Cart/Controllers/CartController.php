@@ -32,12 +32,45 @@ class CartController extends Controller
     // Add product to cart
     public function add($productId)
     {
+        // Load product + relations we'll need
+        $product = Product::with(['variation', 'inventory.variations'])->findOrFail($productId);
+
+        // Determine available stock (variation first, then inventory)
+        $availableStock = 0;
+        if ($product->variation) {
+            $availableStock = (int) ($product->variation->stock ?? 0);
+        } elseif ($product->inventory) {
+            $inventory = $product->inventory;
+            if ($inventory->relationLoaded('variations') && $inventory->variations->count() > 0) {
+                $availableStock = (int) $inventory->variations->sum('stock');
+            } else {
+                $availableStock = (int) ($inventory->quantity ?? 0);
+            }
+        }
+
+        // Find existing cart item
         $cartItem = CartItem::where('user_id', Auth::id())
             ->where('product_id', $productId)
             ->first();
 
+        $currentQty = $cartItem ? (int) $cartItem->quantity : 0;
+        $newQty = $currentQty + 1;
+
+        // If nothing available
+        if ($availableStock <= 0) {
+            return redirect()->route('products.index')
+                ->withErrors(['cart' => "Sorry — {$product->name} is out of stock."]);
+        }
+
+        // Check against stock
+        if ($newQty > $availableStock) {
+            return redirect()->route('products.index')
+                ->withErrors(['cart' => "Cannot add more than {$availableStock} item(s) of {$product->name} to your cart."]);
+        }
+
+        // Safe to add
         if ($cartItem) {
-            $cartItem->increment('quantity'); // add 1
+            $cartItem->increment('quantity', 1);
         } else {
             CartItem::create([
                 'user_id' => Auth::id(),
@@ -46,13 +79,13 @@ class CartController extends Controller
             ]);
         }
 
-        return redirect()->route('cart.index');
+        return redirect()->route('cart.index')->with('success', "{$product->name} added to cart.");
     }
 
     // Update quantity
     public function update(Request $request, $id)
     {
-        $cartItem = CartItem::with('product.inventory.variations')->findOrFail($id);
+        $cartItem = CartItem::with('product.variation', 'product.inventory')->findOrFail($id);
 
         $request->validate([
             'quantity' => 'required|integer|min:0',
@@ -61,19 +94,18 @@ class CartController extends Controller
         $newQuantity = (int) $request->input('quantity');
         $product = $cartItem->product;
 
-        if (!$product || !$product->inventory) {
+        if (!$product) {
             return redirect()->route('cart.index')
-                ->withErrors(['cart' => 'Inventory not found for this product.']);
+                ->withErrors(['cart' => 'Product not found.']);
         }
 
-        $inventory = $product->inventory;
-
-        // ✅ Decide whether to use variation stock or inventory stock
-        if ($inventory->variations()->exists()) {
-            // If variations exist, sum their stock or pick the relevant variation
-            $availableStock = $inventory->variations->sum('stock');
+        // ✅ Get available stock (variation-specific or inventory stock)
+        if ($product->variation) {
+            $availableStock = $product->variation->stock ?? 0;
+        } elseif ($product->inventory) {
+            $availableStock = $product->inventory->quantity ?? 0;
         } else {
-            $availableStock = $inventory->quantity ?? 0;
+            $availableStock = 0;
         }
 
         // If quantity is zero, remove the cart item
@@ -98,6 +130,7 @@ class CartController extends Controller
     }
 
 
+
     // Remove item from cart
     public function remove($id)
     {
@@ -119,7 +152,10 @@ class CartController extends Controller
     {
         $cartItems = CartItem::where('user_id', Auth::id())->with('product')->get();
 
-        $total = $cartItems->sum(fn($item) => $item->product->price * $item->quantity);
+        $total = $cartItems->sum(function ($item) {
+            $unitPrice = $item->product->discount_price ?? $item->product->selling_price;
+            return $unitPrice * $item->quantity;
+        });
 
         return view('cart::checkout', compact('cartItems', 'total')); // loads Views/checkout.blade.php
 
@@ -161,7 +197,10 @@ class CartController extends Controller
         $validated = $request->validate($rules);
 
         // Calculate subtotal
-        $subtotal = $cartItems->sum(fn($item) => $item->product->price * $item->quantity);
+        $subtotal = $cartItems->sum(function ($item) {
+            $unitPrice = $item->product->discount_price ?? $item->product->selling_price;
+            return $unitPrice * $item->quantity;
+        });
 
         $shippingStrategy = $request->shipping === 'fast' ? new FastDelivery() : new NormalDelivery();
         $shippingCost = $shippingStrategy->getCost($subtotal);

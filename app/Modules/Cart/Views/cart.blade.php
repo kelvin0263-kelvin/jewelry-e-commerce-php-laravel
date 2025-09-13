@@ -2,7 +2,25 @@
 
 @section('title', 'My Shopping Bag')
 
+
 @section('content')
+    @if ($errors->any())
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+            <strong class="font-bold">Oops!</strong>
+            <ul class="mt-2 list-disc list-inside">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @if (session('success'))
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
+            {{ session('success') }}
+        </div>
+    @endif
+
     <div class="py-12">
         <div class="max-w-6xl mx-auto px-6 lg:px-8">
 
@@ -27,7 +45,12 @@
                                     <td class="p-4 flex items-center space-x-4">
                                         <span class="font-medium text-gray-900">{{ $item->product->name }}</span>
                                     </td>
-                                    <td class="p-4 text-gray-700">RM {{ number_format($item->product->price, 2) }}</td>
+                                    @php
+                                        $unitPrice = $item->product->discount_price ?? $item->product->selling_price;
+                                    @endphp
+                                    <td class="p-4 text-gray-700">
+                                        RM {{ number_format($unitPrice, 2) }}
+                                    </td>
                                     <td class="p-4">
                                         <div class="flex items-center justify-center space-x-3">
                                             <!-- Minus -->
@@ -44,27 +67,28 @@
 
                                             <!-- Plus -->
                                             @php
-                                                $inventory = $item->product->inventory;
-                                                $availableStock = $inventory
-                                                    ? ($inventory->variations->count() > 0 ? $inventory->variations->sum('stock') : $inventory->quantity)
-                                                    : null;
+                                                // ✅ Check variation-specific stock first, then fallback to inventory stock
+                                                if ($item->product->variation) {
+                                                    $availableStock = $item->product->variation->stock ?? 0;
+                                                } elseif ($item->product->inventory) {
+                                                    $availableStock = $item->product->inventory->quantity ?? 0;
+                                                } else {
+                                                    $availableStock = 0;
+                                                }
                                             @endphp
-
                                             <form action="{{ route('cart.update', $item->id) }}" method="POST" class="inline">
                                                 @csrf
                                                 <input type="hidden" name="quantity" value="{{ $item->quantity + 1 }}">
-                                                <button
-                                                    type="submit"
-                                                    @if($availableStock !== null && $item->quantity >= $availableStock) disabled @endif
+                                                <button type="submit" @if($availableStock !== null && $item->quantity >= $availableStock) disabled @endif
                                                     class="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-gray-700
-                                                        @if($availableStock !== null && $item->quantity >= $availableStock) opacity-50 cursor-not-allowed hover:bg-gray-200 @endif">
+                                                                                @if($availableStock !== null && $item->quantity >= $availableStock) opacity-50 cursor-not-allowed hover:bg-gray-200 @endif">
                                                     +
                                                 </button>
                                             </form>
                                         </div>
                                     </td>
                                     <td class="p-4 font-semibold text-green-600">
-                                        RM {{ number_format($item->product->price * $item->quantity, 2) }}
+                                        RM {{ number_format($unitPrice * $item->quantity, 2) }}
                                     </td>
                                     <td class="p-4 text-center">
                                         <form action="{{ route('cart.remove', $item->id) }}" method="POST"
