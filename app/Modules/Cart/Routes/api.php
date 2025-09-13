@@ -1,14 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Modules\Cart\Controllers\CartController;
+use App\Modules\Cart\Controllers\CartApiController;
 
-Route::middleware('auth:sanctum')->prefix('cart')->group(function () {
-    Route::get('/', [CartController::class, 'index']);            // GET /api/cart
-    Route::post('/add/{productId}', [CartController::class, 'add']);
-    Route::put('/update/{id}', [CartController::class, 'update']);
-    Route::delete('/remove/{id}', [CartController::class, 'remove']);
-    Route::delete('/clear', [CartController::class, 'clear']);
-    Route::get('/checkout', [CartController::class, 'checkout']);
-    Route::post('/place-order', [CartController::class, 'placeOrder']);
+Route::prefix('cart')->group(function () {
+    Route::get('/', [CartApiController::class, 'index']);            // GET /api/cart
+    Route::post('/add/{productId}', [CartApiController::class, 'add']);  // POST /api/cart/add/{productId}
+    Route::put('/update/{id}', [CartApiController::class, 'update']);    // PUT /api/cart/update/{id}
+    Route::delete('/remove/{id}', [CartApiController::class, 'remove']); // DELETE /api/cart/remove/{id}
+    Route::delete('/clear', [CartApiController::class, 'clear']);        // DELETE /api/cart/clear
+    Route::get('/checkout', [CartApiController::class, 'checkout']);     // GET /api/cart/checkout
+    Route::post('/place-order', [CartApiController::class, 'placeOrder']); // POST /api/cart/place-order
 });

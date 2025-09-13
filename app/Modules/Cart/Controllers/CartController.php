@@ -32,112 +32,60 @@ class CartController extends Controller
     // Add product to cart
     public function add(Request $request, $productId = null)
     {
-        // Handle both GET and POST requests
-        if ($request->isMethod('post')) {
-            $data = $request->validate([
-                'product_id' => 'required|integer',
-                'quantity' => 'required|integer|min:1',
-                'price' => 'nullable|numeric|min:0'
-            ]);
-            
-            $productId = $data['product_id'];
-            $quantity = $data['quantity'];
-            $price = $data['price'] ?? null;
-        } else {
-            $quantity = 1;
-            $price = null;
-        }
+        // Load product + relations we'll need
+        $product = Product::with(['variation', 'inventory.variations'])->findOrFail($productId);
 
-        // Get the product with inventory information
-        $product = \App\Modules\Product\Models\Product::with('inventory.variations')->find($productId);
-        
-        if (!$product || !$product->inventory) {
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'Product not found or inventory not available.']);
-            }
-            return redirect()->back()->withErrors(['cart' => 'Product not found or inventory not available.']);
-        }
-
-        $inventory = $product->inventory;
-
-        // Calculate available stock
+        // Determine available stock (variation first, then inventory)
         $availableStock = 0;
-        if ($inventory->variations()->exists()) {
-            // If variations exist, sum their stock
-            $availableStock = $inventory->variations->sum('stock');
-        } else {
-            $availableStock = $inventory->quantity ?? 0;
-        }
-
-        // Check if product is out of stock
-        if ($availableStock <= 0) {
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'This product is currently out of stock.']);
+        if ($product->variation) {
+            $availableStock = (int) ($product->variation->stock ?? 0);
+        } elseif ($product->inventory) {
+            $inventory = $product->inventory;
+            if ($inventory->relationLoaded('variations') && $inventory->variations->count() > 0) {
+                $availableStock = (int) $inventory->variations->sum('stock');
+            } else {
+                $availableStock = (int) ($inventory->quantity ?? 0);
             }
-            return redirect()->back()->withErrors(['cart' => 'This product is currently out of stock.']);
         }
 
-        // Check if requested quantity exceeds available stock
-        if ($quantity > $availableStock) {
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => "Only {$availableStock} item(s) available in stock."]);
-            }
-            return redirect()->back()->withErrors(['cart' => "Only {$availableStock} item(s) available in stock."]);
-        }
-
-        // Check existing cart item
+        // Find existing cart item
         $cartItem = CartItem::where('user_id', Auth::id())
             ->where('product_id', $productId)
             ->first();
 
+        $currentQty = $cartItem ? (int) $cartItem->quantity : 0;
+        $newQty = $currentQty + 1;
+
+        // If nothing available
+        if ($availableStock <= 0) {
+            return redirect()->route('products.index')
+                ->withErrors(['cart' => "Sorry — {$product->name} is out of stock."]);
+        }
+
+        // Check against stock
+        if ($newQty > $availableStock) {
+            return redirect()->route('products.index')
+                ->withErrors(['cart' => "Cannot add more than {$availableStock} item(s) of {$product->name} to your cart."]);
+        }
+
+        // Safe to add
         if ($cartItem) {
-            // Check if adding this quantity would exceed stock
-            $newTotalQuantity = $cartItem->quantity + $quantity;
-            if ($newTotalQuantity > $availableStock) {
-                if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'message' => "Cannot add {$quantity} more items. Only " . ($availableStock - $cartItem->quantity) . " more available."]);
-                }
-                return redirect()->back()->withErrors(['cart' => "Cannot add {$quantity} more items. Only " . ($availableStock - $cartItem->quantity) . " more available."]);
-            }
-            
-            $cartItem->increment('quantity', $quantity);
+            $cartItem->increment('quantity', 1);
         } else {
-            try {
-                $finalPrice = $price ?? $product->selling_price ?? $product->price;
-                
-                if (!$finalPrice || $finalPrice <= 0) {
-                    if ($request->expectsJson()) {
-                        return response()->json(['success' => false, 'message' => 'Invalid product price.']);
-                    }
-                    return redirect()->back()->withErrors(['cart' => 'Invalid product price.']);
-                }
-                
-                CartItem::create([
-                    'user_id' => Auth::id(),
-                    'product_id' => $productId,
-                    'quantity' => $quantity,
-                    'price' => $finalPrice,
-                ]);
-            } catch (\Exception $e) {
-                \Log::error('Cart creation error: ' . $e->getMessage());
-                if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'message' => 'Failed to add product to cart. Please try again.']);
-                }
-                return redirect()->back()->withErrors(['cart' => 'Failed to add product to cart. Please try again.']);
-            }
+            CartItem::create([
+                'user_id' => Auth::id(),
+                'product_id' => $productId,
+                'quantity' => 1,
+            ]);
         }
 
-        if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'message' => 'Product added to cart successfully!']);
-        }
-
-        return redirect()->route('cart.index')->with('success', 'Product added to cart successfully!');
+        return redirect()->route('cart.index')->with('success', "{$product->name} added to cart.");
     }
 
     // Update quantity
     public function update(Request $request, $id)
     {
-        $cartItem = CartItem::with('product.inventory.variations')->findOrFail($id);
+        $cartItem = CartItem::with('product.variation', 'product.inventory')->findOrFail($id);
 
         $request->validate([
             'quantity' => 'required|integer|min:0',
@@ -146,19 +94,18 @@ class CartController extends Controller
         $newQuantity = (int) $request->input('quantity');
         $product = $cartItem->product;
 
-        if (!$product || !$product->inventory) {
+        if (!$product) {
             return redirect()->route('cart.index')
-                ->withErrors(['cart' => 'Inventory not found for this product.']);
+                ->withErrors(['cart' => 'Product not found.']);
         }
 
-        $inventory = $product->inventory;
-
-        // ✅ Decide whether to use variation stock or inventory stock
-        if ($inventory->variations()->exists()) {
-            // If variations exist, sum their stock or pick the relevant variation
-            $availableStock = $inventory->variations->sum('stock');
+        // ✅ Get available stock (variation-specific or inventory stock)
+        if ($product->variation) {
+            $availableStock = $product->variation->stock ?? 0;
+        } elseif ($product->inventory) {
+            $availableStock = $product->inventory->quantity ?? 0;
         } else {
-            $availableStock = $inventory->quantity ?? 0;
+            $availableStock = 0;
         }
 
         // If quantity is zero, remove the cart item
@@ -183,6 +130,7 @@ class CartController extends Controller
     }
 
 
+
     // Remove item from cart
     public function remove($id)
     {
@@ -204,7 +152,10 @@ class CartController extends Controller
     {
         $cartItems = CartItem::where('user_id', Auth::id())->with('product')->get();
 
-        $total = $cartItems->sum(fn($item) => $item->product->price * $item->quantity);
+        $total = $cartItems->sum(function ($item) {
+            $unitPrice = $item->product->discount_price ?? $item->product->selling_price;
+            return $unitPrice * $item->quantity;
+        });
 
         return view('cart::checkout', compact('cartItems', 'total')); // loads Views/checkout.blade.php
 
@@ -246,7 +197,10 @@ class CartController extends Controller
         $validated = $request->validate($rules);
 
         // Calculate subtotal
-        $subtotal = $cartItems->sum(fn($item) => $item->product->price * $item->quantity);
+        $subtotal = $cartItems->sum(function ($item) {
+            $unitPrice = $item->product->discount_price ?? $item->product->selling_price;
+            return $unitPrice * $item->quantity;
+        });
 
         $shippingStrategy = $request->shipping === 'fast' ? new FastDelivery() : new NormalDelivery();
         $shippingCost = $shippingStrategy->getCost($subtotal);

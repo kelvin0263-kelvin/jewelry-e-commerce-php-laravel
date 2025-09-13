@@ -447,6 +447,16 @@
 @endpush
 
 @section('content')
+    @if ($errors->any())
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+            <strong class="font-bold">Oops!</strong>
+            <ul class="mt-2 list-disc list-inside">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 <div class="products-container">
     <div class="products-header">
         <h1 class="products-title">Our Products</h1>
@@ -510,24 +520,14 @@
                             <a href="{{ route('products.show', $product->product->id) }}" class="view-details-btn">
                                 View Details
                             </a>
-                            @php
-                                $totalStock = 0;
-                                if ($product->product->inventory && $product->product->inventory->variations) {
-                                    $totalStock = $product->product->inventory->variations->sum('stock');
-                                } elseif ($product->product->variation) {
-                                    $totalStock = $product->product->variation->stock ?? 0;
-                                }
-                            @endphp
-                            
-                            @if($totalStock > 0)
-                                <button class="add-to-cart-btn" onclick="addToCart({{ $product->product->id }})">
-                                    Add to Cart
-                                </button>
-                            @else
-                                <button class="add-to-cart-btn no-stock-btn" disabled>
-                                    No Stock Now
-                                </button>
-                            @endif
+                           <form action="{{ route('cart.add', $product->product->id) }}" method="POST"
+                                    class="inline add-to-cart-form"
+                                    data-stock="{{ $product->variation->stock ?? $product->inventory->quantity ?? 0 }}">
+                                    @csrf
+                                    <button type="submit" class="add-to-cart-btn">
+                                        Add to Bag
+                                    </button>
+                                </form>
                         </div>
                     </div>
                 </div>
@@ -558,51 +558,45 @@
     @endif
     </div>
 
-<!-- Floating Action Buttons -->
-<div class="floating-buttons">
-    <a href="{{ route('wishlist.index') }}" class="floating-btn wishlist-btn" title="View Wishlist">
-        <i class="fas fa-heart"></i>
-        <span>Wishlist</span>
-    </a>
-    <a href="{{ route('cart.index') }}" class="floating-btn bag-btn" title="View Cart">
-        <i class="fas fa-shopping-bag"></i>
-        <span>BAG</span>
-    </a>
+    <!-- Floating Action Buttons -->
+    <div class="floating-buttons">
+        <a href="{{ route('wishlist.index') }}" class="floating-btn wishlist-btn" title="View Wishlist">
+            <i class="fas fa-heart"></i>
+            <span>Wishlist</span>
+        </a>
+        <a href="{{ route('cart.index') }}" class="floating-btn bag-btn" title="View Cart">
+            <i class="fas fa-shopping-bag"></i>
+            <span>BAG</span>
+        </a>
     </div>
 
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const forms = document.querySelectorAll('.add-to-cart-form');
 
-<script>
-function addToCart(productId) {
-    // Check if the button is disabled (out of stock)
-    const button = event.target;
-    if (button.disabled || button.classList.contains('no-stock-btn')) {
-        alert('This product is currently out of stock.');
-        return;
-    }
-    
-    fetch('/cart/add', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            product_id: productId,
-            quantity: 1
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Product added to cart successfully!');
-        } else {
-            alert('Error: ' + (data.message || 'Failed to add product to cart'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-    });
-}
-</script>
+                forms.forEach(form => {
+                    form.addEventListener('submit', function (e) {
+                        const stock = parseInt(this.dataset.stock, 10);
+
+                        // For now assume add-to-bag = +1 item
+                        const qtyToAdd = 1;
+
+                        if (stock <= 0) {
+                            e.preventDefault();
+                            alert("⚠️ Sorry, this product is out of stock!");
+                            return false;
+                        }
+
+                        // If stock is limited, check
+                        if (qtyToAdd > stock) {
+                            e.preventDefault();
+                            alert("⚠️ You cannot add more than available stock (" + stock + ").");
+                            return false;
+                        }
+                    });
+                });
+            });
+        </script>
+    @endpush
 @endsection

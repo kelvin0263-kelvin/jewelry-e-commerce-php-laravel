@@ -3,228 +3,229 @@
 @section('title', $decoratedProduct->product->name)
 
 @push('styles')
-<style>
-    /* 完全按照图片设计 */
-    .product-page {
-        background-color: #faf8f5;
-        min-height: 100vh;
-        font-family: 'Arial', sans-serif;
-        padding: 1rem;
-    }
-    
-    .product-layout {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 40px;
-        max-width: 800px;
-        margin: 0 auto;
-        overflow-wrap: break-word;
-        word-wrap: break-word;
-    }
-    
-    @media (min-width: 1024px) {
+    <style>
+        /* 完全按照图片设计 */
+        .product-page {
+            background-color: #faf8f5;
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+            padding: 1rem;
+        }
+
         .product-layout {
-            grid-template-columns: 1fr 1fr;
+            display: grid;
+            grid-template-columns: 1fr;
             gap: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
         }
-    }
-    
-    .image-section {
-        width: 100%;
-    }
-    
-    .content-section {
-        width: 100%;
-        padding-left: 0;
-        overflow-wrap: break-word;
-        word-wrap: break-word;
-        word-break: break-all;
-        max-width: 100%;
-        overflow: hidden;
-    }
-    
-    @media (min-width: 1024px) {
+
+        @media (min-width: 1024px) {
+            .product-layout {
+                grid-template-columns: 1fr 1fr;
+                gap: 40px;
+            }
+        }
+
+        .image-section {
+            width: 100%;
+        }
+
         .content-section {
-            padding-left: 0px;
+            width: 100%;
+            padding-left: 0;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-all;
+            max-width: 100%;
+            overflow: hidden;
         }
-    }
-    
-    .main-image-container {
-        position: relative;
-        background-color: #f5f3f0;
-        border-radius: 12px;
-        overflow: hidden;
-        aspect-ratio: 1;
-    }
-    
-    
-    .product-title {
-        font-size: 1.5rem;
-        font-weight: 400;
-        color: #2c2c2c;
-        margin: 0 0 1rem 0;
-        line-height: 1.2;
-        font-family: 'Times New Roman', serif;
-        letter-spacing: 0.3px;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        word-break: break-all;
-        hyphens: auto;
-        max-width: 100%;
-        overflow: hidden;
-    }
-    
-    .title-container {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        margin-bottom: 1rem;
-    }
-    
-    .starburst-icon {
-        width: 18px;
-        height: 18px;
-        background: #f0f0f0;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-top: 8px;
-        flex-shrink: 0;
-    }
-    
-    .starburst-icon::before {
-        content: '✦';
-        font-size: 10px;
-        color: #999;
-    }
-    
-    .price-display {
-        font-size: 1.3rem;
-        font-weight: 600;
-        color: #2c2c2c;
-        margin: 0 0 1.5rem 0;
-    }
-    
-    .marketing-description {
-        background: transparent;
-        padding: 0;
-        margin-bottom: 1.5rem;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        word-break: break-all;
-        hyphens: auto;
-        overflow: hidden;
-        max-width: 100%;
-    }
-    
-    .marketing-description p {
-        font-size: 0.85rem;
-        color: #666;
-        margin-bottom: 0.2rem;
-        line-height: 1.3;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        word-break: break-all;
-        hyphens: auto;
-        max-width: 100%;
-        white-space: pre-wrap;
-        overflow: hidden;
-    }
-    
-    
-    .product-features {
-        margin-bottom: 1.5rem;
-    }
-    
-    .features-label {
-        font-size: 0.85rem;
-        color: #666;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-    }
-    
-    .features-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.3rem;
-    }
-    
-    .feature-item {
-        font-size: 0.85rem;
-        color: #666;
-        line-height: 1.4;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        word-break: break-all;
-    }
-    
-    /* SKU Selection Styles */
-    .sku-image-selection {
-        margin-bottom: 1.5rem;
-    }
-    
-    .sku-image-options {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 10px;
-    }
-    
-    .sku-image-option {
-        position: relative;
-        cursor: pointer;
-        border: 2px solid transparent;
-        border-radius: 8px;
-        padding: 5px;
-        transition: all 0.3s ease;
-        width: 60px;
-        height: 60px;
-    }
-    
-    .sku-image-option:hover {
-        border-color: #ddd;
-    }
-    
-    .sku-image-option.selected {
-        border-color: #333;
-    }
-    
-    .sku-image-option.disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-    
-    .sku-image-container {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        border-radius: 4px;
-        overflow: hidden;
-    }
-    
-    .sku-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    
-    .out-of-stock-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.7);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 8px;
-        text-align: center;
-        line-height: 1.2;
-    }
+
+        @media (min-width: 1024px) {
+            .content-section {
+                padding-left: 0px;
+            }
+        }
+
+        .main-image-container {
+            position: relative;
+            background-color: #f5f3f0;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 1;
+        }
+
+
+        .product-title {
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: #2c2c2c;
+            margin: 0 0 1rem 0;
+            line-height: 1.2;
+            font-family: 'Times New Roman', serif;
+            letter-spacing: 0.3px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-all;
+            hyphens: auto;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .title-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .starburst-icon {
+            width: 18px;
+            height: 18px;
+            background: #f0f0f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+
+        .starburst-icon::before {
+            content: '✦';
+            font-size: 10px;
+            color: #999;
+        }
+
+        .price-display {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c2c2c;
+            margin: 0 0 1.5rem 0;
+        }
+
+        .marketing-description {
+            background: transparent;
+            padding: 0;
+            margin-bottom: 1.5rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-all;
+            hyphens: auto;
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        .marketing-description p {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.2rem;
+            line-height: 1.3;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-all;
+            hyphens: auto;
+            max-width: 100%;
+            white-space: pre-wrap;
+            overflow: hidden;
+        }
+
+
+        .product-features {
+            margin-bottom: 1.5rem;
+        }
+
+        .features-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .features-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .feature-item {
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-all;
+        }
+
+        /* SKU Selection Styles */
+        .sku-image-selection {
+            margin-bottom: 1.5rem;
+        }
+
+        .sku-image-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .sku-image-option {
+            position: relative;
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 5px;
+            transition: all 0.3s ease;
+            width: 60px;
+            height: 60px;
+        }
+
+        .sku-image-option:hover {
+            border-color: #ddd;
+        }
+
+        .sku-image-option.selected {
+            border-color: #333;
+        }
+
+        .sku-image-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .sku-image-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .sku-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+
+        .out-of-stock-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
         hyphens: auto;
         max-width: 100%;
         overflow: hidden;
@@ -934,35 +935,35 @@
 @endpush
 
 @section('content')
-<div class="product-page">
-    <div class="container mx-auto px-4 py-8">
-        @php
-            $data = $decoratedProduct->getDecoratedData();
-        @endphp
-        
-        <div class="product-layout">
-            <!-- Product Images Section -->
-            <div class="image-section">
-                   <!-- Main Product Image -->
-                   <div class="main-image-container">
-                       <img src="{{ $data['main_image'] }}" alt="{{ $data['name'] }}" 
-                            class="w-full h-full object-cover" id="mainImage">
-                   </div>
-                
-                <!-- Thumbnail Gallery -->
-                @if(count($data['gallery_images']) > 1)
-                    <div class="thumbnail-gallery">
-                        <div class="flex gap-2 overflow-hidden" id="thumbnailContainer">
-                            @foreach($data['gallery_images'] as $index => $image)
-                                <div class="thumbnail {{ $index === 0 ? 'active' : '' }}" 
-                                     onclick="changeMainImage('{{ $image }}', this)">
-                                    <img src="{{ $image }}" alt="{{ $data['name'] }} - Image {{ $index + 1 }}">
-                                </div>
-                            @endforeach
-                        </div>
+    <div class="product-page">
+        <div class="container mx-auto px-4 py-8">
+            @php
+                $data = $decoratedProduct->getDecoratedData();
+            @endphp
+
+            <div class="product-layout">
+                <!-- Product Images Section -->
+                <div class="image-section">
+                    <!-- Main Product Image -->
+                    <div class="main-image-container">
+                        <img src="{{ $data['main_image'] }}" alt="{{ $data['name'] }}" class="w-full h-full object-cover"
+                            id="mainImage">
                     </div>
-                @endif
-            </div>
+
+                    <!-- Thumbnail Gallery -->
+                    @if(count($data['gallery_images']) > 1)
+                        <div class="thumbnail-gallery">
+                            <div class="flex gap-2 overflow-hidden" id="thumbnailContainer">
+                                @foreach($data['gallery_images'] as $index => $image)
+                                    <div class="thumbnail {{ $index === 0 ? 'active' : '' }}"
+                                        onclick="changeMainImage('{{ $image }}', this)">
+                                        <img src="{{ $image }}" alt="{{ $data['name'] }} - Image {{ $index + 1 }}">
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                </div>
 
             <!-- Product Information Section -->
             <div class="content-section">
@@ -1038,24 +1039,14 @@
                 
                 <!-- Action Buttons -->
                 <div class="action-buttons">
-                    @php
-                        $totalStock = 0;
-                        if ($inventory && $inventory->variations) {
-                            $totalStock = $inventory->variations->sum('stock');
-                        } elseif ($decoratedProduct->product->variation) {
-                            $totalStock = $decoratedProduct->product->variation->stock ?? 0;
-                        }
-                    @endphp
-                    
-                    @if($totalStock > 0)
-                        <button class="add-to-bag-btn" onclick="addToCart({{ $decoratedProduct->product->id }})">
-                            ADD TO BAG
-                        </button>
-                    @else
-                        <button class="add-to-bag-btn no-stock-btn" disabled>
-                            NO STOCK NOW
-                        </button>
-                    @endif
+                       <form action="{{ route('cart.add', $decoratedProduct->product->id) }}" method="POST"
+                            id="addToCartForm">
+                            @csrf
+                            <input type="hidden" name="quantity" id="formQuantity" value="1">
+                            <input type="hidden" name="price" id="formPrice">
+                            <button type="submit" class="add-to-bag-btn">ADD TO BAG</button>
+                        </form>
+
                 </div>
                 
                 <div class="additional-actions">
@@ -1176,69 +1167,69 @@
     </div>
 </div>
 
-<!-- Floating Action Buttons -->
-<div class="floating-buttons">
-    <a href="{{ route('wishlist.index') }}" class="floating-btn wishlist-btn" title="View Wishlist">
-        <i class="fas fa-heart"></i>
-        <span>Wishlist</span>
-    </a>
-    <a href="{{ route('cart.index') }}" class="floating-btn bag-btn" title="View Cart">
-        <i class="fas fa-shopping-bag"></i>
-        <span>BAG</span>
-    </a>
-</div>
+    <!-- Floating Action Buttons -->
+    <div class="floating-buttons">
+        <a href="{{ route('wishlist.index') }}" class="floating-btn wishlist-btn" title="View Wishlist">
+            <i class="fas fa-heart"></i>
+            <span>Wishlist</span>
+        </a>
+        <a href="{{ route('cart.index') }}" class="floating-btn bag-btn" title="View Cart">
+            <i class="fas fa-shopping-bag"></i>
+            <span>BAG</span>
+        </a>
+    </div>
 
-<!-- Write Review Modal -->
-<div id="reviewModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Write a Review</h2>
-            <span class="close" onclick="closeReviewModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <form id="reviewForm">
-                <div class="form-group">
-                    <label for="reviewerName">Your Name</label>
-                    <input type="text" id="reviewerName" name="reviewerName" required>
-                </div>
-                <div class="form-group">
-                    <label for="reviewRating">Rating</label>
-                    <div class="rating-input">
-                        <span class="star" data-rating="1">★</span>
-                        <span class="star" data-rating="2">★</span>
-                        <span class="star" data-rating="3">★</span>
-                        <span class="star" data-rating="4">★</span>
-                        <span class="star" data-rating="5">★</span>
+    <!-- Write Review Modal -->
+    <div id="reviewModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Write a Review</h2>
+                <span class="close" onclick="closeReviewModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="reviewForm">
+                    <div class="form-group">
+                        <label for="reviewerName">Your Name</label>
+                        <input type="text" id="reviewerName" name="reviewerName" required>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label for="reviewTitle">Review Title</label>
-                    <input type="text" id="reviewTitle" name="reviewTitle" required>
-                </div>
-                <div class="form-group">
-                    <label for="reviewText">Your Review</label>
-                    <textarea id="reviewText" name="reviewText" rows="4" required></textarea>
-                </div>
-                <div class="form-actions">
-                    <button type="button" onclick="closeReviewModal()" class="btn-cancel">Cancel</button>
-                    <button type="submit" class="btn-submit">Submit Review</button>
-                </div>
-            </form>
+                    <div class="form-group">
+                        <label for="reviewRating">Rating</label>
+                        <div class="rating-input">
+                            <span class="star" data-rating="1">★</span>
+                            <span class="star" data-rating="2">★</span>
+                            <span class="star" data-rating="3">★</span>
+                            <span class="star" data-rating="4">★</span>
+                            <span class="star" data-rating="5">★</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="reviewTitle">Review Title</label>
+                        <input type="text" id="reviewTitle" name="reviewTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reviewText">Your Review</label>
+                        <textarea id="reviewText" name="reviewText" rows="4" required></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" onclick="closeReviewModal()" class="btn-cancel">Cancel</button>
+                        <button type="submit" class="btn-submit">Submit Review</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Success Message Modal -->
-<div id="successModal" class="modal" style="display: none;">
-    <div class="modal-content success-modal">
-        <div class="modal-body">
-            <div class="success-icon">✓</div>
-            <h2>Review Submitted Successfully!</h2>
-            <p>Thank you for your review.</p>
-            <button onclick="closeSuccessModal()" class="btn-ok">OK</button>
+    <!-- Success Message Modal -->
+    <div id="successModal" class="modal" style="display: none;">
+        <div class="modal-content success-modal">
+            <div class="modal-body">
+                <div class="success-icon">✓</div>
+                <h2>Review Submitted Successfully!</h2>
+                <p>Thank you for your review.</p>
+                <button onclick="closeSuccessModal()" class="btn-ok">OK</button>
+            </div>
         </div>
     </div>
-</div>
 
 <!-- JavaScript -->
 <script>
