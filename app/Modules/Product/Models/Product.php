@@ -71,17 +71,10 @@ public function issuer()
         return $this->belongsTo(\App\Modules\Inventory\Models\InventoryVariation::class, 'inventory_variation_id');
     }
 
-    // Each product has many reviews through inventory
+    // Each product has many reviews
     public function reviews()
     {
-        return $this->hasManyThrough(
-            \App\Modules\Product\Models\Review::class,
-            \App\Modules\Inventory\Models\Inventory::class,
-            'id', // Foreign key on inventories table
-            'inventory_id', // Foreign key on reviews table
-            'inventory_id', // Local key on products table
-            'id' // Local key on inventories table
-        );
+        return $this->hasMany(\App\Modules\Product\Models\Review::class, 'product_id');
     }
 
     // Optional: fetch all variations linked to this product through inventory
@@ -108,8 +101,8 @@ public static function forCustomers()
 protected static function booted()
 {
     static::deleting(function ($product) {
-        // Delete associated reviews through inventory
-        \App\Modules\Product\Models\Review::where('inventory_id', $product->inventory_id)->delete();
+        // Delete associated reviews
+        \App\Modules\Product\Models\Review::where('product_id', $product->id)->delete();
         
         // Delete from wishlists (if wishlist functionality exists)
         if (class_exists('\App\Modules\Product\Models\Wishlist')) {

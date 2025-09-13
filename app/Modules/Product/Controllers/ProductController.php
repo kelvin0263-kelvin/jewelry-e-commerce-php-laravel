@@ -152,8 +152,8 @@ class ProductController extends Controller
 
         $decoratedProduct = new CustomerProductDecorator($product);
         
-        // Get approved reviews for this product through inventory
-        $reviews = \App\Modules\Product\Models\Review::where('inventory_id', $product->inventory_id)
+        // Get approved reviews for this product
+        $reviews = \App\Modules\Product\Models\Review::where('product_id', $product->id)
                              ->where('is_approved', true)
                              ->orderBy('created_at', 'desc')
                              ->get();
@@ -262,8 +262,8 @@ class ProductController extends Controller
         $firstProduct = $publishedVariations->first()->product;
         $decoratedProduct = new CustomerProductDecorator($firstProduct);
 
-        // Get approved reviews for the first product through inventory
-        $reviews = \App\Modules\Product\Models\Review::where('inventory_id', $firstProduct->inventory_id)
+        // Get approved reviews for the first product
+        $reviews = \App\Modules\Product\Models\Review::where('product_id', $firstProduct->id)
                              ->where('is_approved', true)
                              ->orderBy('created_at', 'desc')
                              ->get();

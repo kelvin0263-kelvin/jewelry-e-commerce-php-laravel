@@ -35,9 +35,4 @@ return [
         ],
     ],
 
-    'inventory_api' => [
-        'base' => env('INVENTORY_API_BASE', 'http://127.0.0.1:8000/api/inventory'),
-        'timeout' => env('INVENTORY_API_TIMEOUT', 10),
-    ],
-
 ];

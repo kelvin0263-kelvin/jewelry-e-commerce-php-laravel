@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Modules\Product\Models\Product;
 use App\Modules\Product\Decorators\CustomerProductDecorator;
 use App\Modules\Product\Decorators\AdminProductDecorator;
-use App\Modules\Product\Services\InventoryApiService;
+use App\Modules\Inventory\Models\Inventory;
+use App\Modules\Inventory\Models\InventoryVariation;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -14,13 +15,10 @@ use Illuminate\Support\Facades\Validator;
 
 class ProductApiController extends Controller
 {
-    protected $inventoryApiService;
-
-    public function __construct(InventoryApiService $inventoryApiService)
-    {
-        $this->inventoryApiService = $inventoryApiService;
-    }
-
+    /**
+     * Display a listing of products
+     * GET /api/products
+     */
     public function index(Request $request): JsonResponse
     {
         $query = Product::with(['variation.inventory', 'reviews']);
@@ -138,16 +136,6 @@ class ProductApiController extends Controller
         $data['created_by'] = Auth::id();
         $data['sku'] = $this->generateSku();
 
-        // Get inventory_id from inventory_variation_id using API
-        $variation = $this->inventoryApiService->fetchVariationBySku($data['inventory_variation_id']);
-        if (!$variation) {
-            return response()->json([
-                'error' => 'Invalid inventory variation',
-                'message' => 'The specified inventory variation does not exist.'
-            ], 422);
-        }
-        $data['inventory_id'] = $variation->inventory_id;
-
         $product = Product::create($data);
 
         return response()->json([
@@ -263,16 +251,17 @@ class ProductApiController extends Controller
      */
     public function getByInventory($inventoryId): JsonResponse
     {
-        $inventory = $this->inventoryApiService->fetchInventory($inventoryId);
+        $inventory = Inventory::with(['variations.product'])->find($inventoryId);
 
         if (!$inventory) {
             return response()->json(['error' => 'Inventory not found'], 404);
         }
 
-        // Get products that are associated with this inventory
-        $products = Product::where('inventory_id', $inventoryId)
-            ->with(['reviews'])
+        $products = $inventory->variations()
+            ->whereHas('product')
+            ->with('product')
             ->get()
+            ->pluck('product')
             ->map(function($product) {
                 return Auth::check() && Auth::user()->is_admin 
                     ? new AdminProductDecorator($product)

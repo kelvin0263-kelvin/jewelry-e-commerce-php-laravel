@@ -6,20 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Modules\Product\Models\Product;
 use App\Modules\Product\Decorators\AdminProductDecorator;
 use App\Http\Requests\ProductUpdateRequest;
-use App\Modules\Product\Services\InventoryApiService;
+use App\Modules\Inventory\Models\Inventory;
+use App\Modules\Inventory\Models\InventoryVariation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 class ProductManagementController extends Controller
 {
-    protected $inventoryApiService;
-
-    public function __construct(InventoryApiService $inventoryApiService)
-    {
-        $this->inventoryApiService = $inventoryApiService;
-    }
-
     /**
      * Display all products based on inventory variations (SKU-based).
      */
@@ -67,18 +61,21 @@ class ProductManagementController extends Controller
             }
         }
 
-        // Fetch inventories from API
-        $allInventories = $this->inventoryApiService->fetchAllInventories();
-        
-        // Apply search filter
+        $query = \App\Modules\Inventory\Models\Inventory::with(['variations.product']);
+
+        // Inventory Summary Page Independent Search functionality
         if ($request->has('search') && $request->search) {
             $sanitizedSearch = $this->sanitizeSearchInput($request->search);
             if (!empty($sanitizedSearch)) {
-                $allInventories = array_filter($allInventories, function($inventory) use ($sanitizedSearch) {
-                    return stripos($inventory->name, $sanitizedSearch) !== false ||
-                           stripos($inventory->type, $sanitizedSearch) !== false ||
-                           stripos($inventory->description, $sanitizedSearch) !== false ||
-                           $this->searchInVariations($inventory->variations, $sanitizedSearch);
+                $query->where(function($q) use ($sanitizedSearch) {
+                    $q->where('name', 'like', '%' . $sanitizedSearch . '%')
+                      ->orWhere('type', 'like', '%' . $sanitizedSearch . '%')
+                      ->orWhere('description', 'like', '%' . $sanitizedSearch . '%')
+                      ->orWhereHas('variations', function($variationQuery) use ($sanitizedSearch) {
+                          $variationQuery->where('sku', 'like', '%' . $sanitizedSearch . '%')
+                                         ->orWhere('color', 'like', '%' . $sanitizedSearch . '%')
+                                         ->orWhere('material', 'like', '%' . $sanitizedSearch . '%');
+                      });
                 });
                 
                 // 记录Inventory搜索活动
@@ -89,20 +86,24 @@ class ProductManagementController extends Controller
             }
         }
 
-        // Apply category filter
+        // Inventory Summary Page Independent Category filter
         if ($request->has('category') && $request->category !== 'all') {
-            $allInventories = array_filter($allInventories, function($inventory) use ($request) {
-                return stripos($inventory->type, $request->category) !== false;
-            });
+            $query->where('type', 'like', '%' . $request->category . '%');
         }
 
-        // Filter inventories that are either published or were previously published
-        $allInventories = array_filter($allInventories, function($inventory) {
-            return $inventory->status === 'published' || $inventory->status === 'draft';
+
+        // Show inventories that are either published or were previously published (now draft)
+        // This ensures we can show rejected status for unpublished inventories
+        $query->where(function($q) {
+            $q->where('status', 'published') // Currently published inventories
+              ->orWhere('status', 'draft') // Draft inventories (previously published, now unpublished)
+              ->orWhereHas('variations.product', function($subQ) {
+                  $subQ->whereNotNull('published_at'); // Previously published inventories
+              });
         });
 
-        // Convert to collection for pagination
-        $inventories = collect($allInventories)->sortByDesc('id');
+        // Get paginated results
+        $inventories = $query->orderBy('created_at', 'desc')->paginate(15);
 
         // Get issued products (products with status = 'issued' or 'rejected' that were previously published on user side)
         $issuedProducts = \App\Modules\Product\Models\Product::with(['variation.inventory', 'issuer'])
@@ -116,19 +117,16 @@ class ProductManagementController extends Controller
             ->get();
 
         // Transform inventories to summary data
-        $inventorySummaries = $inventories->map(function($inventory) {
-            $totalStock = array_sum(array_column($inventory->variations, 'stock'));
-            $totalVariations = count($inventory->variations);
-            
-            // Get products for this inventory from database
-            $products = Product::where('inventory_id', $inventory->id)->get();
-            $publishedCount = $products->where('is_visible', true)
-                ->where('status', 'published')
+        $inventorySummaries = $inventories->getCollection()->map(function($inventory) {
+            $totalStock = $inventory->variations->sum('stock');
+            $publishedCount = $inventory->variations->where('product.is_visible', true)
+                ->where('product.status', 'published')
                 ->count();
+            $totalVariations = $inventory->variations->count();
             
             // Check if at least one SKU has user-facing information
-            $hasUserFacingInfo = $products->where('marketing_description', '!=', 'None')
-                ->where('marketing_description', '!=', null)
+            $hasUserFacingInfo = $inventory->variations->where('product.marketing_description', '!=', 'None')
+                ->where('product.marketing_description', '!=', null)
                 ->count() > 0;
             
             // Get inventory status based on inventory module status and product visibility
@@ -137,8 +135,8 @@ class ProductManagementController extends Controller
                 $status = 'rejected';
             } else {
                 // Check if there are any products that are visible but pending, rejected, or issued (republished products)
-                $pendingProducts = $products->where('is_visible', true)
-                    ->whereIn('status', ['pending', 'rejected', 'issued'])
+                $pendingProducts = $inventory->variations->where('product.is_visible', true)
+                    ->whereIn('product.status', ['pending', 'rejected', 'issued'])
                     ->count();
                 
                 if ($publishedCount > 0 && $pendingProducts === 0) {
@@ -154,7 +152,7 @@ class ProductManagementController extends Controller
             }
             
             // Get published info from the first published product
-            $publishedProduct = $products->where('is_visible', true)->first();
+            $publishedProduct = $inventory->variations->where('product.is_visible', true)->first()?->product;
             $publishedBy = $publishedProduct?->publisher?->email ?? 'System';
             $publishedAt = $publishedProduct?->published_at;
             
@@ -173,20 +171,15 @@ class ProductManagementController extends Controller
             ];
         });
 
-        // Create pagination manually since we're working with API data
-        $perPage = 15;
-        $currentPage = $request->get('page', 1);
-        $offset = ($currentPage - 1) * $perPage;
-        $paginatedData = $inventorySummaries->slice($offset, $perPage)->values();
-        
+        // Create a new paginator with the transformed data
         $inventories = new \Illuminate\Pagination\LengthAwarePaginator(
-            $paginatedData,
-            $inventorySummaries->count(),
-            $perPage,
-            $currentPage,
+            $inventorySummaries,
+            $inventories->total(),
+            $inventories->perPage(),
+            $inventories->currentPage(),
             [
-                'path' => $request->url(),
-                'pageName' => 'page',
+                'path' => $inventories->path(),
+                'pageName' => $inventories->getPageName(),
             ]
         );
 
@@ -250,9 +243,8 @@ class ProductManagementController extends Controller
             session()->forget('new_product_added');
         }
 
-        // Get unique categories for filter from API data
-        $categories = collect($allInventories)
-            ->pluck('type')
+        // Get unique categories for filter
+        $categories = \App\Modules\Inventory\Models\Inventory::pluck('type')
             ->unique()
             ->map(function($type) {
                 return str_replace('Item', '', strtolower($type));
@@ -261,8 +253,8 @@ class ProductManagementController extends Controller
             ->sort()
             ->values();
 
-        // Get all reviews with inventory information
-        $reviews = \App\Modules\Product\Models\Review::with('inventory')
+        // Get all reviews with product information
+        $reviews = \App\Modules\Product\Models\Review::with('product')
             ->latest()
             ->paginate(10);
 
@@ -274,33 +266,27 @@ class ProductManagementController extends Controller
      */
     public function showSkuDetails($inventoryId)
     {
-        $inventory = $this->inventoryApiService->fetchInventory($inventoryId);
+        $inventory = \App\Modules\Inventory\Models\Inventory::findOrFail($inventoryId);
         
-        if (!$inventory) {
-            abort(404, 'Inventory not found');
-        }
-        
-        $variations = $this->inventoryApiService->fetchVariationsByInventoryId($inventoryId);
+        $query = InventoryVariation::with(['inventory', 'product'])
+            ->where('inventory_id', $inventoryId);
+
+        $variations = $query->paginate(15);
         
         // Transform variations to product-like data for display
-        $transformedProducts = collect($variations)->map(function($variation) {
-            return $this->transformVariationToProductDataFromApi($variation);
+        $transformedProducts = $variations->getCollection()->map(function($variation) {
+            return $this->transformVariationToProductData($variation);
         });
 
-        // Create pagination manually
-        $perPage = 15;
-        $currentPage = request()->get('page', 1);
-        $offset = ($currentPage - 1) * $perPage;
-        $paginatedData = $transformedProducts->slice($offset, $perPage)->values();
-        
+        // Create a new paginator with the transformed data
         $products = new \Illuminate\Pagination\LengthAwarePaginator(
-            $paginatedData,
-            $transformedProducts->count(),
-            $perPage,
-            $currentPage,
+            $transformedProducts,
+            $variations->total(),
+            $variations->perPage(),
+            $variations->currentPage(),
             [
-                'path' => request()->url(),
-                'pageName' => 'page',
+                'path' => $variations->path(),
+                'pageName' => $variations->getPageName(),
             ]
         );
 
@@ -315,25 +301,17 @@ class ProductManagementController extends Controller
      */
     public function publishInventory($inventoryId)
     {
-        $inventory = $this->inventoryApiService->fetchInventory($inventoryId);
-        
-        if (!$inventory) {
-            return redirect()->route('admin.product-management.index')
-                ->with('error', 'Inventory not found.');
-        }
+        $inventory = \App\Modules\Inventory\Models\Inventory::with(['variations.product'])->findOrFail($inventoryId);
         
         // Check if inventory has stock
-        if ($inventory->quantity <= 0) {
+        if ($inventory->total_stock <= 0) {
             return redirect()->route('admin.product-management.index')
                 ->with('error', '该产品没有stock - Cannot publish inventory with zero stock.');
         }
 
-        // Get products for this inventory from database
-        $products = Product::where('inventory_id', $inventoryId)->get();
-        
         // Check if at least one SKU has user-facing information
-        $skusWithUserFacingInfo = $products->where('marketing_description', '!=', 'None')
-            ->where('marketing_description', '!=', null);
+        $skusWithUserFacingInfo = $inventory->variations->where('product.marketing_description', '!=', 'None')
+            ->where('product.marketing_description', '!=', null);
             
         if ($skusWithUserFacingInfo->count() == 0) {
             return redirect()->route('admin.product-management.index')
@@ -342,14 +320,16 @@ class ProductManagementController extends Controller
 
         // Publish all SKUs that have user-facing information
         $publishedCount = 0;
-        foreach ($skusWithUserFacingInfo as $product) {
-            $product->update([
-                'status' => 'published',
-                'is_visible' => true,
-                'published_at' => now(),
-                'published_by' => Auth::id(),
-            ]);
-            $publishedCount++;
+        foreach ($skusWithUserFacingInfo as $variation) {
+            if ($variation->product) {
+                $variation->product->update([
+                    'status' => 'published',
+                    'is_visible' => true,
+                    'published_at' => now(),
+                    'published_by' => Auth::id(),
+                ]);
+                $publishedCount++;
+            }
         }
 
         \Log::info('Inventory published', [
@@ -370,27 +350,21 @@ class ProductManagementController extends Controller
      */
     public function unpublishInventory($inventoryId)
     {
-        $inventory = $this->inventoryApiService->fetchInventory($inventoryId);
-        
-        if (!$inventory) {
-            return redirect()->route('admin.product-management.index')
-                ->with('error', 'Inventory not found.');
-        }
-        
-        // Get products for this inventory from database
-        $products = Product::where('inventory_id', $inventoryId)->get();
+        $inventory = \App\Modules\Inventory\Models\Inventory::with(['variations.product'])->findOrFail($inventoryId);
         
         // Unpublish all SKUs and mark as issued
         $unpublishedCount = 0;
-        foreach ($products as $product) {
-            // Mark all products as pending (regardless of their current visibility status)
-            $product->update([
-                'is_visible' => false,
-                'status' => 'pending',
-                'issued_at' => now(),
-                'issued_by' => Auth::id(),
-            ]);
-            $unpublishedCount++;
+        foreach ($inventory->variations as $variation) {
+            if ($variation->product) {
+                // Mark all products as pending (regardless of their current visibility status)
+                $variation->product->update([
+                    'is_visible' => false,
+                    'status' => 'pending',
+                    'issued_at' => now(),
+                    'issued_by' => Auth::id(),
+                ]);
+                $unpublishedCount++;
+            }
         }
 
         \Log::info('Inventory unpublished', [
@@ -519,15 +493,10 @@ class ProductManagementController extends Controller
      */
     public function show($variationId)
     {
-        $variation = $this->inventoryApiService->fetchVariationBySku($variationId);
-        
-        if (!$variation) {
-            return redirect()->route('admin.product-management.index')
-                ->with('error', 'Inventory variation not found.');
-        }
+        $variation = InventoryVariation::with(['inventory.product.publisher'])->findOrFail($variationId);
         
         // Transform variation to product data
-        $product = $this->transformVariationToProductDataFromApi($variation);
+        $product = $this->transformVariationToProductData($variation);
         
         // Check if customer information is created
         if (!$product->product_record || 
@@ -546,23 +515,17 @@ class ProductManagementController extends Controller
      */
     public function create($variationId)
     {
-        $variation = $this->inventoryApiService->fetchVariationById($variationId);
-        
-        if (!$variation) {
-            return redirect()->route('admin.product-management.index')
-                ->with('error', 'Inventory variation not found.');
-        }
+        $variation = InventoryVariation::with(['inventory', 'product'])->findOrFail($variationId);
         
         // Check if product already exists for this SKU
-        $existingProduct = Product::where('inventory_variation_id', $variation->id)->first();
-        if ($existingProduct) {
+        if ($variation->product) {
             return redirect()->route('admin.product-management.index')
                 ->with('error', 'Product already exists for this SKU.');
         }
         
         // Create product from inventory variation (SKU-specific)
         $product = Product::create([
-            'inventory_id' => $variation->inventory_id,
+            'inventory_id' => $variation->inventory->id,
             'inventory_variation_id' => $variation->id,
             'name' => $variation->inventory->name,
             'price' => $variation->price,
@@ -579,8 +542,8 @@ class ProductManagementController extends Controller
             'product_id' => $product->id,
             'variation_id' => $variation->id,
             'sku' => $variation->sku,
-            'user_id' => auth()->id()
-        ]);
+                'user_id' => auth()->id()
+            ]);
             
         return redirect()->route('admin.product-management.index')
             ->with('success', 'Product created successfully for SKU: ' . $variation->sku);
@@ -591,20 +554,12 @@ class ProductManagementController extends Controller
      */
     public function createInfo($variationId)
     {
-        $variation = $this->inventoryApiService->fetchVariationById($variationId);
-        
-        if (!$variation) {
-            return redirect()->route('admin.product-management.index')
-                ->with('error', 'Inventory variation not found.');
-        }
-
-        // Check if product exists in database
-        $existingProduct = Product::where('inventory_variation_id', $variation->id)->first();
+        $variation = InventoryVariation::with(['inventory', 'product'])->findOrFail($variationId);
 
         // If product doesn't exist, create it first
-        if (!$existingProduct) {
+        if (!$variation->product) {
             $product = Product::create([
-                'inventory_id' => $variation->inventory_id,
+                'inventory_id' => $variation->inventory->id,
                 'inventory_variation_id' => $variation->id,
                 'name' => $variation->inventory->name,
                 'price' => $variation->price,
@@ -629,7 +584,7 @@ class ProductManagementController extends Controller
             $productToEnhance = $product;
         } else {
             // Use the existing product
-            $productToEnhance = $existingProduct;
+            $productToEnhance = $variation->product;
         }
 
         // Redirect to enhance page to create customer information
@@ -641,8 +596,8 @@ class ProductManagementController extends Controller
      */
     public function enhance(Product $product)
     {
-        // Get variation from API using the product's inventory_variation_id
-        $variation = $this->inventoryApiService->fetchVariationBySku($product->sku);
+        // Load the inventory variation and inventory relationship
+        $variation = $product->variation;
         
         if (!$variation) {
             return redirect()->route('admin.product-management.index')
@@ -650,7 +605,7 @@ class ProductManagementController extends Controller
         }
         
         // Transform the variation to product data format
-        $transformedProduct = $this->transformVariationToProductDataFromApi($variation);
+        $transformedProduct = $this->transformVariationToProductData($variation);
         
         return view('product::admin.product-management.enhance', compact('product', 'transformedProduct'));
     }
@@ -712,9 +667,9 @@ class ProductManagementController extends Controller
                 ->with('error', 'Please create customer information first before publishing.');
         }
 
-        // Check if product has stock (quantity > 0) using API
-        $inventory = $this->inventoryApiService->fetchInventory($product->inventory_id);
-        if (!$inventory || $inventory->quantity <= 0) {
+        // Check if product has stock (quantity > 0)
+        $inventory = $product->variation?->inventory;
+        if (!$inventory || $inventory->total_stock <= 0) {
             return redirect()->route('admin.product-management.index')
                 ->with('error', '该产品没有stock - Cannot publish product with zero stock.');
         }
@@ -760,8 +715,8 @@ class ProductManagementController extends Controller
                 ->with('error', 'Please create customer information first before editing.');
         }
 
-        // Get variation from API using the product's SKU
-        $variation = $this->inventoryApiService->fetchVariationBySku($product->sku);
+        // Load the inventory variation and inventory relationship
+        $variation = $product->variation;
         
         if (!$variation) {
             return redirect()->route('admin.product-management.index')
@@ -769,7 +724,7 @@ class ProductManagementController extends Controller
         }
         
         // Transform the variation to product data format (same as enhance page)
-        $transformedProduct = $this->transformVariationToProductDataFromApi($variation);
+        $transformedProduct = $this->transformVariationToProductData($variation);
 
         return view('product::admin.product-management.edit', compact('product', 'transformedProduct'));
     }
@@ -1058,77 +1013,5 @@ class ProductManagementController extends Controller
 
         return redirect()->route('admin.product-management.index')
             ->with('success', 'Review has been rejected and deleted successfully');
-    }
-
-    /**
-     * Search in inventory variations
-     */
-    private function searchInVariations(array $variations, string $searchTerm): bool
-    {
-        foreach ($variations as $variation) {
-            if (stripos($variation['sku'] ?? '', $searchTerm) !== false ||
-                stripos($variation['color'] ?? '', $searchTerm) !== false ||
-                stripos($variation['material'] ?? '', $searchTerm) !== false) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Transform inventory variation from API to product data for display.
-     */
-    private function transformVariationToProductDataFromApi($variation)
-    {
-        $inventory = $variation->inventory;
-        
-        // Get product from database if it exists
-        $product = Product::where('inventory_variation_id', $variation->id)->first();
-        
-        // Build features array from variation data
-        $features = [];
-        if ($variation->color) {
-            $features[] = "Color: " . $variation->color;
-        }
-        if ($variation->size) {
-            $features[] = "Size: " . $variation->size;
-        }
-        if ($variation->material) {
-            $features[] = "Material: " . $variation->material;
-        }
-        
-        // Ensure features is always an array
-        $features = $features ?: [];
-        
-        // Get category from inventory type
-        $category = str_replace('Item', '', strtolower($inventory->type));
-        
-        // Determine completion status
-        $isComplete = $product && 
-                     $product->is_visible && 
-                     $product->marketing_description && 
-                     $product->marketing_description !== 'None';
-        
-        return (object) [
-            'id' => $variation->id,
-            'sku' => $variation->sku,
-            'name' => $inventory->name,
-            'price' => $variation->price,
-            'selling_price' => $product ? $product->selling_price : null,
-            'discount_price' => $product ? $product->discount_price : null,
-            'quantity' => $variation->stock,
-            'category' => $category,
-            'features' => $features,
-            'description' => $product ? $product->marketing_description : 'None',
-            'status' => $isComplete ? 'complete' : 'incomplete',
-            'is_visible' => $product ? $product->is_visible : false,
-            'published_at' => $product ? $product->published_at : null,
-            'published_by' => $product ? ($product->publisher ? $product->publisher->email : 'System') : 'System',
-            'customer_images' => $product ? ($product->customer_images ?? []) : [],
-            'product_video' => $product ? $product->product_video : null,
-            'variation' => $variation,
-            'inventory' => $inventory,
-            'product_record' => $product, // Renamed to avoid confusion
-        ];
     }
 }

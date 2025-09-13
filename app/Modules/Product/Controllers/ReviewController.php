@@ -12,7 +12,7 @@ class ReviewController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'inventory_id' => 'required|exists:inventories,id',
+            'product_id' => 'required|exists:products,id',
             'reviewer_name' => 'required|string|max:255',
             'rating' => 'required|integer|min:1|max:5',
             'title' => 'required|string|max:255',
@@ -29,7 +29,7 @@ class ReviewController extends Controller
 
         try {
             $review = Review::create([
-                'inventory_id' => $request->inventory_id,
+                'product_id' => $request->product_id,
                 'reviewer_name' => $request->reviewer_name,
                 'rating' => $request->rating,
                 'title' => $request->title,

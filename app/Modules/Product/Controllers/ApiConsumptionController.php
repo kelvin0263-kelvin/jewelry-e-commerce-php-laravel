@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\Http;
 
 class ApiConsumptionController extends Controller
 {
+    /**
+     * Demo: consume another module's API (Inventory) and render in a Product view.
+     * Add `?use_api=1` to force HTTP; otherwise tries internal fallback when possible.
+     */
     public function inventory(Request $request)
     {
         $error = null;
@@ -28,6 +32,8 @@ class ApiConsumptionController extends Controller
 
                 $items = $response->json() ?? [];
             } else {
+                // Internal consumption example (direct model access) — faster for local testing
+                // NOTE: This bypasses the API boundary; only suitable for in-process scenarios.
                 $items = \App\Modules\Inventory\Models\Inventory::with('variations')
                     ->latest()
                     ->get()

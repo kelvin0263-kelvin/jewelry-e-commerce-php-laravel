@@ -380,11 +380,11 @@
                             <tr class="hover:bg-gray-50">
                                 <!-- Product -->
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @if($review->inventory)
-                                        <div class="text-sm font-medium text-gray-900">{{ $review->inventory->name }}</div>
-                                        <div class="text-sm text-gray-500">ID: {{ $review->inventory->id }}</div>
+                                    @if($review->product)
+                                        <div class="text-sm font-medium text-gray-900">{{ $review->product->name }}</div>
+                                        <div class="text-sm text-gray-500">ID: {{ $review->product->id }}</div>
                                     @else
-                                        <span class="text-sm text-red-600 italic">Inventory not found</span>
+                                        <span class="text-sm text-red-600 italic">Product not found</span>
                                     @endif
                                 </td>
 
