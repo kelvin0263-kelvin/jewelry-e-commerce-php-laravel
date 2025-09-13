@@ -2,380 +2,348 @@
 
 @section('title', 'Product Management - Inventory Summary')
 
-@push('styles')
-    <!-- Bootstrap CSS for buttons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-@endpush
-
 @section('content')
-    <div class="container-fluid" style="max-width: 1400px; margin: 0 auto;">
-        <!-- Enhanced Page Header -->
-        <div class="page-header">
-            <div class="container-fluid">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="h5 mb-1 fw-bold">
-                            <i class="fas fa-gem me-1"></i>Inventory Summary
-                        </h1>
-                        <p class="mb-0 opacity-75" style="font-size: 0.7rem;">Manage products by inventory groups</p>
-                    </div>
-                    <div class="d-flex gap-1">
-                        <!-- No additional buttons needed for inventory summary -->
-                    </div>
-                </div>
-            </div>
+    <!-- Header -->
+    <div class="mb-6 flex items-start justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-gem mr-2"></i>Inventory Summary
+            </h1>
+            <p class="text-gray-600 mt-1 text-sm">Manage products by inventory groups</p>
         </div>
+    </div>
     
     @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show auto-dismiss" role="alert" data-dismiss-delay="5000">
-            {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="mb-4 rounded-md bg-green-50 p-4 auto-dismiss" data-dismiss-delay="5000">
+            <div class="flex">
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
+                </div>
+            </div>
         </div>
     @endif
     
     @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show auto-dismiss" role="alert" data-dismiss-delay="5000">
-            {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="mb-4 rounded-md bg-red-50 p-4 auto-dismiss" data-dismiss-delay="5000">
+            <div class="flex">
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
+                </div>
+            </div>
         </div>
     @endif
 
-    @if(isset($messages['inventory_changes']))
+    @if(isset($messages['inventory_changes']) && !empty($messages['inventory_changes']))
         @php
             $changes = $messages['inventory_changes'];
         @endphp
-        <div class="alert alert-info alert-dismissible fade show auto-dismiss" role="alert" data-dismiss-delay="5000">
-            <h6 class="alert-heading">
-                <i class="fas fa-info-circle me-2"></i>Inventory Changes Detected
-            </h6>
-            <p class="mb-2">
-                <strong>SKU:</strong> {{ is_array($changes) ? $changes['sku'] : 'N/A' }} - 
-                <strong>Product:</strong> {{ is_array($changes) ? $changes['name'] : 'N/A' }}
-            </p>
-            <p class="mb-0">
-                <strong>Changes:</strong> {{ is_array($changes) ? (is_array($changes['changes']) ? implode(', ', $changes['changes']) : $changes['changes']) : 'Changes detected' }}
-            </p>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="mb-4 rounded-md bg-blue-50 p-4 auto-dismiss" data-dismiss-delay="5000">
+            <div class="flex">
+                <div class="ml-3">
+                    <h6 class="text-sm font-medium text-blue-800 flex items-center">
+                        <i class="fas fa-info-circle mr-2"></i>Inventory Changes Detected
+                    </h6>
+                    <p class="mt-1 text-sm text-blue-700">
+                        <strong>SKU:</strong> {{ (is_array($changes) && isset($changes['sku'])) ? $changes['sku'] : 'N/A' }} - 
+                        <strong>Product:</strong> {{ (is_array($changes) && isset($changes['name'])) ? $changes['name'] : 'N/A' }}
+                    </p>
+                    <p class="mt-1 text-sm text-blue-700">
+                        <strong>Changes:</strong> {{ (is_array($changes) && isset($changes['changes'])) ? (is_array($changes['changes']) ? implode(', ', $changes['changes']) : $changes['changes']) : 'Changes detected' }}
+                    </p>
+                </div>
+            </div>
         </div>
     @endif
 
-    @if(isset($messages['inventory_unpublished']))
+    @if(isset($messages['inventory_unpublished']) && !empty($messages['inventory_unpublished']))
         @php
             $unpublished = $messages['inventory_unpublished'];
         @endphp
-        <div class="alert alert-warning alert-dismissible fade show auto-dismiss" role="alert" data-dismiss-delay="5000">
-            <h6 class="alert-heading">
-                <i class="fas fa-exclamation-triangle me-2"></i>Products Delisted
-            </h6>
-            <p class="mb-2">
-                <strong>Inventory:</strong> {{ is_array($unpublished) ? $unpublished['inventory_name'] : 'N/A' }}
-            </p>
-            <p class="mb-0">
-                <strong>Changes:</strong> {{ is_array($unpublished) ? $unpublished['message'] : 'Products have been delisted' }}
-            </p>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="mb-4 rounded-md bg-yellow-50 p-4 auto-dismiss" data-dismiss-delay="5000">
+            <div class="flex">
+                <div class="ml-3">
+                    <h6 class="text-sm font-medium text-yellow-800 flex items-center">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Products Delisted
+                    </h6>
+                    <p class="mt-1 text-sm text-yellow-700">
+                        <strong>Changes:</strong> {{ (is_array($unpublished) && isset($unpublished['changes'])) ? $unpublished['changes'] : 'Products have been delisted' }}
+                    </p>
+                </div>
+            </div>
         </div>
     @endif
 
-    @if(isset($messages['new_product_added']))
+    @if(isset($messages['new_product_added']) && !empty($messages['new_product_added']))
         @php
             $newProduct = $messages['new_product_added'];
         @endphp
-        <div class="alert alert-success alert-dismissible fade show auto-dismiss" role="alert" data-dismiss-delay="5000">
-            <h6 class="alert-heading">
-                <i class="fas fa-plus-circle me-2"></i>New Product Added
-            </h6>
-            <p class="mb-2">
-                <strong>Product:</strong> {{ is_array($newProduct) ? $newProduct['name'] : 'N/A' }}
-            </p>
-            <p class="mb-0">
-                <strong>Changes:</strong> {{ is_array($newProduct) ? $newProduct['changes'] : 'New product added' }}
-            </p>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="mb-4 rounded-md bg-green-50 p-4 auto-dismiss" data-dismiss-delay="5000">
+            <div class="flex">
+                <div class="ml-3">
+                    <h6 class="text-sm font-medium text-green-800 flex items-center">
+                        <i class="fas fa-plus-circle mr-2"></i>New Product Added
+                    </h6>
+                    <p class="mt-1 text-sm text-green-700">
+                        <strong>Product:</strong> {{ (is_array($newProduct) && isset($newProduct['name'])) ? $newProduct['name'] : 'N/A' }}
+                    </p>
+                    <p class="mt-1 text-sm text-green-700">
+                        <strong>Changes:</strong> {{ (is_array($newProduct) && isset($newProduct['changes'])) ? $newProduct['changes'] : 'New product added' }}
+                    </p>
+                </div>
+            </div>
         </div>
     @endif
 
-    @if(isset($messages['inventory_republished']))
+    @if(isset($messages['inventory_republished']) && !empty($messages['inventory_republished']))
         @php
             $republished = $messages['inventory_republished'];
         @endphp
-        <div class="alert alert-info alert-dismissible fade show auto-dismiss" role="alert" data-dismiss-delay="5000">
-            <h6 class="alert-heading">
-                <i class="fas fa-arrow-up me-2"></i>Products Relisted
-            </h6>
-            <p class="mb-2">
-                <strong>Inventory:</strong> {{ is_array($republished) ? $republished['inventory_name'] : 'N/A' }}
-            </p>
-            <p class="mb-0">
-                <strong>Changes:</strong> {{ is_array($republished) ? $republished['message'] : 'Products have been relisted' }}
-            </p>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="mb-4 rounded-md bg-blue-50 p-4 auto-dismiss" data-dismiss-delay="5000">
+            <div class="flex">
+                <div class="ml-3">
+                    <h6 class="text-sm font-medium text-blue-800 flex items-center">
+                        <i class="fas fa-arrow-up mr-2"></i>Products Relisted
+                    </h6>
+                    <p class="mt-1 text-sm text-blue-700">
+                        <strong>Changes:</strong> {{ (is_array($republished) && isset($republished['changes'])) ? $republished['changes'] : 'Products have been relisted' }}
+                    </p>
+                </div>
+            </div>
         </div>
     @endif
 
-        <!-- Filters and Search -->
-        <div class="card border-0 shadow-sm mb-2">
-            <div class="card-header bg-white border-0 py-2">
-                <h6 class="mb-0 text-dark fw-semibold" style="font-size: 0.8rem;">
-                    <i class="fas fa-filter me-2 text-primary"></i>Filter & Search
-                </h6>
-            </div>
-            <div class="card-body bg-light py-2">
-                <form method="GET" action="{{ route('admin.product-management.index') }}" class="row g-2">
-                    <div class="col-md-4">
-                        <label for="search" class="form-label fw-semibold text-dark" style="font-size: 0.75rem;">Search</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-white border-0" style="font-size: 0.75rem; padding: 0.4rem 0.6rem;">
-                                <i class="fas fa-search text-muted"></i>
-                            </span>
-                            <input type="text" class="form-control border-0 shadow-sm" id="search" name="search" 
-                                   value="{{ request('search') }}" placeholder="Search inventories..." style="font-size: 0.75rem; padding: 0.4rem 0.6rem;">
+    <!-- Search + Summary -->
+    <div class="bg-white rounded-lg shadow mb-6">
+        <div class="p-4">
+            <h6 class="mb-4 text-gray-800 font-semibold flex items-center">
+                <i class="fas fa-filter mr-2 text-blue-500"></i>Filter & Search
+            </h6>
+            <form method="GET" action="{{ route('admin.product-management.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
                         </div>
+                        <input type="text" id="search" name="search" value="{{ request('search') }}" 
+                               placeholder="Search inventories..." 
+                               class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     </div>
-                    <div class="col-md-3">
-                        <label for="category" class="form-label fw-semibold text-dark" style="font-size: 0.75rem;">Category</label>
-                        <select class="form-select border-0 shadow-sm" id="category" name="category" style="font-size: 0.75rem; padding: 0.4rem 0.6rem;">
-                            <option value="all" {{ request('category') == 'all' ? 'selected' : '' }}>All Categories</option>
-                            @foreach($categories as $category)
-                                <option value="{{ $category }}" {{ request('category') == $category ? 'selected' : '' }}>
-                                    {{ ucfirst($category) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label fw-semibold text-dark" style="font-size: 0.75rem;">&nbsp;</label>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary shadow-sm" style="font-size: 0.75rem; padding: 0.4rem 0.6rem;">
-                                <i class="fas fa-search me-1"></i>Filter
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold text-dark" style="font-size: 0.75rem;">&nbsp;</label>
-                        <div class="d-grid">
-                            <a href="{{ route('admin.product-management.index') }}" class="btn btn-outline-secondary shadow-sm" style="font-size: 0.75rem; padding: 0.4rem 0.6rem;">
-                                <i class="fas fa-times me-1"></i>Clear
-                            </a>
-                        </div>
-                    </div>
-                </form>
+                </div>
+                <div>
+                    <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select id="category" name="category" 
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <option value="all" {{ request('category') == 'all' ? 'selected' : '' }}>All Categories</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category }}" {{ request('category') == $category ? 'selected' : '' }}>
+                                {{ ucfirst($category) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">&nbsp;</label>
+                    <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-search mr-1"></i>Filter
+                    </button>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">&nbsp;</label>
+                    <a href="{{ route('admin.product-management.index') }}" 
+                       class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        <i class="fas fa-times mr-1"></i>Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Inventory Summary Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h6 class="text-lg font-medium text-gray-800 flex items-center">
+                <i class="fas fa-list mr-2 text-blue-500"></i>Inventory Summary
+            </h6>
+        </div>
+        <div class="px-6 py-3 bg-gray-50 border-b border-gray-200">
+            <span class="text-sm text-gray-600 flex items-center">
+                <i class="fas fa-box mr-1"></i>{{ $inventories->total() }} inventories
+            </span>
+        </div>
+        <div class="product-module-table" style="overflow: hidden !important; position: relative;">
+            <div class="table-scroll-container" style="overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -ms-overflow-style: none; -webkit-scrollbar: none; width: 100%;">
+                <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Stock</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Published SKUs</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total SKUs</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Published By</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Published At</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @forelse ($inventories as $inventory)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 w-20">
+                                {{ $inventory->id }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">{{ $inventory->name }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    {{ ucfirst(str_replace('Item', '', strtolower($inventory->type))) }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ number_format($inventory->total_stock) }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ $inventory->published_count }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ $inventory->total_variations }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if($inventory->status === 'published')
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Published</span>
+                                @elseif($inventory->status === 'pending')
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Pending</span>
+                                @elseif($inventory->status === 'rejected')
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Rejected</span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Draft</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ $inventory->published_by ?: 'Not published' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ $inventory->published_at ? $inventory->published_at->format('M d, Y') : 'Not published' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex flex-col space-y-1">
+                                    <a href="{{ route('admin.product-management.index', ['inventory_id' => $inventory->id]) }}" 
+                                       class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-24 justify-center">
+                                        <i class="fas fa-eye mr-1"></i> View SKUs
+                                    </a>
+                                    <button onclick="checkAndViewProduct({{ $inventory->id }})" 
+                                            class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-cyan-500 hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 w-24 justify-center">
+                                        <i class="fas fa-external-link-alt mr-1"></i> View Product
+                                    </button>
+                                    @if($inventory->status === 'published')
+                                        <form action="{{ route('admin.product-management.unpublish-inventory', $inventory->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 w-24 justify-center" 
+                                                    onclick="return confirm('Are you sure you want to unpublish this inventory?')">
+                                                <i class="fas fa-eye-slash mr-1"></i> Unpublish
+                                            </button>
+                                        </form>
+                                    @elseif($inventory->status === 'rejected')
+                                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-400 w-24 justify-center" title="Inventory has been rejected. Please contact administrator or create a new inventory.">
+                                            <i class="fas fa-arrow-up mr-1"></i> Publish
+                                        </span>
+                                    @elseif($inventory->total_stock <= 0)
+                                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-600 w-24 justify-center" title="该产品没有stock - Cannot publish inventory with zero stock">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i> No Stock
+                                        </span>
+                                    @elseif($inventory->has_user_facing_info)
+                                        <form action="{{ route('admin.product-management.publish-inventory', $inventory->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-cyan-500 hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 w-24 justify-center" 
+                                                    onclick="return confirm('Are you sure you want to publish this inventory?')">
+                                                <i class="fas fa-arrow-up mr-1"></i> Publish
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-400 w-24 justify-center" title="Please create user-facing information for at least one SKU first">
+                                            <i class="fas fa-arrow-up mr-1"></i> Publish
+                                        </span>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="10" class="px-6 py-10 text-center text-gray-500">
+                                <i class="fas fa-box-open text-gray-400 mb-2 text-3xl"></i>
+                                <h5 class="text-gray-600 text-lg font-medium mb-2">No Inventory Found</h5>
+                                <p class="text-gray-500 text-sm">No inventory items match your search criteria.</p>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                </table>
             </div>
         </div>
-
-        <!-- Inventory Summary Table -->
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 py-1">
-                <h6 class="mb-0 text-dark fw-semibold small">
-                    <i class="fas fa-list me-2 text-primary"></i>Inventory Summary
-                </h6>
-            </div>
-            <div class="card-body p-0">
-                <div class="d-flex justify-content-between align-items-center px-3 py-1 bg-light border-bottom">
-                    <span class="text-muted small">
-                        <i class="fas fa-box me-1"></i>{{ $inventories->total() }} inventories
-                    </span>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0 table-sm">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 80px; min-width: 80px;">
-                                    ID
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 200px; min-width: 200px;">
-                                    Product Name
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                    Type
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                    Total Stock
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                    Published SKUs
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                    Total SKUs
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                    Status
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                    Published By
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                    Published At
-                                </th>
-                                <th class="py-1 px-2 fw-bold text-dark text-center" style="width: 200px; min-width: 200px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($inventories as $inventory)
-                                <tr class="border-bottom hover-row">
-                                    <td class="border-end py-1 px-2 align-middle text-center" style="width: 80px; min-width: 80px;">
-                                        <span class="text-dark" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="{{ $inventory->id }}">{{ $inventory->id }}</span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center" style="width: 200px; min-width: 200px;">
-                                        <span class="text-dark" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="{{ $inventory->name }}">{{ $inventory->name }}</span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <span class="badge bg-light text-dark border" style="font-size: 0.7rem;">{{ ucfirst(str_replace('Item', '', strtolower($inventory->type))) }}</span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <span class="text-dark" style="font-size: 0.7rem;">{{ number_format($inventory->total_stock) }}</span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <span class="text-dark" style="font-size: 0.7rem;">{{ $inventory->published_count }}</span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <span class="text-dark" style="font-size: 0.7rem;">{{ $inventory->total_variations }}</span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        @if($inventory->status === 'published')
-                                            <span class="badge bg-success" style="font-size: 0.7rem;">Published</span>
-                                        @elseif($inventory->status === 'pending')
-                                            <span class="badge bg-warning text-dark" style="font-size: 0.7rem;">Pending</span>
-                                        @elseif($inventory->status === 'rejected')
-                                            <span class="badge bg-danger" style="font-size: 0.7rem;">Rejected</span>
-                                        @else
-                                            <span class="badge bg-secondary" style="font-size: 0.7rem;">Draft</span>
-                                        @endif
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <span class="text-muted" style="font-size: 0.7rem;">{{ $inventory->published_by ?: 'Not published' }}</span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <span class="text-muted" style="font-size: 0.7rem;">{{ $inventory->published_at ? $inventory->published_at->format('M d, Y') : 'Not published' }}</span>
-                                    </td>
-                                    <td class="py-1 px-2 align-middle text-center" style="width: 200px; min-width: 200px;">
-                                        <div class="d-flex flex-column gap-1 justify-content-center align-items-center">
-                                            <a href="{{ route('admin.product-management.index', ['inventory_id' => $inventory->id]) }}" 
-                                               class="btn btn-sm btn-primary">
-                                                <i class="fas fa-eye me-1"></i> View SKUs
-                                            </a>
-                                            <button onclick="checkAndViewProduct({{ $inventory->id }})" 
-                                                    class="btn btn-sm btn-info">
-                                                <i class="fas fa-external-link-alt me-1"></i> View Product
-                                            </button>
-                                            @if($inventory->status === 'published')
-                                                <form action="{{ route('admin.product-management.unpublish-inventory', $inventory->id) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-warning" 
-                                                            onclick="return confirm('Are you sure you want to unpublish this inventory?')">
-                                                        <i class="fas fa-eye-slash me-1"></i> Unpublish
-                                                    </button>
-                                                </form>
-                                            @elseif($inventory->status === 'rejected')
-                                                <button class="btn btn-sm btn-outline-secondary" disabled 
-                                                        title="Inventory has been rejected. Please contact administrator or create a new inventory.">
-                                                    <i class="fas fa-arrow-up me-1"></i> Publish
-                                                </button>
-                                            @elseif($inventory->has_user_facing_info)
-                                                <form action="{{ route('admin.product-management.publish-inventory', $inventory->id) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-success" 
-                                                            onclick="return confirm('Are you sure you want to publish this inventory?')">
-                                                        <i class="fas fa-arrow-up me-1"></i> Publish
-                                                    </button>
-                                                </form>
-                                            @else
-                                                <button class="btn btn-sm btn-outline-secondary" disabled 
-                                                        title="Please create user-facing information for at least one SKU first">
-                                                    <i class="fas fa-arrow-up me-1"></i> Publish
-                                                </button>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="10" class="text-center py-4">
-                                        <i class="fas fa-box-open text-muted mb-2" style="font-size: 2rem;"></i>
-                                        <h5 class="text-muted" style="font-size: 0.9rem;">No Inventory Found</h5>
-                                        <p class="text-muted" style="font-size: 0.75rem;">No inventory items match your search criteria.</p>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                
+        
         <!-- Pagination -->
         @if($inventories->hasPages())
-            <div class="d-flex justify-content-center mt-2">
-                <div class="pagination-container" style="padding: 0.8rem 1.2rem;">
-                    {{ $inventories->appends(request()->query())->links('vendor.pagination.bootstrap-5') }}
-                </div>
+            <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                {{ $inventories->appends(request()->query())->links() }}
             </div>
         @endif
-            </div>
-        </div>
+    </div>
 
         <!-- Issued Products Table -->
-        @if($issuedProducts->count() > 0)
-            <div class="card border-0 shadow-sm mt-4">
-                <div class="card-header bg-white border-0 py-1">
-                    <h6 class="mb-0 text-dark fw-semibold small">
-                        <i class="fas fa-exclamation-triangle me-2 text-warning"></i>Issued Products
+        @if(isset($issuedProducts) && $issuedProducts->count() > 0)
+            <div class="bg-white rounded-lg shadow overflow-hidden mt-6">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h6 class="text-lg font-medium text-gray-800 flex items-center">
+                        <i class="fas fa-exclamation-triangle mr-2 text-yellow-500"></i>Previously Published Products
                     </h6>
                 </div>
-                <div class="card-body p-0">
-                    <div class="d-flex justify-content-between align-items-center px-3 py-1 bg-light border-bottom">
-                        <span class="text-muted small">
-                            <i class="fas fa-box me-1"></i>{{ $issuedProducts->count() }} issued products
-                        </span>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 table-sm">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 150px; min-width: 150px;">
-                                        SKU
-                                    </th>
-                                    <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 200px; min-width: 200px;">
-                                        Product Name
-                                    </th>
-                                    <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                        Price
-                                    </th>
-                                    <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                        Category
-                                    </th>
-                                    <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                        Issued At
-                                    </th>
-                                    <th class="py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                        Reason
-                                    </th>
+                <div class="px-6 py-3 bg-gray-50 border-b border-gray-200">
+                    <span class="text-sm text-gray-600 flex items-center">
+                        <i class="fas fa-box mr-1"></i>{{ $issuedProducts->count() }} previously published products (now delisted)
+                    </span>
+                </div>
+                <div class="product-module-table" style="overflow: hidden !important; position: relative;">
+                    <div class="table-scroll-container" style="overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -ms-overflow-style: none; -webkit-scrollbar: none; width: 100%;">
+                        <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issued At</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach($issuedProducts as $product)
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ $product->sku }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900">{{ $product->name }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        RM{{ number_format($product->price, 2) }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            {{ ucfirst($product->category) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ $product->issued_at ? $product->issued_at->format('M d, Y H:i') : 'Unknown' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        Previously published, now delisted
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($issuedProducts as $product)
-                                    <tr class="border-bottom hover-row">
-                                        <td class="border-end py-1 px-2 align-middle text-center" style="width: 150px; min-width: 150px;">
-                                            <span class="text-dark" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="{{ $product->sku }}">{{ $product->sku }}</span>
-                                        </td>
-                                        <td class="border-end py-1 px-2 align-middle text-center" style="width: 200px; min-width: 200px;">
-                                            <span class="text-dark" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="{{ $product->name }}">{{ $product->name }}</span>
-                                        </td>
-                                        <td class="border-end py-1 px-2 align-middle text-center">
-                                            <span class="text-dark" style="font-size: 0.7rem;">RM{{ number_format($product->price, 2) }}</span>
-                                        </td>
-                                        <td class="border-end py-1 px-2 align-middle text-center">
-                                            <span class="badge bg-light text-dark border" style="font-size: 0.7rem;">{{ ucfirst($product->category) }}</span>
-                                        </td>
-                                        <td class="border-end py-1 px-2 align-middle text-center">
-                                            <span class="text-muted" style="font-size: 0.7rem;">{{ $product->issued_at ? $product->issued_at->format('M d, Y H:i') : 'Unknown' }}</span>
-                                        </td>
-                                        <td class="py-1 px-2 align-middle text-center">
-                                            <span class="text-dark" style="font-size: 0.7rem;">Inventory delisted</span>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
+                            @endforeach
+                        </tbody>
                         </table>
                     </div>
                 </div>
@@ -383,127 +351,101 @@
         @endif
 
         <!-- Reviews Management Table -->
-        <div class="card border-0 shadow-sm mt-4">
-            <div class="card-header bg-white border-0 py-1">
-                <h6 class="mb-0 text-dark fw-semibold small">
-                    <i class="fas fa-star me-2 text-warning"></i>Reviews Management
+        <div class="bg-white rounded-lg shadow overflow-hidden mt-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h6 class="text-lg font-medium text-gray-800 flex items-center">
+                    <i class="fas fa-star mr-2 text-yellow-500"></i>Reviews Management
                 </h6>
             </div>
-            <div class="card-body p-0">
-                <div class="d-flex justify-content-between align-items-center px-3 py-1 bg-light border-bottom">
-                    <span class="text-muted small">
-                        <i class="fas fa-comment me-1"></i>{{ $reviews->total() }} reviews
-                    </span>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0 table-sm">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 200px; min-width: 200px;">
-                                    Product
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 150px; min-width: 150px;">
-                                    User Name
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 100px; min-width: 100px;">
-                                    Rating
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 200px; min-width: 200px;">
-                                    Review Title
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                    Review Content
-                                </th>
-                                <th class="py-1 px-2 fw-bold text-dark text-center" style="width: 100px; min-width: 100px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                    Actions
-                                </th>
+            <div class="px-6 py-3 bg-gray-50 border-b border-gray-200">
+                <span class="text-sm text-gray-600 flex items-center">
+                    <i class="fas fa-comment mr-1"></i>{{ $reviews->total() }} reviews
+                </span>
+            </div>
+            <div class="product-module-table" style="overflow: hidden !important; position: relative;">
+                <div class="table-scroll-container" style="overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -ms-overflow-style: none; -webkit-scrollbar: none; width: 100%;">
+                    <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Review Title</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Review Content</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @forelse($reviews as $review)
+                            <tr class="hover:bg-gray-50">
+                                <!-- Product -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if($review->product)
+                                        <div class="text-sm font-medium text-gray-900">{{ $review->product->name }}</div>
+                                        <div class="text-sm text-gray-500">ID: {{ $review->product->id }}</div>
+                                    @else
+                                        <span class="text-sm text-red-600 italic">Product not found</span>
+                                    @endif
+                                </td>
+
+                                <!-- User Name -->
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {{ $review->reviewer_name }}
+                                </td>
+
+                                <!-- Rating -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            @if($i <= $review->rating)
+                                                <svg class="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                                                </svg>
+                                            @else
+                                                <svg class="w-4 h-4 text-gray-300 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                                                </svg>
+                                            @endif
+                                        @endfor
+                                        <span class="text-sm text-gray-500 ml-1">{{ $review->rating }}/5</span>
+                                    </div>
+                                </td>
+
+                                <!-- Review Title -->
+                                <td class="px-6 py-4">
+                                    <div class="text-sm font-medium text-gray-900">{{ $review->title }}</div>
+                                </td>
+
+                                <!-- Review Content -->
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-500">{{ Str::limit($review->content, 80) }}</div>
+                                </td>
+
+                                <!-- Actions -->
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <form action="{{ route('admin.product-management.rejectReview', $review->id) }}" 
+                                          method="POST" 
+                                          class="inline"
+                                          onsubmit="return confirm('Are you sure you want to reject this review? This action cannot be undone.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" 
+                                                class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 w-20 justify-center">
+                                            <i class="fas fa-times mr-1"></i>Reject
+                                        </button>
+                                    </form>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($reviews as $review)
-                                <tr class="border-bottom hover-row">
-                                    <!-- Product -->
-                                    <td class="border-end py-1 px-2 align-middle text-center" style="width: 200px; min-width: 200px;">
-                                        @if($review->product)
-                                            <div class="text-dark" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="{{ $review->product->name }}">
-                                                {{ $review->product->name }}
-                                            </div>
-                                            <div class="text-muted" style="font-size: 0.6rem;">ID: {{ $review->product->id }}</div>
-                                        @else
-                                            <span class="text-danger" style="font-size: 0.7rem; font-style: italic;">Product not found</span>
-                                        @endif
-                                    </td>
-
-                                    <!-- User Name -->
-                                    <td class="border-end py-1 px-2 align-middle text-center" style="width: 150px; min-width: 150px;">
-                                        <span class="text-dark fw-medium" style="font-size: 0.7rem;">{{ $review->reviewer_name }}</span>
-                                    </td>
-
-                                    <!-- Rating -->
-                                    <td class="border-end py-1 px-2 align-middle text-center" style="width: 100px; min-width: 100px;">
-                                        <div class="d-flex align-items-center justify-content-center">
-                                            @for($i = 1; $i <= 5; $i++)
-                                                @if($i <= $review->rating)
-                                                    <svg class="w-3 h-3 text-warning me-1" fill="currentColor" viewBox="0 0 20 20" style="width: 12px; height: 12px;">
-                                                        <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                                                    </svg>
-                                                @else
-                                                    <svg class="w-3 h-3 text-muted me-1" fill="currentColor" viewBox="0 0 20 20" style="width: 12px; height: 12px;">
-                                                        <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                                                    </svg>
-                                                @endif
-                                            @endfor
-                                            <span class="text-muted ms-1" style="font-size: 0.6rem;">{{ $review->rating }}/5</span>
-                                        </div>
-                                    </td>
-
-                                    <!-- Review Title -->
-                                    <td class="border-end py-1 px-2 align-middle text-center" style="width: 200px; min-width: 200px;">
-                                        <div class="text-dark fw-medium" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="{{ $review->title }}">
-                                            {{ $review->title }}
-                                        </div>
-                                    </td>
-
-                                    <!-- Review Content -->
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <div class="text-muted" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; max-width: 300px;" title="{{ $review->content }}">
-                                            {{ Str::limit($review->content, 80) }}
-                                        </div>
-                                    </td>
-
-                                    <!-- Actions -->
-                                    <td class="py-1 px-2 align-middle text-center" style="width: 100px; min-width: 100px;">
-                                        <div class="d-flex justify-content-center">
-                                            <!-- Reject Button -->
-                                            <form action="{{ route('admin.product-management.rejectReview', $review->id) }}" 
-                                                  method="POST" 
-                                                  class="d-inline"
-                                                  onsubmit="return confirm('Are you sure you want to reject this review? This action cannot be undone.')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" 
-                                                        class="btn btn-sm btn-danger" 
-                                                        style="font-size: 0.65rem; padding: 0.25rem 0.5rem; height: 24px;">
-                                                    <i class="fas fa-times me-1"></i>Reject
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="text-center py-4">
-                                        <div class="d-flex flex-column align-items-center">
-                                            <div class="mb-2">
-                                                <i class="fas fa-star text-muted" style="font-size: 2rem; opacity: 0.5;"></i>
-                                            </div>
-                                            <h5 class="text-muted mb-2" style="font-size: 0.9rem;">No Reviews Found</h5>
-                                            <p class="text-muted mb-0" style="font-size: 0.75rem;">No reviews have been submitted yet.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="px-6 py-10 text-center text-gray-500">
+                                    <i class="fas fa-star text-gray-400 mb-2 text-3xl"></i>
+                                    <h5 class="text-gray-600 text-lg font-medium mb-2">No Reviews Found</h5>
+                                    <p class="text-gray-500 text-sm">No reviews have been submitted yet.</p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
                     </table>
                 </div>
             </div>
@@ -511,199 +453,12 @@
 
         <!-- Reviews Pagination -->
         @if($reviews->hasPages())
-            <div class="d-flex justify-content-center mt-2">
-                <div class="pagination-container" style="padding: 0.8rem 1.2rem;">
-                    {{ $reviews->appends(request()->query())->links('vendor.pagination.bootstrap-5') }}
-                </div>
+            <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                {{ $reviews->appends(request()->query())->links() }}
             </div>
         @endif
     </div>
 
-    <!-- Bootstrap JS for alerts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Custom Styles -->
-    <style>
- body a,
-body a:link,
-body a:visited,
-body a:hover,
-body a:active {
-    text-decoration: none;
-    color: black
-}
-
-        /* Enhanced Page Header */
-        .page-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            color: white !important;
-            padding: 0.75rem 0 !important;
-            margin-bottom: 0.75rem !important;
-            border-radius: 0 0 8px 8px !important;
-            position: relative !important;
-            overflow: hidden !important;
-        }
-        
-        .page-header::before {
-            content: '' !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.1) 100%) !important;
-            animation: shimmer 3s infinite !important;
-        }
-        
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-        
-        .page-header > * {
-            position: relative;
-            z-index: 1;
-        }
-        
-        .table {
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-        
-        .table thead th {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            font-weight: 600;
-            font-size: 0.875rem;
-        }
-        
-        .table tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .table tbody td {
-            border: 1px solid #dee2e6;
-            vertical-align: middle;
-            font-size: 0.75rem;
-        }
-        
-        .table tbody td small {
-            font-size: 0.75rem;
-        }
-        
-        .table tbody td .badge {
-            font-size: 0.75rem;
-        }
-        
-        .d-flex.gap-1 .btn {
-            font-size: 0.65rem;
-            width: 80px;
-            min-width: 80px;
-            max-width: 80px;
-            white-space: nowrap;
-            border-radius: 4px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 0.25rem 0.5rem;
-            height: 28px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-        
-        .d-flex.gap-1 .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-        
-        .hover-row:hover {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            transform: scale(1.01);
-            transition: all 0.3s ease;
-        }
-        
-        .badge {
-            font-weight: 500;
-            padding: 0.4em 0.6em;
-            font-size: 0.75rem;
-            border-radius: 6px;
-        }
-        
-        .card {
-            border-radius: 12px;
-        }
-        
-        .form-control, .form-select {
-            border-radius: 8px;
-        }
-        
-        .btn {
-            border-radius: 8px;
-        }
-        
-        .table {
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        
-        .alert {
-            border-radius: 10px;
-            border: none;
-        }
-        
-        /* Enhanced Pagination */
-        .pagination-container {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 12px;
-            padding: 1.5rem 2rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            border: 1px solid #dee2e6;
-        }
-        
-        .pagination .page-link {
-            border: 1px solid #dee2e6;
-            color: #495057;
-            font-weight: 500;
-            font-size: 0.9rem;
-            padding: 0.6rem 1rem;
-            margin: 0 0.2rem;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            background: white;
-        }
-        
-        .pagination .page-link:hover {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-        
-        .pagination .page-item.active .page-link {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-color: #667eea;
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .pagination .page-item.disabled .page-link {
-            background: #f8f9fa;
-            color: #6c757d;
-            border-color: #dee2e6;
-            cursor: not-allowed;
-        }
-        
-        .pagination .page-item.disabled .page-link:hover {
-            background: #f8f9fa;
-            color: #6c757d;
-            border-color: #dee2e6;
-            transform: none;
-            box-shadow: none;
-        }
-    </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -760,5 +515,174 @@ body a:active {
                     button.disabled = false;
                 });
         }
+        
+        // 强制隐藏滚动条 - 使用更激进的方法
+        document.addEventListener('DOMContentLoaded', function() {
+            const tables = document.querySelectorAll('.product-module-table');
+            const scrollContainers = document.querySelectorAll('.table-scroll-container');
+            
+            // 处理主表格容器
+            tables.forEach(function(table) {
+                table.style.overflow = 'hidden';
+                table.style.position = 'relative';
+            });
+            
+            // 处理滚动容器
+            scrollContainers.forEach(function(container) {
+                container.style.scrollbarWidth = 'none';
+                container.style.msOverflowStyle = 'none';
+                container.style.overflowX = 'auto';
+                container.style.overflowY = 'hidden';
+                
+                // 强制应用样式
+                container.setAttribute('style', container.getAttribute('style') + '; scrollbar-width: none !important; -ms-overflow-style: none !important;');
+            });
+            
+            // 添加全局CSS来强制隐藏滚动条
+            const style = document.createElement('style');
+            style.textContent = `
+                .table-scroll-container::-webkit-scrollbar {
+                    display: none !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                    background: transparent !important;
+                }
+                .table-scroll-container::-webkit-scrollbar:horizontal {
+                    display: none !important;
+                    height: 0 !important;
+                    width: 0 !important;
+                }
+                .table-scroll-container::-webkit-scrollbar-track {
+                    display: none !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                }
+                .table-scroll-container::-webkit-scrollbar-thumb {
+                    display: none !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                }
+                .table-scroll-container::-webkit-scrollbar-corner {
+                    display: none !important;
+                }
+                .table-scroll-container::-webkit-scrollbar-button {
+                    display: none !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                }
+            `;
+            document.head.appendChild(style);
+        });
     </script>
 @endsection
+
+@push('styles')
+<style>
+    /* 完全隐藏滚动条 - 使用嵌套div方法 */
+    .product-module-table {
+        overflow: hidden !important;
+        position: relative !important;
+    }
+    
+    .table-scroll-container {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
+    
+    /* 隐藏所有webkit滚动条 */
+    .table-scroll-container::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        background: transparent !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar:horizontal {
+        display: none !important;
+        height: 0 !important;
+        width: 0 !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar-track {
+        display: none !important;
+        background: transparent !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar-thumb {
+        display: none !important;
+        background: transparent !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar-corner {
+        display: none !important;
+        background: transparent !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar-button {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar-button:horizontal {
+        display: none !important;
+        height: 0 !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar-track-piece {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar-track-piece:horizontal {
+        display: none !important;
+        height: 0 !important;
+    }
+    
+    /* 强制隐藏所有滚动条元素 */
+    .table-scroll-container *::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    .table-scroll-container *::-webkit-scrollbar-track {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    .table-scroll-container *::-webkit-scrollbar-thumb {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    /* 确保没有滚动条空间被保留 */
+    .table-scroll-container {
+        scrollbar-gutter: stable !important;
+        scrollbar-color: transparent transparent !important;
+    }
+    
+    /* 覆盖任何现有的滚动条样式 */
+    .table-scroll-container[style*="scrollbar"] {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+    }
+    
+    /* 额外的webkit滚动条隐藏 */
+    .table-scroll-container {
+        -webkit-scrollbar-width: none !important;
+        -webkit-scrollbar-height: none !important;
+    }
+</style>
+@endpush

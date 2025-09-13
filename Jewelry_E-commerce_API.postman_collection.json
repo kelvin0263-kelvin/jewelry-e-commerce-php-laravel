@@ -1,0 +1,980 @@
+{
+  "info": {
+    "name": "Jewelry E-commerce API",
+    "description": "Complete API collection for the jewelry e-commerce Laravel application",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user",
+              "host": ["{{base_url}}"],
+              "path": ["user"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products (Public)",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/products?per_page=15&order_by=created_at&order_direction=desc",
+              "host": ["{{base_url}}"],
+              "path": ["products"],
+              "query": [
+                {"key": "per_page", "value": "15"},
+                {"key": "order_by", "value": "created_at"},
+                {"key": "order_direction", "value": "desc"},
+                {"key": "visible", "value": "true", "disabled": true},
+                {"key": "published", "value": "true", "disabled": true},
+                {"key": "category", "value": "", "disabled": true},
+                {"key": "search", "value": "", "disabled": true},
+                {"key": "min_price", "value": "", "disabled": true},
+                {"key": "max_price", "value": "", "disabled": true}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/products/search?q=ring",
+              "host": ["{{base_url}}"],
+              "path": ["products", "search"],
+              "query": [
+                {"key": "q", "value": "ring"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/products/1",
+              "host": ["{{base_url}}"],
+              "path": ["products", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Product Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/products/stats/overview",
+              "host": ["{{base_url}}"],
+              "path": ["products", "stats", "overview"]
+            }
+          }
+        },
+        {
+          "name": "Get Products by Inventory",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/products/inventory/1",
+              "host": ["{{base_url}}"],
+              "path": ["products", "inventory", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products (Protected)",
+      "item": [
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"inventory_variation_id\": 1,\n  \"name\": \"测试产品\",\n  \"description\": \"产品描述\",\n  \"marketing_description\": \"营销描述\",\n  \"selling_price\": 99.99,\n  \"discount_price\": 79.99,\n  \"category\": \"ring\",\n  \"status\": \"draft\",\n  \"is_visible\": false,\n  \"features\": [\"特征1\", \"特征2\"],\n  \"gallery_images\": [\"image1.jpg\", \"image2.jpg\"],\n  \"main_image\": \"main.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products",
+              "host": ["{{base_url}}"],
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"更新后的产品名称\",\n  \"selling_price\": 129.99,\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/1",
+              "host": ["{{base_url}}"],
+              "path": ["products", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/products/1",
+              "host": ["{{base_url}}"],
+              "path": ["products", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/dashboard/stats",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "dashboard", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Customers",
+      "item": [
+        {
+          "name": "Get All Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/customers?page=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "customers"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "per_page", "value": "15"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Customer Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/customers/1",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "customers", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"is_admin\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/customers/1",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "customers", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Customer",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/customers/1",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "customers", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/customers/1/orders",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "customers", "1", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Block Customer",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/customers/1/block",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "customers", "1", "block"]
+            }
+          }
+        },
+        {
+          "name": "Unblock Customer",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/customers/1/unblock",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "customers", "1", "unblock"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Reports",
+      "item": [
+        {
+          "name": "Customer Segments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/reports/customer-segments",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "reports", "customer-segments"]
+            }
+          }
+        },
+        {
+          "name": "Sales Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/reports/sales?start_date=2024-01-01&end_date=2024-12-31",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "reports", "sales"],
+              "query": [
+                {"key": "start_date", "value": "2024-01-01"},
+                {"key": "end_date", "value": "2024-12-31"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Product Performance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/reports/products",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "reports", "products"]
+            }
+          }
+        },
+        {
+          "name": "Order Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/reports/orders",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "reports", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Revenue Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/reports/revenue",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "reports", "revenue"]
+            }
+          }
+        },
+        {
+          "name": "Export Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/reports/export/customers",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "reports", "export", "customers"]
+            }
+          }
+        },
+        {
+          "name": "Export Sales",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/reports/export/sales",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "reports", "export", "sales"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Support - Tickets (User)",
+      "item": [
+        {
+          "name": "Get User Tickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/support/tickets?status=open&priority=medium&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["support", "tickets"],
+              "query": [
+                {"key": "status", "value": "open"},
+                {"key": "priority", "value": "medium"},
+                {"key": "per_page", "value": "15"},
+                {"key": "search", "value": "", "disabled": true}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"订单问题\",\n  \"content\": \"详细描述问题内容\",\n  \"category\": \"general\",\n  \"priority\": \"medium\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/support/tickets",
+              "host": ["{{base_url}}"],
+              "path": ["support", "tickets"]
+            }
+          }
+        },
+        {
+          "name": "Get Ticket Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/support/tickets/1",
+              "host": ["{{base_url}}"],
+              "path": ["support", "tickets", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Ticket",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"更新后的主题\",\n  \"priority\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/support/tickets/1",
+              "host": ["{{base_url}}"],
+              "path": ["support", "tickets", "1"]
+            }
+          }
+        },
+        {
+          "name": "Reply to Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"我的回复内容\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/support/tickets/1/reply",
+              "host": ["{{base_url}}"],
+              "path": ["support", "tickets", "1", "reply"]
+            }
+          }
+        },
+        {
+          "name": "Close Ticket",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/support/tickets/1/close",
+              "host": ["{{base_url}}"],
+              "path": ["support", "tickets", "1", "close"]
+            }
+          }
+        },
+        {
+          "name": "Get FAQ",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/support/faq",
+              "host": ["{{base_url}}"],
+              "path": ["support", "faq"]
+            }
+          }
+        },
+        {
+          "name": "Get Support Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/support/categories",
+              "host": ["{{base_url}}"],
+              "path": ["support", "categories"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Support - Chat (User)",
+      "item": [
+        {
+          "name": "Start Chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"需要帮助\",\n  \"initial_message\": \"你好，我需要帮助...\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/support/chat/start",
+              "host": ["{{base_url}}"],
+              "path": ["support", "chat", "start"]
+            }
+          }
+        },
+        {
+          "name": "Get Queue Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/support/chat/queue/1",
+              "host": ["{{base_url}}"],
+              "path": ["support", "chat", "queue", "1"]
+            }
+          }
+        },
+        {
+          "name": "Leave Queue",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/support/chat/1/leave",
+              "host": ["{{base_url}}"],
+              "path": ["support", "chat", "1", "leave"]
+            }
+          }
+        },
+        {
+          "name": "Terminate Conversation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/support/chat/1/terminate",
+              "host": ["{{base_url}}"],
+              "path": ["support", "chat", "1", "terminate"]
+            }
+          }
+        },
+        {
+          "name": "Get User Conversations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/support/chat/conversations",
+              "host": ["{{base_url}}"],
+              "path": ["support", "chat", "conversations"]
+            }
+          }
+        },
+        {
+          "name": "Create Conversation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"需要帮助\",\n  \"initial_message\": \"你好，我需要帮助...\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/support/chat/conversations",
+              "host": ["{{base_url}}"],
+              "path": ["support", "chat", "conversations"]
+            }
+          }
+        },
+        {
+          "name": "Get Conversation Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/support/chat/conversations/1",
+              "host": ["{{base_url}}"],
+              "path": ["support", "chat", "conversations", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Conversation Messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/support/chat/conversations/1/messages",
+              "host": ["{{base_url}}"],
+              "path": ["support", "chat", "conversations", "1", "messages"]
+            }
+          }
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"我的消息内容\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/support/chat/conversations/1/messages",
+              "host": ["{{base_url}}"],
+              "path": ["support", "chat", "conversations", "1", "messages"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Support Tickets",
+      "item": [
+        {
+          "name": "Get All Tickets (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/support/tickets?status=open&priority=medium&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "tickets"],
+              "query": [
+                {"key": "status", "value": "open"},
+                {"key": "priority", "value": "medium"},
+                {"key": "per_page", "value": "15"},
+                {"key": "search", "value": "", "disabled": true}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Ticket Details (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/support/tickets/1",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "tickets", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Ticket (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"priority\": \"high\",\n  \"assigned_to\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/support/tickets/1",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "tickets", "1"]
+            }
+          }
+        },
+        {
+          "name": "Assign Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/support/tickets/1/assign",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "tickets", "1", "assign"]
+            }
+          }
+        },
+        {
+          "name": "Reply to Ticket (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"管理员回复内容\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/support/tickets/1/reply",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "tickets", "1", "reply"]
+            }
+          }
+        },
+        {
+          "name": "Close Ticket (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/support/tickets/1/close",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "tickets", "1", "close"]
+            }
+          }
+        },
+        {
+          "name": "Get Ticket History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/support/tickets/1/history",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "tickets", "1", "history"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Support Chat",
+      "item": [
+        {
+          "name": "Get All Conversations (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/support/chat/conversations",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "chat", "conversations"]
+            }
+          }
+        },
+        {
+          "name": "Get Conversation Details (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/support/chat/conversations/1",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "chat", "conversations", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Conversation Messages (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/support/chat/conversations/1/messages",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "chat", "conversations", "1", "messages"]
+            }
+          }
+        },
+        {
+          "name": "Send Message (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"管理员消息内容\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/support/chat/conversations/1/messages",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "chat", "conversations", "1", "messages"]
+            }
+          }
+        },
+        {
+          "name": "Transfer Conversation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_id\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/support/chat/conversations/1/transfer",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "chat", "conversations", "1", "transfer"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Chat Queue",
+      "item": [
+        {
+          "name": "Get Chat Queue",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/support/queue",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "queue"]
+            }
+          }
+        },
+        {
+          "name": "Take Next Chat",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/support/queue/take",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "queue", "take"]
+            }
+          }
+        },
+        {
+          "name": "Assign Chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/support/queue/1/assign",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "support", "queue", "1", "assign"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inventory",
+      "item": [
+        {
+          "name": "Get Inventory History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/inventory/history",
+              "host": ["{{base_url}}"],
+              "path": ["inventory", "history"]
+            }
+          }
+        },
+        {
+          "name": "Get All Inventory",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/inventory",
+              "host": ["{{base_url}}"],
+              "path": ["inventory"]
+            }
+          }
+        },
+        {
+          "name": "Get Inventory Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/inventory/1",
+              "host": ["{{base_url}}"],
+              "path": ["inventory", "1"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

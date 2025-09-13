@@ -68,12 +68,7 @@ Route::middleware('auth')->group(function () {
 // Review routes (public for now)
 Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 
-// Cart routes
-Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-Route::put('/cart/update/{id}', [CartController::class, 'update'])->name('cart.update');
-Route::delete('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
-Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout.index');
+// Cart routes (moved to auth middleware group below)
 
 // Wishlist routes
 Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
@@ -358,7 +353,8 @@ Route::middleware(['auth'])->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-    Route::post('/cart/add/{productId}', [CartController::class, 'add'])->name('cart.add');
+    Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+    Route::post('/cart/add/{productId}', [CartController::class, 'add'])->name('cart.add.product');
     Route::post('/cart/update/{id}', [CartController::class, 'update'])->name('cart.update');
     Route::post('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
     Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');

@@ -45,7 +45,10 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::where('is_visible', true)
-                       ->whereNotNull('published_at');
+                       ->whereNotNull('published_at')
+                       ->whereHas('variation', function($q) {
+                           $q->where('stock', '>', 0); // Only show products with stock
+                       });
 
         // Filter by category
         if ($request->has('category') && $request->category !== 'all') {
@@ -141,6 +144,12 @@ class ProductController extends Controller
             abort(404);
         }
 
+        // Check if product has stock
+        $inventory = $product->variation?->inventory;
+        if (!$inventory || $inventory->total_stock <= 0) {
+            abort(404, '该产品没有stock');
+        }
+
         $decoratedProduct = new CustomerProductDecorator($product);
         
         // Get approved reviews for this product
@@ -229,6 +238,11 @@ class ProductController extends Controller
     {
         $inventory = \App\Modules\Inventory\Models\Inventory::with(['variations.product'])
             ->findOrFail($inventoryId);
+
+        // Check if inventory has stock
+        if ($inventory->total_stock <= 0) {
+            return response('<script>alert("该产品没有stock"); window.history.back();</script>');
+        }
 
         // Get all published products for this inventory
         $publishedVariations = $inventory->variations()

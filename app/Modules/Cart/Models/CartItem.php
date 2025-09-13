@@ -11,12 +11,13 @@ class CartItem extends Model
 {
     use HasFactory;
 
-    protected $table = 'cart_items';
+    protected $table = 'carts';
 
     protected $fillable = [
         'user_id',
         'product_id',
         'quantity',
+        'price',
     ];
 
     // A cart item belongs to a user

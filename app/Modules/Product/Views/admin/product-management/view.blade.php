@@ -2,334 +2,210 @@
 
 @section('title', 'View Product Information')
 
-@push('styles')
-    <!-- Bootstrap CSS for buttons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-@endpush
-
 @section('content')
-    <div class="container-fluid">
-        <!-- Enhanced Page Header -->
-        <div class="page-header">
-            <div class="container-fluid">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="h5 mb-1 fw-bold">
-                            <i class="fas fa-eye me-1"></i>View Product Information
-                        </h1>
-                        <p class="mb-0 opacity-75" style="font-size: 0.8rem;">View detailed product information and customer-facing content</p>
+    <!-- Header -->
+    <div class="mb-6 flex items-start justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-eye mr-2"></i>View Product Information
+            </h1>
+            <p class="text-gray-600 mt-1 text-sm">View detailed product information and customer-facing content</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{{ route('admin.product-management.sku-details', $product->variation->inventory_id) }}" 
+               class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                <i class="fas fa-arrow-left mr-1"></i>Back to SKU Details
+            </a>
+            @if($product->product)
+                <a href="{{ route('admin.product-management.edit', $product->product) }}" 
+                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                    <i class="fas fa-edit mr-1"></i>Edit
+                </a>
+            @endif
+        </div>
+    </div>
+        
+    @if(session('success'))
+        <div class="mb-4 rounded-md bg-green-50 p-4">
+            <div class="flex">
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
+                </div>
+            </div>
+        </div>
+    @endif
+    
+    @if(session('error'))
+        <div class="mb-4 rounded-md bg-red-50 p-4">
+            <div class="flex">
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Left Side: Inventory Information -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200 bg-blue-600">
+                <h3 class="text-lg font-medium text-white flex items-center">
+                    <i class="fas fa-box mr-2"></i>Inventory Information
+                </h3>
+            </div>
+            <div class="p-4">
+                <div class="space-y-3 text-sm">
+                    <div class="flex">
+                        <div class="w-1/3 font-medium text-gray-700">SKU:</div>
+                        <div class="w-2/3 text-gray-900">{{ $product->variation->sku }}</div>
                     </div>
-                    <div class="d-flex gap-1">
-                        <a href="{{ route('admin.product-management.sku-details', $product->variation->inventory_id) }}" class="btn btn-light btn-sm">
-                            <i class="fas fa-arrow-left me-1"></i>Back to SKU Details
-                        </a>
-                        @if($product->product)
-                            <a href="{{ route('admin.product-management.edit', $product->product) }}" class="btn btn-warning btn-sm">
-                                <i class="fas fa-edit me-1"></i>Edit
-                            </a>
-                        @endif
+                    
+                    <div class="flex">
+                        <div class="w-1/3 font-medium text-gray-700">Product Name:</div>
+                        <div class="w-2/3 text-gray-900">{{ $product->variation->inventory->name }}</div>
+                    </div>
+                    
+                    <div class="flex">
+                        <div class="w-1/3 font-medium text-gray-700">Type:</div>
+                        <div class="w-2/3 text-gray-900">{{ str_replace('Item', '', $product->variation->inventory->type) }}</div>
+                    </div>
+                    
+                    <div class="flex">
+                        <div class="w-1/3 font-medium text-gray-700">Quantity:</div>
+                        <div class="w-2/3 text-gray-900">{{ $product->variation->stock }} units</div>
+                    </div>
+                    
+                    <div class="flex">
+                        <div class="w-1/3 font-medium text-gray-700">Price:</div>
+                        <div class="w-2/3 text-gray-900">RM{{ number_format($product->variation->price, 2) }}</div>
+                    </div>
+                    
+                    <div class="flex">
+                        <div class="w-1/3 font-medium text-gray-700">Features:</div>
+                        <div class="w-2/3">
+                            @foreach($product->features ?? [] as $feature)
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1 mb-1">{{ $feature }}</span>
+                            @endforeach
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-        
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
 
-        <div class="row">
-            <!-- Left Side: Inventory Information (50%) -->
-            <div class="col-md-6">
-                <div class="card border h-100">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-box me-2"></i>Inventory Information
-                        </h5>
-                    </div>
-                    <div class="card-body" style="padding: 0.75rem;">
-                        <div class="row mb-2" style="font-size: 0.8rem;">
-                            <div class="col-sm-4">
-                                <strong>SKU:</strong>
-                            </div>
-                            <div class="col-sm-8">
-                                {{ $product->variation->sku }}
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-2" style="font-size: 0.8rem;">
-                            <div class="col-sm-4">
-                                <strong>Product Name:</strong>
-                            </div>
-                            <div class="col-sm-8">
-                                {{ $product->variation->inventory->name }}
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-2" style="font-size: 0.8rem;">
-                            <div class="col-sm-4">
-                                <strong>Type:</strong>
-                            </div>
-                            <div class="col-sm-8">
-                                {{ str_replace('Item', '', $product->variation->inventory->type) }}
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-2" style="font-size: 0.8rem;">
-                            <div class="col-sm-4">
-                                <strong>Quantity:</strong>
-                            </div>
-                            <div class="col-sm-8">
-                                {{ $product->variation->stock }} units
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-2" style="font-size: 0.8rem;">
-                            <div class="col-sm-4">
-                                <strong>Price:</strong>
-                            </div>
-                            <div class="col-sm-8">
-                                RM{{ number_format($product->variation->price, 2) }}
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-2" style="font-size: 0.8rem;">
-                            <div class="col-sm-4">
-                                <strong>Features:</strong>
-                            </div>
-                            <div class="col-sm-8">
-                                @foreach($product->features ?? [] as $feature)
-                                    <span class="badge bg-light text-dark border me-1 mb-1" style="font-size: 0.8rem;">{{ $feature }}</span>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Right Side: Product Information -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200 bg-green-600">
+                <h3 class="text-lg font-medium text-white flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i>Product Information
+                </h3>
             </div>
-
-            <!-- Right Side: Product Information (50%) -->
-            <div class="col-md-6">
-                <div class="card border h-100">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-info-circle me-2"></i>Product Information
-                        </h5>
+            <div class="p-4">
+                @if($product->product)
+                    <!-- Product Information (Read-only) -->
+                    <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                        <h6 class="text-gray-600 mb-3 text-sm font-medium">Product Information</h6>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex">
+                                <div class="w-1/3 font-medium text-gray-700">SKU:</div>
+                                <div class="w-2/3 text-gray-900">{{ $product->sku }}</div>
+                            </div>
+                            <div class="flex">
+                                <div class="w-1/3 font-medium text-gray-700">Product Name:</div>
+                                <div class="w-2/3 text-gray-900">{{ $product->name }}</div>
+                            </div>
+                            <div class="flex">
+                                <div class="w-1/3 font-medium text-gray-700">Category:</div>
+                                <div class="w-2/3 text-gray-900">{{ ucfirst($product->category) }}</div>
+                            </div>
+                            <div class="flex">
+                                <div class="w-1/3 font-medium text-gray-700">Quantity:</div>
+                                <div class="w-2/3 text-gray-900">{{ $product->quantity }}</div>
+                            </div>
+                            <div class="flex">
+                                <div class="w-1/3 font-medium text-gray-700">Price:</div>
+                                <div class="w-2/3 text-gray-900">RM{{ number_format($product->price, 2) }}</div>
+                            </div>
+                            <div class="flex">
+                                <div class="w-1/3 font-medium text-gray-700">Features:</div>
+                                <div class="w-2/3">
+                                    @foreach($product->features ?? [] as $feature)
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1 mb-1">{{ $feature }}</span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        @if($product->product)
-                            <!-- Product Information (Read-only) -->
-                            <div class="mb-4 p-3 bg-light rounded" style="font-size: 0.8rem;">
-                                <h6 class="text-muted mb-3" style="font-size: 0.8rem;">Product Information</h6>
-                                <div class="row mb-2" style="font-size: 0.8rem;">
-                                    <div class="col-sm-4"><strong>SKU:</strong></div>
-                                    <div class="col-sm-8">{{ $product->sku }}</div>
-                                </div>
-                                <div class="row mb-2" style="font-size: 0.8rem;">
-                                    <div class="col-sm-4"><strong>Product Name:</strong></div>
-                                    <div class="col-sm-8">{{ $product->name }}</div>
-                                </div>
-                                <div class="row mb-2" style="font-size: 0.8rem;">
-                                    <div class="col-sm-4"><strong>Category:</strong></div>
-                                    <div class="col-sm-8">{{ ucfirst($product->category) }}</div>
-                                </div>
-                                <div class="row mb-2" style="font-size: 0.8rem;">
-                                    <div class="col-sm-4"><strong>Quantity:</strong></div>
-                                    <div class="col-sm-8">{{ $product->quantity }}</div>
-                                </div>
-                                <div class="row mb-2" style="font-size: 0.8rem;">
-                                    <div class="col-sm-4"><strong>Price:</strong></div>
-                                    <div class="col-sm-8">RM{{ number_format($product->price, 2) }}</div>
-                                </div>
-                                <div class="row mb-2" style="font-size: 0.8rem;">
-                                    <div class="col-sm-4"><strong>Features:</strong></div>
-                                    <div class="col-sm-8">
-                                        @foreach($product->features ?? [] as $feature)
-                                            <span class="badge bg-light text-dark border me-1 mb-1" style="font-size: 0.8rem;">{{ $feature }}</span>
+
+                    <!-- Marketing Information -->
+                    <div class="mb-4 text-sm">
+                        <h6 class="text-gray-600 mb-3 text-sm font-medium">Marketing Information</h6>
+                        
+                        <div class="mb-3">
+                            <strong class="text-gray-700">Marketing Description:</strong>
+                            <p class="mt-2 p-3 bg-gray-50 rounded text-sm">{{ $product->product->marketing_description ?: 'None' }}</p>
+                        </div>
+
+                        @if($product->product->discount_price)
+                        <div class="mb-3">
+                            <strong class="text-gray-700">Discounted Price:</strong>
+                            <p class="mt-2 text-green-600 text-sm">RM{{ number_format($product->product->discount_price, 2) }}</p>
+                        </div>
+                        @endif
+
+                        <div class="mb-3">
+                            <strong class="text-gray-700">Images:</strong>
+                            <div class="mt-2">
+                                @if($product->product->customer_images && count($product->product->customer_images) > 0)
+                                    <div class="grid grid-cols-3 gap-2">
+                                        @foreach($product->product->customer_images as $image)
+                                            <div>
+                                                <img src="{{ asset('storage/' . $image) }}" alt="Product Image" class="w-full h-24 object-cover rounded border">
+                                            </div>
                                         @endforeach
                                     </div>
-                                </div>
-                            </div>
-
-                            <!-- Marketing Information -->
-                            <div class="mb-4" style="font-size: 0.8rem;">
-                                <h6 class="text-muted mb-3" style="font-size: 0.8rem;">Marketing Information</h6>
-                                
-                                <div class="mb-3" style="font-size: 0.8rem;">
-                                    <strong>Marketing Description:</strong>
-                                    <p class="mt-2 p-3 bg-light rounded" style="font-size: 0.8rem;">{{ $product->product->marketing_description ?: 'None' }}</p>
-                                </div>
-
-                                @if($product->product->discount_price)
-                                <div class="mb-3" style="font-size: 0.8rem;">
-                                    <strong>Discounted Price:</strong>
-                                    <p class="mt-2 text-success" style="font-size: 0.8rem;">RM{{ number_format($product->product->discount_price, 2) }}</p>
-                                </div>
-                                @endif
-
-                                <div class="mb-3" style="font-size: 0.8rem;">
-                                    <strong>Images:</strong>
-                                    <div class="mt-2">
-                                        @if($product->product->customer_images && count($product->product->customer_images) > 0)
-                                            <div class="row">
-                                                @foreach($product->product->customer_images as $image)
-                                                    <div class="col-md-4 mb-2">
-                                                        <img src="{{ asset('storage/' . $image) }}" alt="Product Image" class="img-thumbnail" style="width: 100%; height: 100px; object-fit: cover;">
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @else
-                                            <p class="text-muted" style="font-size: 0.8rem;">No images uploaded</p>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="mb-3" style="font-size: 0.8rem;">
-                                    <strong>Video:</strong>
-                                    <div class="mt-2">
-                                        @if($product->product->product_video)
-                                            <video controls style="max-width: 100%; height: 200px;">
-                                                <source src="{{ asset('storage/' . $product->product->product_video) }}" type="video/mp4">
-                                                Your browser does not support the video tag.
-                                            </video>
-                                        @else
-                                            <p class="text-muted" style="font-size: 0.8rem;">No video uploaded</p>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="mb-3" style="font-size: 0.8rem;">
-                                    <strong>Status:</strong>
-                                    <div class="mt-2">
-                                        @if($product->status === 'published')
-                                            <span class="badge bg-success" style="font-size: 0.8rem;">Published</span>
-                                        @else
-                                            <span class="badge bg-warning text-dark" style="font-size: 0.8rem;">Pending</span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                @if($product->published_by && $product->published_by !== 'System')
-                                <div class="mb-3" style="font-size: 0.8rem;">
-                                    <strong>Published By:</strong>
-                                    <p class="mt-2" style="font-size: 0.8rem;">{{ $product->published_by }}</p>
-                                </div>
-                                @endif
-
-                                @if($product->published_at)
-                                <div class="mb-3" style="font-size: 0.8rem;">
-                                    <strong>Published At:</strong>
-                                    <p class="mt-2" style="font-size: 0.8rem;">{{ $product->published_at->format('M d, Y H:i') }}</p>
-                                </div>
+                                @else
+                                    <p class="text-gray-500 text-sm">No images uploaded</p>
                                 @endif
                             </div>
-                        @else
-                            <div class="text-center py-5" style="font-size: 0.8rem;">
-                                <i class="fas fa-exclamation-triangle text-warning mb-3" style="font-size: 3rem;"></i>
-                                <h5 class="text-muted" style="font-size: 0.8rem;">No Product Information Available</h5>
-                                <p class="text-muted" style="font-size: 0.8rem;">This inventory item has not been converted to a product yet.</p>
-                                <a href="{{ route('admin.product-management.create', $product->id) }}" class="btn btn-success" style="font-size: 0.8rem;">
-                                    <i class="fas fa-plus me-1"></i>Create Product
-                                </a>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong class="text-gray-700">Status:</strong>
+                            <div class="mt-2">
+                                @if($product->status === 'published')
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Published</span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Pending</span>
+                                @endif
                             </div>
+                        </div>
+
+                        @if($product->published_by && $product->published_by !== 'System')
+                        <div class="mb-3">
+                            <strong class="text-gray-700">Published By:</strong>
+                            <p class="mt-2 text-sm">{{ $product->published_by }}</p>
+                        </div>
+                        @endif
+
+                        @if($product->published_at)
+                        <div class="mb-3">
+                            <strong class="text-gray-700">Published At:</strong>
+                            <p class="mt-2 text-sm">{{ $product->published_at->format('M d, Y H:i') }}</p>
+                        </div>
                         @endif
                     </div>
-                </div>
+                @else
+                    <div class="text-center py-8">
+                        <i class="fas fa-exclamation-triangle text-yellow-500 mb-4 text-4xl"></i>
+                        <h5 class="text-gray-600 text-lg font-medium mb-2">No Product Information Available</h5>
+                        <p class="text-gray-500 text-sm mb-4">This inventory item has not been converted to a product yet.</p>
+                        <a href="{{ route('admin.product-management.create', $product->id) }}" 
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <i class="fas fa-plus mr-1"></i>Create Product
+                        </a>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
-
-    <!-- Bootstrap JS for alerts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Custom Styles -->
-    <style>
-         body a,
-body a:link,
-body a:visited,
-body a:hover,
-body a:active {
-    text-decoration: none;
-    color: black
-}
-
-        /* Enhanced Page Header */
-        .page-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 0.75rem 0;
-            margin-bottom: 0.75rem;
-            border-radius: 0 0 8px 8px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .page-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.1) 100%);
-            animation: shimmer 3s infinite;
-        }
-        
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-        
-        .page-header > * {
-            position: relative;
-            z-index: 1;
-        }
-        
-        /* Enhanced Cards */
-        .card {
-            transition: all 0.3s ease;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        }
-        
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-        }
-        
-        .card-header {
-            border-bottom: 1px solid #dee2e6;
-            padding: 0.75rem 1rem;
-        }
-        
-        .card-header h5 {
-            font-weight: 600;
-            margin: 0;
-            font-size: 0.9rem;
-        }
-        
-        .card-body {
-            padding: 1rem;
-        }
-        
-        .badge {
-            font-size: 0.75rem;
-            padding: 0.4em 0.6em;
-            border-radius: 6px;
-        }
-        
-        .img-thumbnail {
-            border: 2px solid #dee2e6;
-            border-radius: 6px;
-        }
-    </style>
-    
 @endsection

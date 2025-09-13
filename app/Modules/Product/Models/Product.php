@@ -135,6 +135,75 @@ public static function boot()
     
     // Listen for inventory status changes
     \App\Modules\Inventory\Models\Inventory::updated(function ($inventory) {
+        // Check if inventory was changed from draft to published (new product added)
+        if ($inventory->wasChanged('status') && $inventory->status === 'published') {
+            // Check if this is a new inventory (no existing products)
+            $existingProducts = self::where('inventory_id', $inventory->id)->count();
+            
+            if ($existingProducts === 0) {
+                // This is a new product from inventory module
+                session(['new_product_added' => [
+                    'sku' => $inventory->variations->first()?->sku ?? 'N/A',
+                    'name' => $inventory->name,
+                    'updated_at' => $inventory->updated_at->format('M d, Y H:i'),
+                    'changes' => 'New product added from inventory module'
+                ]]);
+            } else {
+                // This is a republished inventory - check if there are rejected products
+                $rejectedProducts = self::where('inventory_id', $inventory->id)
+                    ->where('status', 'rejected')
+                    ->get();
+                
+                if ($rejectedProducts->count() > 0) {
+                    // Update rejected products to pending status
+                    foreach ($rejectedProducts as $product) {
+                        $product->update([
+                            'status' => 'pending',
+                            'issued_at' => null,
+                            'issued_by' => null
+                        ]);
+                    }
+                    
+                    session(['inventory_republished' => [
+                        'sku' => $inventory->variations->first()?->sku ?? 'N/A',
+                        'name' => $inventory->name,
+                        'updated_at' => $inventory->updated_at->format('M d, Y H:i'),
+                        'changes' => 'Inventory has been republished - products status changed to pending'
+                    ]]);
+                } else {
+                    // Check if this is truly a republish (not just a new product with existing records)
+                    $hasPublishedProducts = self::where('inventory_id', $inventory->id)
+                        ->whereNotNull('published_at')
+                        ->exists();
+                    
+                    if ($hasPublishedProducts) {
+                        // Only show republish notification if there were previously published products
+                        session(['inventory_republished' => [
+                            'sku' => $inventory->variations->first()?->sku ?? 'N/A',
+                            'name' => $inventory->name,
+                            'updated_at' => $inventory->updated_at->format('M d, Y H:i'),
+                            'changes' => 'Inventory has been republished'
+                        ]]);
+                    }
+                }
+            }
+        }
+        
+        // Check for inventory changes (quantity, price, etc.) that need sync
+        if ($inventory->wasChanged(['total_stock', 'price', 'name', 'description']) && $inventory->status === 'published') {
+            // Check if there are any products for this inventory
+            $existingProducts = self::where('inventory_id', $inventory->id)->count();
+            
+            if ($existingProducts > 0) {
+                session(['inventory_changes' => [
+                    'sku' => $inventory->variations->first()?->sku ?? 'N/A',
+                    'name' => $inventory->name,
+                    'updated_at' => $inventory->updated_at->format('M d, Y H:i'),
+                    'changes' => 'Inventory data has been updated - sync required'
+                ]]);
+            }
+        }
+        
         // Check if inventory was changed from published to draft (unpublished)
         if ($inventory->wasChanged('status') && $inventory->status === 'draft') {
             // Mark all products as issued (rejected) instead of deleting them
@@ -142,7 +211,7 @@ public static function boot()
             
             foreach ($productsToUpdate as $product) {
                 $product->update([
-                    'status' => 'issued',
+                    'status' => 'rejected',
                     'issued_at' => now(),
                     'is_visible' => false
                 ]);
@@ -155,7 +224,7 @@ public static function boot()
             
             foreach ($variationProducts as $product) {
                 $product->update([
-                    'status' => 'issued',
+                    'status' => 'rejected',
                     'issued_at' => now(),
                     'is_visible' => false
                 ]);
@@ -166,18 +235,7 @@ public static function boot()
                 'sku' => $inventory->variations->first()?->sku ?? 'N/A',
                 'name' => $inventory->name,
                 'updated_at' => $inventory->updated_at->format('M d, Y H:i'),
-                'changes' => 'Products have been delisted and marked as issued'
-            ]]);
-        }
-        
-        // Check if inventory was changed from draft to published (republished)
-        if ($inventory->wasChanged('status') && $inventory->status === 'published') {
-            // Set session flag for republish notification
-            session(['inventory_republished' => [
-                'sku' => $inventory->variations->first()?->sku ?? 'N/A',
-                'name' => $inventory->name,
-                'updated_at' => $inventory->updated_at->format('M d, Y H:i'),
-                'changes' => 'Inventory has been republished'
+                'changes' => 'Products have been delisted and marked as rejected'
             ]]);
         }
     });
