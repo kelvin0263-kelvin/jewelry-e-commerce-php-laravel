@@ -18,6 +18,9 @@ use App\Modules\Product\Controllers\ProductManagementController;
 
 // Support controllers (chat/tickets/self-service)
 use App\Modules\Support\Controllers\ChatController;
+
+// User controllers
+use App\Modules\User\Controllers\Auth\RegisterAdminController;
 use App\Modules\Support\Controllers\ChatHistoryController;
 use App\Modules\Support\Controllers\TicketController;
 use App\Modules\Support\Controllers\AdminTicketController;
@@ -25,6 +28,13 @@ use App\Modules\Support\Controllers\ChatQueueController;
 use App\Modules\Support\Controllers\FaqController;
 use App\Modules\Support\Controllers\SelfServiceController;
 use App\Modules\User\Controllers\ProfileController;
+
+//User Controller
+use App\Modules\User\Controllers\Auth\UserProfileController;
+use App\Modules\User\Controllers\Auth\PasswordResetLinkController;
+use App\Modules\User\Controllers\Auth\NewPasswordController;
+use App\Modules\User\Controllers\Auth\VerifyCodeController;
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -283,3 +293,43 @@ Route::middleware(['auth'])->group(function () {
         return view('dashboard');
     })->name('dashboard');
 });
+
+
+
+//User
+
+// Request reset code (step 1)
+Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
+    ->name('password.request');
+Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+    ->name('password.email');
+
+// Verify code (step 2)
+Route::get('verify-code', [PasswordResetLinkController::class, 'showVerifyForm'])
+    ->name('password.verify.form');
+Route::post('verify-code', [PasswordResetLinkController::class, 'verifyCode'])
+    ->name('password.verify');
+
+// Reset password (step 3)
+Route::get('reset-password', [NewPasswordController::class, 'create'])
+    ->name('password.reset');
+Route::post('reset-password', [NewPasswordController::class, 'store'])
+    ->name('password.update');
+
+// Optional: custom update (if you want separate form handler)
+Route::post('reset-password/custom', [NewPasswordController::class, 'customUpdate'])
+    ->name('password.update.custom');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [UserProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profile/edit', [UserProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('profile', [UserProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [UserProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::delete('profile', [UserProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+//RegisterAdmin
+Route::get('/admin/register', [RegisterAdminController::class, 'createAdmin'])->name('admin.register.form');
+Route::post('/admin/register', [RegisterAdminController::class, 'storeAdmin'])->name('admin.register');
+
+

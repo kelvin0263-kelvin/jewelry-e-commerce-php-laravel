@@ -10,24 +10,6 @@ use App\Http\Controllers\Controller;
 
 class AuthController extends Controller
 {
-    // // 注册
-    // public function register(Request $request)
-    // {
-    //     $request->validate([
-    //         'name' => 'required|string|max:255',
-    //         'email' => 'required|string|email|unique:users',
-    //         'password' => 'required|string|min:6',
-    //     ]);
-
-    //     $user = User::create([
-    //         'name' => $request->name,
-    //         'email' => $request->email,
-    //         'password' => Hash::make($request->password),
-    //     ]);
-
-    //     return response()->json(['user' => $user], 201);
-    // }
-
     // 登录
     public function login(Request $request)
     {

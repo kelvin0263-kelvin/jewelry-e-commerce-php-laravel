@@ -6,16 +6,18 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use App\Modules\User\Services\UserService;
 
 class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
      */
-    public function register(): void
+    public function register()
     {
-        // Register Chat Observer Service Provider
-        $this->app->register(\App\Modules\Support\Providers\ChatObserverServiceProvider::class);
+        $this->app->singleton('user-service', function ($app) {
+            return new UserService();
+        });
     }
 
     /**
@@ -23,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->loadViewsFrom(base_path('app/Modules/User/Views'), 'user');
+
         // Named rate limiters for chat/tickets (per user and IP)
         RateLimiter::for('chat-send', function (Request $request) {
             $key = 'chat-send:' . ($request->user()?->id ?? 'guest') . '|' . $request->ip();
@@ -52,4 +56,6 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
     }
+
+
 }
