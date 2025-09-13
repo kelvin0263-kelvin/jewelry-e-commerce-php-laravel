@@ -76,11 +76,13 @@ class CartController extends Controller
                 'user_id' => Auth::id(),
                 'product_id' => $productId,
                 'quantity' => 1,
+                'price' => $product->discount_price ?? $product->price, // 👈 add price here
             ]);
         }
 
         return redirect()->route('cart.index')->with('success', "{$product->name} added to cart.");
     }
+
 
     // Update quantity
     public function update(Request $request, $id)
