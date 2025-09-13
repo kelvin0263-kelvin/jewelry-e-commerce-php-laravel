@@ -156,7 +156,7 @@
                     <div class="p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Account & Profile 👤</h3>
                         <div class="space-y-3">
-                            <a href="{{ route('profile.edit') }}" class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <a href="{{ route('profile.show') }}" class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                                 <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
                                     <span class="text-sm">⚙️</span>
                                 </div>

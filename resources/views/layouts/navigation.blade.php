@@ -15,7 +15,6 @@
                     <x-nav-link :href="route('home')" :active="request()->routeIs('home')">
                         {{ __('Home') }}
                     </x-nav-link>
-                    </x-nav-link>
                     <x-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
                         {{ __('Products') }}
                     </x-nav-link>
@@ -100,7 +99,7 @@
                         <x-dropdown-link :href="route('dashboard')">
                             {{ __('Dashboard') }}
                         </x-dropdown-link>
-                        <x-dropdown-link :href="route('profile.edit')">
+                        <x-dropdown-link :href="route('profile.show')">
                             {{ __('Profile') }}
                         </x-dropdown-link>
 

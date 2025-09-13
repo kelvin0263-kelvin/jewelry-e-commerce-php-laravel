@@ -9,6 +9,7 @@ use App\Modules\User\Controllers\Auth\PasswordController;
 use App\Modules\User\Controllers\Auth\PasswordResetLinkController;
 use App\Modules\User\Controllers\Auth\RegisteredUserController;
 use App\Modules\User\Controllers\Auth\VerifyEmailController;
+use App\Modules\User\Controllers\Auth\VerifyCodeController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -33,6 +34,12 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
+
+    Route::get('verify-code', [PasswordResetLinkController::class, 'showVerifyForm'])
+        ->name('password.verify.form');
+
+    Route::post('verify-code', [PasswordResetLinkController::class, 'verifyCode'])
+        ->name('password.verify');
 });
 
 Route::middleware('auth')->group(function () {

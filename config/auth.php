@@ -116,4 +116,17 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Registration Credentials
+    |--------------------------------------------------------------------------
+    |
+    | These credentials are required to register new admin users.
+    | Store these securely in your .env file.
+    |
+    */
+
+    'admin_email' => env('ADMIN_EMAIL', 'admin@example.com'),
+    'admin_password' => env('ADMIN_PASSWORD', 'admin123'),
+
 ];
