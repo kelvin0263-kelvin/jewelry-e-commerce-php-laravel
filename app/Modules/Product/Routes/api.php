@@ -25,7 +25,7 @@ Route::prefix('products')
     });
 
 // Protected product routes (require authentication)
-Route::group(function () {
+Route::group(['middleware' => 'auth:sanctum'], function () {
     Route::prefix('products')
         ->name('api.products.')
         ->controller(ProductApiController::class)
@@ -40,6 +40,7 @@ Route::group(function () {
             Route::delete('/{product}', 'destroy')->name('destroy');
         });
 });
+
 
 // Admin-only product routes
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
