@@ -96,20 +96,22 @@ class ProductManagementController extends Controller
         // This ensures we can show rejected status for unpublished inventories
         $query->where(function($q) {
             $q->where('status', 'published') // Currently published inventories
+              ->orWhere('status', 'draft') // Draft inventories (previously published, now unpublished)
               ->orWhereHas('variations.product', function($subQ) {
-                  $subQ->whereNotNull('published_at'); // Previously published inventories (now draft)
+                  $subQ->whereNotNull('published_at'); // Previously published inventories
               });
         });
 
         // Get paginated results
         $inventories = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        // Get issued products (products with status = 'issued' that were previously published and had customer info)
+        // Get issued products (products with status = 'issued' or 'rejected' that were previously published on user side)
         $issuedProducts = \App\Modules\Product\Models\Product::with(['variation.inventory', 'issuer'])
-            ->where('status', 'issued')
-            ->whereNotNull('published_at') // Only show products that were previously published
+            ->whereIn('status', ['issued', 'rejected'])
             ->whereNotNull('issued_at') // Only show products that have been issued
-            ->where('marketing_description', '!=', 'None') // Only show products that had customer info created
+            ->whereNotNull('published_at') // Only show products that were previously published on user side
+            ->where('is_visible', false) // Only show products that are no longer visible to users
+            ->where('marketing_description', '!=', 'None') // Only show products that had user side info created
             ->whereNotNull('marketing_description') // Ensure marketing description exists
             ->orderBy('issued_at', 'desc')
             ->get();
@@ -132,9 +134,9 @@ class ProductManagementController extends Controller
                 // If inventory is unpublished in inventory module, show as rejected
                 $status = 'rejected';
             } else {
-                // Check if there are any products that are visible but pending or issued (republished products)
+                // Check if there are any products that are visible but pending, rejected, or issued (republished products)
                 $pendingProducts = $inventory->variations->where('product.is_visible', true)
-                    ->whereIn('product.status', ['pending', 'issued'])
+                    ->whereIn('product.status', ['pending', 'rejected', 'issued'])
                     ->count();
                 
                 if ($publishedCount > 0 && $pendingProducts === 0) {
@@ -301,6 +303,12 @@ class ProductManagementController extends Controller
     {
         $inventory = \App\Modules\Inventory\Models\Inventory::with(['variations.product'])->findOrFail($inventoryId);
         
+        // Check if inventory has stock
+        if ($inventory->total_stock <= 0) {
+            return redirect()->route('admin.product-management.index')
+                ->with('error', '该产品没有stock - Cannot publish inventory with zero stock.');
+        }
+
         // Check if at least one SKU has user-facing information
         $skusWithUserFacingInfo = $inventory->variations->where('product.marketing_description', '!=', 'None')
             ->where('product.marketing_description', '!=', null);
@@ -657,6 +665,13 @@ class ProductManagementController extends Controller
         if (!$product->marketing_description || $product->marketing_description === 'None') {
             return redirect()->route('admin.product-management.index')
                 ->with('error', 'Please create customer information first before publishing.');
+        }
+
+        // Check if product has stock (quantity > 0)
+        $inventory = $product->variation?->inventory;
+        if (!$inventory || $inventory->total_stock <= 0) {
+            return redirect()->route('admin.product-management.index')
+                ->with('error', '该产品没有stock - Cannot publish product with zero stock.');
         }
 
         $product->update([

@@ -2,393 +2,259 @@
 
 @section('title', 'Edit Product Information')
 
-@push('styles')
-    <!-- Bootstrap CSS for buttons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-@endpush
-
 @section('content')
-    <div class="container-fluid">
-        <!-- Enhanced Page Header -->
-        <div class="page-header">
-            <div class="container-fluid">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="h5 mb-1 fw-bold">
-                            <i class="fas fa-edit me-1"></i>Edit Product Information
-                        </h1>
-                        <p class="mb-0 opacity-75" style="font-size: 0.7rem;">Update product information and customer-facing content</p>
+    <!-- Header -->
+    <div class="mb-6 flex items-start justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-edit mr-2"></i>Edit Product Information
+            </h1>
+            <p class="text-gray-600 mt-1 text-sm">Update marketing details and customer-facing information</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{{ route('admin.product-management.sku-details', $product->variation->inventory_id) }}" 
+               class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                <i class="fas fa-arrow-left mr-1"></i>Back
+            </a>
+        </div>
+    </div>
+        
+    @if(session('success'))
+        <div class="mb-4 rounded-md bg-green-50 p-4">
+            <div class="flex">
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
+                </div>
+            </div>
+        </div>
+    @endif
+    
+    @if(session('error'))
+        <div class="mb-4 rounded-md bg-red-50 p-4">
+            <div class="flex">
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Left Side: Inventory Information -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200 bg-blue-600">
+                <h3 class="text-lg font-medium text-white flex items-center">
+                    <i class="fas fa-box mr-2"></i>Inventory Information
+                </h3>
+            </div>
+            <div class="p-4">
+                <div class="space-y-3 text-sm">
+                    <div class="flex">
+                        <div class="w-1/3 font-medium text-gray-700">SKU:</div>
+                        <div class="w-2/3 text-gray-900">{{ $transformedProduct->variation->sku }}</div>
                     </div>
-                    <div class="d-flex gap-1">
-                        <a href="{{ route('admin.product-management.sku-details', $product->inventory->id) }}" class="btn btn-light btn-sm">
-                            <i class="fas fa-arrow-left me-1"></i>Back
-                        </a>
+                    
+                    <div class="flex">
+                        <div class="w-1/3 font-medium text-gray-700">Product Name:</div>
+                        <div class="w-2/3 text-gray-900">{{ $transformedProduct->variation->inventory->name }}</div>
+                    </div>
+                    
+                    <div class="flex">
+                        <div class="w-1/3 font-medium text-gray-700">Cost:</div>
+                        <div class="w-2/3 text-gray-900">RM{{ number_format($transformedProduct->price, 2) }}</div>
+                    </div>
+                    
+                    <div class="flex">
+                        <div class="w-1/3 font-medium text-gray-700">Type:</div>
+                        <div class="w-2/3 text-gray-900">{{ str_replace('Item', '', $transformedProduct->variation->inventory->type) }}</div>
+                    </div>
+                    
+                    <div class="flex">
+                        <div class="w-1/3 font-medium text-gray-700">Quantity:</div>
+                        <div class="w-2/3 text-gray-900">{{ $transformedProduct->variation->stock }} units</div>
+                    </div>
+                    
+                    <div class="flex">
+                        <div class="w-1/3 font-medium text-gray-700">Features:</div>
+                        <div class="w-2/3">
+                            @foreach($transformedProduct->features ?? [] as $feature)
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1 mb-1">{{ $feature }}</span>
+                            @endforeach
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-        
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-        
-        @if($errors->any())
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <strong>Validation Errors:</strong>
-                <ul class="mb-0">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
 
-        <div class="row">
-            <!-- Left Side: Inventory Information (50%) -->
-            <div class="col-md-6">
-                <div class="card border h-100">
-                    <div class="card-header bg-primary text-white" style="padding: 0.5rem 0.75rem;">
-                        <h5 class="card-title mb-0" style="font-size: 0.85rem;">
-                            <i class="fas fa-box me-2"></i>Inventory Information
-                        </h5>
-                    </div>
-                    <div class="card-body" style="padding: 0.75rem;">
-                        <div class="row mb-2" style="font-size: 0.8rem;">
-                            <div class="col-sm-4">
-                                <strong>SKU:</strong>
-                            </div>
-                            <div class="col-sm-8">
-                                {{ $product->sku }}
-                            </div>
+        <!-- Right Side: Edit Product Information Form -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200 bg-green-600">
+                <h3 class="text-lg font-medium text-white flex items-center">
+                    <i class="fas fa-edit mr-2"></i>Edit Product Information
+                </h3>
+            </div>
+            <div class="p-4">
+                <!-- Product Information (Read-only) -->
+                <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                    <h6 class="text-gray-600 mb-3 text-sm font-medium">Product Information for SKU: {{ $transformedProduct->variation->sku }} (Read-only)</h6>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex">
+                            <div class="w-1/3 font-medium text-gray-700">SKU:</div>
+                            <div class="w-2/3 text-gray-900">{{ $transformedProduct->sku }}</div>
                         </div>
-                        
-                        <div class="row mb-2" style="font-size: 0.8rem;">
-                            <div class="col-sm-4">
-                                <strong>Product Name:</strong>
-                            </div>
-                            <div class="col-sm-8">
-                                {{ $product->inventory->name }}
-                            </div>
+                        <div class="flex">
+                            <div class="w-1/3 font-medium text-gray-700">Product Name:</div>
+                            <div class="w-2/3 text-gray-900">{{ $transformedProduct->name }}</div>
                         </div>
-                        
-                        <div class="row mb-2" style="font-size: 0.8rem;">
-                            <div class="col-sm-4">
-                                <strong>Type:</strong>
-                            </div>
-                            <div class="col-sm-8">
-                                {{ str_replace('Item', '', $product->inventory->type) }}
-                            </div>
+                        <div class="flex">
+                            <div class="w-1/3 font-medium text-gray-700">Category:</div>
+                            <div class="w-2/3 text-gray-900">{{ ucfirst($transformedProduct->category) }}</div>
                         </div>
-                        
-                        <div class="row mb-2" style="font-size: 0.8rem;">
-                            <div class="col-sm-4">
-                                <strong>Quantity:</strong>
-                            </div>
-                            <div class="col-sm-8">
-                                {{ $product->inventory->variations->first()->stock ?? 0 }} units
-                            </div>
+                        <div class="flex">
+                            <div class="w-1/3 font-medium text-gray-700">Quantity:</div>
+                            <div class="w-2/3 text-gray-900">{{ $transformedProduct->quantity }}</div>
                         </div>
-                        
-                        <div class="row mb-2" style="font-size: 0.8rem;">
-                            <div class="col-sm-4">
-                                <strong>Price:</strong>
-                            </div>
-                            <div class="col-sm-8">
-                                RM{{ number_format($product->price, 2) }}
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-2" style="font-size: 0.8rem;">
-                            <div class="col-sm-4">
-                                <strong>Features:</strong>
-                            </div>
-                            <div class="col-sm-8">
+                        <div class="flex">
+                            <div class="w-1/3 font-medium text-gray-700">Features:</div>
+                            <div class="w-2/3">
                                 @foreach($transformedProduct->features ?? [] as $feature)
-                                    <span class="badge bg-light text-dark border me-1 mb-1" style="font-size: 0.65rem;">{{ $feature }}</span>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1 mb-1">{{ $feature }}</span>
                                 @endforeach
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Right Side: Edit Product Information Form (50%) -->
-            <div class="col-md-6">
-                <div class="card border h-100">
-                    <div class="card-header bg-success text-white" style="padding: 0.5rem 0.75rem;">
-                        <h5 class="card-title mb-0" style="font-size: 0.85rem;">
-                            <i class="fas fa-edit me-2"></i>Edit Product Information
-                        </h5>
+                <!-- Edit form -->
+                <form action="{{ route('admin.product-management.update', $product) }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    
+                    <div class="mb-4">
+                        <label for="marketing_description" class="block text-sm font-medium text-gray-700 mb-1">
+                            <strong>Marketing Description for SKU: {{ $transformedProduct->variation->sku }} *</strong>
+                        </label>
+                        <textarea class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('marketing_description') border-red-300 @enderror" 
+                                  id="marketing_description" name="marketing_description" rows="3" required 
+                                  minlength="10">{{ old('marketing_description', $product->marketing_description) }}</textarea>
+                        <p class="mt-1 text-xs text-gray-500">This description will be shown to customers on the website for this specific SKU only. Minimum 10 characters required.</p>
+                        @error('marketing_description')
+                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
-                    <div class="card-body" style="padding: 0.75rem;">
-                        <!-- Product Information (Read-only) -->
-                        <div class="mb-3 p-2 bg-light rounded" style="font-size: 0.8rem;">
-                            <h6 class="text-muted mb-2" style="font-size: 0.75rem;">Product Information (Read-only)</h6>
-                            <div class="row mb-1" style="font-size: 0.75rem;">
-                                <div class="col-sm-4"><strong>SKU:</strong></div>
-                                <div class="col-sm-8">{{ $product->sku }}</div>
+
+                    <div class="mb-4">
+                        <label for="selling_price" class="block text-sm font-medium text-gray-700 mb-1">
+                            <strong>Selling Price for SKU: {{ $transformedProduct->variation->sku }} *</strong>
+                        </label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">RM</span>
                             </div>
-                            <div class="row mb-1" style="font-size: 0.75rem;">
-                                <div class="col-sm-4"><strong>Product Name:</strong></div>
-                                <div class="col-sm-8">{{ $product->name }}</div>
+                            <input type="number" step="0.01" min="0" 
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('selling_price') border-red-300 @enderror" 
+                                   id="selling_price" name="selling_price" 
+                                   value="{{ old('selling_price', $product->selling_price) }}" required>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">The price customers will pay for this SKU. *Required</p>
+                        @error('selling_price')
+                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="discount_price" class="block text-sm font-medium text-gray-700 mb-1">
+                            <strong>Discounted Price for SKU: {{ $transformedProduct->variation->sku }}</strong>
+                        </label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">RM</span>
                             </div>
-                            <div class="row mb-1" style="font-size: 0.75rem;">
-                                <div class="col-sm-4"><strong>Category:</strong></div>
-                                <div class="col-sm-8">{{ ucfirst($product->category) }}</div>
-                            </div>
-                            <div class="row mb-1" style="font-size: 0.75rem;">
-                                <div class="col-sm-4"><strong>Quantity:</strong></div>
-                                <div class="col-sm-8">{{ $product->inventory->variations->first()->stock ?? 0 }}</div>
-                            </div>
-                            <div class="row mb-1" style="font-size: 0.75rem;">
-                                <div class="col-sm-4"><strong>Features:</strong></div>
-                                <div class="col-sm-8">
-                                    @foreach($transformedProduct->features ?? [] as $feature)
-                                        <span class="badge bg-light text-dark border me-1 mb-1" style="font-size: 0.65rem;">{{ $feature }}</span>
+                            <input type="number" step="0.01" min="0" 
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('discount_price') border-red-300 @enderror" 
+                                   id="discount_price" name="discount_price" 
+                                   value="{{ old('discount_price', $product->discount_price) }}">
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Optional. Leave empty if no discount for this SKU.</p>
+                        @error('discount_price')
+                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="customer_images" class="block text-sm font-medium text-gray-700 mb-1">
+                            <strong>Update Images for SKU: {{ $transformedProduct->variation->sku }}</strong>
+                        </label>
+                        <input type="file" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm @error('customer_images') border-red-300 @enderror" 
+                               id="customer_images" name="customer_images[]" multiple accept="image/*">
+                        <p class="mt-1 text-xs text-gray-500">Upload new images to replace existing ones. Supported formats: JPEG, PNG, JPG, GIF, WebP. Max size: 2MB per image.</p>
+                        @error('customer_images')
+                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                        
+                        <!-- Show existing images -->
+                        @if($product->customer_images && count($product->customer_images) > 0)
+                            <div class="mt-3">
+                                <p class="text-sm font-medium text-gray-700 mb-2">Current Images:</p>
+                                <div class="grid grid-cols-4 gap-2">
+                                    @foreach($product->customer_images as $image)
+                                        <div class="relative">
+                                            <img src="{{ asset('storage/' . $image) }}" alt="Product Image" class="w-full h-20 object-cover rounded border">
+                                        </div>
                                     @endforeach
                                 </div>
                             </div>
-                        </div>
-
-                        <form action="{{ route('admin.product-management.update', $product) }}" method="POST" enctype="multipart/form-data">
-                            @csrf
-                            @method('PUT')
-                            
-                            <!-- Hidden fields for required data -->
-                            <input type="hidden" name="description" value="{{ $product->description }}">
-                            <input type="hidden" name="category" value="{{ $product->category }}">
-                            
-                            
-                            <div class="mb-2" style="font-size: 0.8rem;">
-                                <label for="marketing_description" class="form-label" style="font-size: 0.8rem;">
-                                    <strong>Marketing Description for SKU: {{ $product->sku }} *</strong>
-                                </label>
-                                <textarea class="form-control @error('marketing_description') is-invalid @enderror" 
-                                          id="marketing_description" name="marketing_description" rows="3" required style="font-size: 0.8rem;">{{ old('marketing_description', $product->marketing_description) }}</textarea>
-                                <div class="form-text" style="font-size: 0.7rem;">This description will be shown to customers on the website for this specific SKU only.</div>
-                                @error('marketing_description')
-                                    <div class="invalid-feedback" style="font-size: 0.7rem;">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-2" style="font-size: 0.8rem;">
-                                <label for="selling_price" class="form-label" style="font-size: 0.8rem;">
-                                    <strong>Selling Price for SKU: {{ $product->sku }} *</strong>
-                                </label>
-                                <div class="input-group" style="font-size: 0.8rem;">
-                                    <span class="input-group-text" style="font-size: 0.8rem;">RM</span>
-                                    <input type="number" step="0.01" min="0" 
-                                           class="form-control @error('selling_price') is-invalid @enderror" 
-                                           id="selling_price" name="selling_price" 
-                                           value="{{ old('selling_price', $product->selling_price) }}" required style="font-size: 0.8rem;">
-                                </div>
-                                <div class="form-text" style="font-size: 0.7rem;">The price customers will pay for this SKU. *Required</div>
-                                @error('selling_price')
-                                    <div class="invalid-feedback" style="font-size: 0.7rem;">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-2" style="font-size: 0.8rem;">
-                                <label for="discount_price" class="form-label" style="font-size: 0.8rem;">
-                                    <strong>Discounted Price</strong>
-                                </label>
-                                <div class="input-group" style="font-size: 0.8rem;">
-                                    <span class="input-group-text" style="font-size: 0.8rem;">RM</span>
-                                    <input type="number" step="0.01" min="0" 
-                                           class="form-control @error('discount_price') is-invalid @enderror" 
-                                           id="discount_price" name="discount_price" 
-                                           value="{{ old('discount_price', $product->discount_price) }}" style="font-size: 0.8rem;">
-                                </div>
-                                <div class="form-text" style="font-size: 0.7rem;">Optional. Leave empty if no discount.</div>
-                                @error('discount_price')
-                                    <div class="invalid-feedback" style="font-size: 0.7rem;">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-2" style="font-size: 0.8rem;">
-                                <label for="customer_images" class="form-label" style="font-size: 0.8rem;">
-                                    <strong>Images for SKU: {{ $product->sku }}</strong>
-                                </label>
-                                <input type="file" class="form-control @error('customer_images') is-invalid @enderror" 
-                                       id="customer_images" name="customer_images[]" multiple accept="image/*" style="font-size: 0.8rem;">
-                                <div class="form-text" style="font-size: 0.7rem;">Upload up to 5 images for this specific SKU. Supported formats: JPEG, PNG, JPG, GIF, WebP. Max size: 2MB per image.</div>
-                                @error('customer_images')
-                                    <div class="invalid-feedback" style="font-size: 0.7rem;">{{ $message }}</div>
-                                @enderror
-                                
-                                @if($product->customer_images && count($product->customer_images) > 0)
-                                    <div class="mt-2">
-                                        <small class="text-muted">Current images:</small>
-                                        <div class="row mt-1">
-                                            @foreach($product->customer_images as $image)
-                                                <div class="col-md-3 mb-2">
-                                                    <img src="{{ asset('storage/' . $image) }}" alt="Current Image" class="img-thumbnail" style="width: 100%; height: 80px; object-fit: cover;">
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-
-                            <div class="mb-2" style="font-size: 0.8rem;">
-                                <label for="product_video" class="form-label" style="font-size: 0.8rem;">
-                                    <strong>Video</strong>
-                                </label>
-                                <input type="file" class="form-control @error('product_video') is-invalid @enderror" 
-                                       id="product_video" name="product_video" accept="video/*" style="font-size: 0.8rem;">
-                                <div class="form-text" style="font-size: 0.7rem;">Upload 1 video. Supported formats: MP4, AVI, MOV. Max size: 10MB.</div>
-                                @error('product_video')
-                                    <div class="invalid-feedback" style="font-size: 0.7rem;">{{ $message }}</div>
-                                @enderror
-                                
-                                @if($product->product_video)
-                                    <div class="mt-2">
-                                        <small class="text-muted">Current video:</small>
-                                        <div class="mt-1">
-                                            <video controls style="max-width: 200px; height: 120px;">
-                                                <source src="{{ asset('storage/' . $product->product_video) }}" type="video/mp4">
-                                                Your browser does not support the video tag.
-                                            </video>
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-success" style="font-size: 0.8rem;" onclick="console.log('Form submitted');">
-                                    <i class="fas fa-save me-1"></i>Update Product Information
-                                </button>
-                                <a href="{{ route('admin.product-management.sku-details', $product->inventory->id) }}" class="btn btn-secondary" style="font-size: 0.8rem;">
-                                    <i class="fas fa-times me-1"></i>Cancel
-                                </a>
-                            </div>
-                        </form>
+                        @endif
                     </div>
-                </div>
+
+                    <div class="flex space-x-3">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <i class="fas fa-save mr-1"></i>Update Information for SKU: {{ $transformedProduct->variation->sku }}
+                        </button>
+                        <a href="{{ route('admin.product-management.sku-details', $product->variation->inventory_id) }}" 
+                           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            <i class="fas fa-times mr-1"></i>Cancel
+                        </a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS for alerts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Custom Styles -->
-    <style>
-        body a,
-body a:link,
-body a:visited,
-body a:hover,
-body a:active {
-    text-decoration: none;
-    color: black
-}
-
-        /* Enhanced Page Header */
-        .page-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 0.75rem 0;
-            margin-bottom: 0.75rem;
-            border-radius: 0 0 8px 8px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .page-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.1) 100%);
-            animation: shimmer 3s infinite;
-        }
-        
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-        
-        .page-header > * {
-            position: relative;
-            z-index: 1;
-        }
-        
-        /* Enhanced Cards */
-        .card {
-            transition: all 0.3s ease;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        }
-        
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-        }
-        
-        .card-header {
-            border-bottom: 1px solid #dee2e6;
-            padding: 0.75rem 1rem;
-        }
-        
-        .card-header h5 {
-            font-weight: 600;
-            margin: 0;
-            font-size: 0.9rem;
-        }
-        
-        .card-body {
-            padding: 1rem;
-        }
-        
-        /* Enhanced Form Controls */
-        .form-control, .form-select {
-            border-radius: 8px;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-        
-        /* Enhanced Buttons */
-        .btn {
-            border-radius: 5px;
-            font-weight: 500;
-            font-size: 0.8rem;
-            transition: all 0.3s ease;
-        }
-        
-        .btn:hover {
-            transform: translateY(-1px);
-        }
-        
-        .alert {
-            border-radius: 10px;
-            border: none;
-        }
-        
-        .badge {
-            font-size: 0.75rem;
-            padding: 0.4em 0.6em;
-            border-radius: 6px;
-        }
-        
-        .img-thumbnail {
-            border: 2px solid #dee2e6;
-            border-radius: 6px;
-        }
-    </style>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const marketingDescription = document.getElementById('marketing_description');
+    
+    if (form && marketingDescription) {
+        form.addEventListener('submit', function(e) {
+            const description = marketingDescription.value.trim();
+            
+            if (description.length < 10) {
+                e.preventDefault();
+                alert('Marketing description must be at least 10 characters long.');
+                marketingDescription.focus();
+                return false;
+            }
+        });
+        
+        // Real-time validation
+        marketingDescription.addEventListener('input', function() {
+            const description = this.value.trim();
+            const isValid = description.length >= 10;
+            
+            if (isValid) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        });
+    }
+});
+</script>
+@endpush

@@ -2,253 +2,214 @@
 
 @section('title', 'Product Management')
 
-@push('styles')
-    <!-- Bootstrap CSS for buttons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-@endpush
-
 @section('content')
-    <div class="container-fluid" style="max-width: 1400px; margin: 0 auto;">
-        <!-- Enhanced Page Header -->
-        <div class="page-header">
-            <div class="container-fluid">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="h5 mb-1 fw-bold">
-                            <i class="fas fa-gem me-1"></i>SKU Details - {{ $inventory->name }}
-                        </h1>
-                        <p class="mb-0 opacity-75" style="font-size: 0.7rem;">Manage SKU variations for this inventory item</p>
-                    </div>
-                    <div class="d-flex gap-1">
-                        <a href="{{ route('admin.product-management.index') }}" class="custom-back-btn">
-                            <i class="fas fa-arrow-left"></i> Back
-                        </a>
-                    </div>
-                </div>
-            </div>
+    <!-- Header -->
+    <div class="mb-6 flex items-start justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-gem mr-2"></i>SKU Details - {{ $inventory->name }}
+            </h1>
+            <p class="text-gray-600 mt-1 text-sm">Manage SKU variations for this inventory item</p>
         </div>
+        <div class="flex gap-2">
+            <a href="{{ route('admin.product-management.index') }}" 
+               class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                <i class="fas fa-arrow-left mr-1"></i> Back
+            </a>
+        </div>
+    </div>
     
     @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show auto-dismiss" role="alert" data-dismiss-delay="5000">
-            {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="mb-4 rounded-md bg-green-50 p-4 auto-dismiss" data-dismiss-delay="5000">
+            <div class="flex">
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
+                </div>
+            </div>
         </div>
     @endif
     
     @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show auto-dismiss" role="alert" data-dismiss-delay="5000">
-            {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="mb-4 rounded-md bg-red-50 p-4 auto-dismiss" data-dismiss-delay="5000">
+            <div class="flex">
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
+                </div>
+            </div>
         </div>
     @endif
 
     @if(session('inventory_changes'))
-        <div class="alert alert-info alert-dismissible fade show auto-dismiss" role="alert" data-dismiss-delay="5000">
-            <h6 class="alert-heading">
-                <i class="fas fa-info-circle me-2"></i>Inventory Changes Detected
-            </h6>
-            <p class="mb-2">
-                <strong>SKU:</strong> {{ session('inventory_changes.sku') }} - 
-                <strong>Product:</strong> {{ session('inventory_changes.name') }}
-            </p>
-            <p class="mb-2">
-                <strong>Updated:</strong> {{ session('inventory_changes.updated_at') }}
-            </p>
-            <p class="mb-0">
-                <strong>Changes:</strong> {{ implode(', ', session('inventory_changes.changes')) }}
-            </p>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="mb-4 rounded-md bg-blue-50 p-4 auto-dismiss" data-dismiss-delay="5000">
+            <div class="flex">
+                <div class="ml-3">
+                    <h6 class="text-sm font-medium text-blue-800 flex items-center">
+                        <i class="fas fa-info-circle mr-2"></i>Inventory Changes Detected
+                    </h6>
+                    <p class="mt-1 text-sm text-blue-700">
+                        <strong>SKU:</strong> {{ session('inventory_changes.sku') }} - 
+                        <strong>Product:</strong> {{ session('inventory_changes.name') }}
+                    </p>
+                    <p class="mt-1 text-sm text-blue-700">
+                        <strong>Updated:</strong> {{ session('inventory_changes.updated_at') }}
+                    </p>
+                    <p class="mt-1 text-sm text-blue-700">
+                        <strong>Changes:</strong> {{ implode(', ', session('inventory_changes.changes')) }}
+                    </p>
+                </div>
+            </div>
         </div>
     @endif
 
 
 
-        <!-- Products Table -->
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 py-1">
-                <h6 class="mb-0 text-dark fw-semibold small">
-                    <i class="fas fa-list me-2 text-primary"></i>Products List
-                </h6>
-            </div>
-            <div class="card-body p-0">
-                <div class="d-flex justify-content-between align-items-center px-3 py-1 bg-light border-bottom">
-                    <span class="text-muted small">
-                        <i class="fas fa-box me-1"></i>{{ $products->total() }} products
-                    </span>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0 table-sm">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 100px; min-width: 100px;">
-                                    ID (SKU)
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 120px; min-width: 120px;">
-                                    Product Name
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 100px; min-width: 100px;">
-                                    Cost
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 100px; min-width: 100px;">
-                                    Selling Price
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 120px; min-width: 120px;">
-                                    Discounted Price
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 80px; min-width: 80px;">
-                                    Category
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 80px; min-width: 80px;">
-                                    Quantity
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 150px; min-width: 150px;">
-                                    Features
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 120px; min-width: 120px;">
-                                    Description
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 100px; min-width: 100px;">
-                                    Media
-                                </th>
-                                <th class="border-end py-1 px-2 fw-bold text-dark text-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem; width: 100px; min-width: 100px;">
-                                    Status
-                                </th>
-                                <th class="py-1 px-2 fw-bold text-dark text-center" style="width: 200px; min-width: 200px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-size: 0.75rem;">
-                                    Actions
-                                </th>
-            </tr>
-        </thead>
-        <tbody>
-                            @forelse ($products as $product)
-                                <tr class="border-bottom hover-row">
-                                    <td class="border-end py-1 px-2 align-middle text-center" style="width: 100px; min-width: 100px;">
-                                        <span class="text-dark" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="{{ $product->sku }}">{{ $product->sku }}</span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center" style="width: 120px; min-width: 120px;">
-                                        <span class="text-dark" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="{{ $product->name }}">{{ $product->name }}</span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <span class="text-dark" style="font-size: 0.7rem;">RM{{ number_format($product->price, 2) }}</span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <span class="text-dark" style="font-size: 0.7rem;">
-                                            @if($product->selling_price)
-                                                RM{{ number_format($product->selling_price, 2) }}
-                                            @else
-                                                None
-                                            @endif
-                                        </span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <span class="text-dark" style="font-size: 0.7rem;">
-                                            @if($product->discount_price)
-                                                RM{{ number_format($product->discount_price, 2) }}
-                                            @else
-                                                None
-                                            @endif
-                                        </span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <span class="badge bg-light text-dark border" style="font-size: 0.7rem;">{{ ucfirst($product->category) }}</span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <span class="text-dark" style="font-size: 0.7rem;">{{ $product->quantity }}</span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <div class="d-flex flex-column gap-1">
-                                            @foreach($product->features ?? [] as $feature)
-                                                <span class="badge bg-light text-dark border" style="font-size: 0.7rem;">{{ $feature }}</span>
-                                            @endforeach
-                                        </div>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <span class="text-muted" style="font-size: 0.7rem;">{{ $product->description ?: 'None' }}</span>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        <div class="d-flex gap-1 justify-content-center">
-                                            <span class="badge bg-light text-dark border" style="font-size: 0.7rem;">
-                                                <i class="fas fa-image me-1"></i>
-                                                {{ count($product->customer_images ?? []) }} img
-                                            </span>
-                                            <span class="badge bg-light text-dark border" style="font-size: 0.7rem;">
-                                                <i class="fas fa-video me-1"></i>
-                                                {{ $product->product_video ? '1 vid' : '0 vid' }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="border-end py-1 px-2 align-middle text-center">
-                                        @if($product->product_record && $product->product_record->marketing_description && $product->product_record->marketing_description !== 'None')
-                                            <span class="badge bg-success" style="font-size: 0.7rem;">Complete</span>
-                                        @else
-                                            <span class="badge bg-warning text-dark" style="font-size: 0.7rem;">Incomplete</span>
-                                        @endif
-                                    </td>
-                                    <td class="py-1 px-2 align-middle text-center" style="width: 200px; min-width: 200px;">
-                                        <div class="d-flex flex-column gap-1 justify-content-center align-items-center">
-                                            <!-- Create Information button - always show -->
-                                            @if($product->product_record)
-                                                <a href="{{ route('admin.product-management.enhance', $product->product_record) }}" 
-                                                   class="btn btn-sm btn-success">
-                                                    <i class="fas fa-plus-circle me-1"></i>Create Info
-                                                </a>
-                                            @else
-                                                <a href="{{ route('admin.product-management.create-info', $product->id) }}" 
-                                                   class="btn btn-sm btn-success">
-                                                    <i class="fas fa-plus-circle me-1"></i>Create Info
-                                                </a>
-                                            @endif
-                                            
-                                            <!-- Edit button - always show -->
-                                            @if($product->product_record)
-                                                <a href="{{ route('admin.product-management.edit', $product->product_record) }}" 
-                                                   class="btn btn-sm btn-primary">
-                                                    <i class="fas fa-edit me-1"></i>Edit
-                                                </a>
-                                            @else
-                                                <a href="{{ route('admin.product-management.create', $product->id) }}" 
-                                                   class="btn btn-sm btn-primary">
-                                                    <i class="fas fa-edit me-1"></i>Edit
-                                                </a>
-                                            @endif
-                                            
-                                        </div>
-                                    </td>
-                                </tr>
-            @empty
-                <tr>
-                                    <td colspan="9" class="text-center py-5">
-                                        <div class="d-flex flex-column align-items-center">
-                                            <div class="mb-4">
-                                                <div class="empty-state-icon">
-                                                    <i class="fas fa-box-open text-muted" style="font-size: 4rem; opacity: 0.5;"></i>
-                                                </div>
-                                            </div>
-                                            <h4 class="text-muted mb-3 fw-bold">No Products Found</h4>
-                                            <p class="text-muted mb-4 fs-5">No inventory variations are available at the moment</p>
-                                        </div>
-                                    </td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
-                </div>
-            </div>
+    <!-- Products Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h6 class="text-lg font-medium text-gray-800 flex items-center">
+                <i class="fas fa-list mr-2 text-blue-500"></i>Products List
+            </h6>
         </div>
-
-        <!-- Pagination -->
-        @if($products->hasPages())
-            <div class="d-flex justify-content-center mt-2">
-                <div class="pagination-container" style="padding: 0.8rem 1.2rem;">
-                    {{ $products->appends(request()->query())->links('vendor.pagination.bootstrap-5') }}
-                </div>
-            </div>
-        @endif
+        <div class="px-6 py-3 bg-gray-50 border-b border-gray-200">
+            <span class="text-sm text-gray-600 flex items-center">
+                <i class="fas fa-box mr-1"></i>{{ $products->total() }} products
+            </span>
+        </div>
+        <div class="product-module-table" style="overflow: hidden !important; position: relative;">
+            <div class="table-scroll-container" style="overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -ms-overflow-style: none; -webkit-scrollbar: none; width: 100%;">
+                <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">ID (SKU)</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Selling Price</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discounted Price</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Features</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Media</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @forelse ($products as $product)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 w-24">
+                                {{ $product->sku }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">{{ $product->name }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                RM{{ number_format($product->price, 2) }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                @if($product->selling_price)
+                                    RM{{ number_format($product->selling_price, 2) }}
+                                @else
+                                    None
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                @if($product->discount_price)
+                                    RM{{ number_format($product->discount_price, 2) }}
+                                @else
+                                    None
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    {{ ucfirst($product->category) }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ $product->quantity }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex flex-col space-y-1">
+                                    @foreach($product->features ?? [] as $feature)
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            {{ $feature }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ $product->description ?: 'None' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    <i class="fas fa-image mr-1"></i>
+                                    {{ count($product->customer_images ?? []) }} img
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if($product->product_record && $product->product_record->marketing_description && $product->product_record->marketing_description !== 'None')
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Complete
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        Incomplete
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex flex-col space-y-1">
+                                    <!-- Create Information button - always show -->
+                                    @if($product->product_record)
+                                        <a href="{{ route('admin.product-management.enhance', $product->product_record) }}" 
+                                           class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-cyan-500 hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 w-24 justify-center">
+                                            <i class="fas fa-plus-circle mr-1"></i>Create Info
+                                        </a>
+                                    @else
+                                        <a href="{{ route('admin.product-management.create-info', $product->id) }}" 
+                                           class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-cyan-500 hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 w-24 justify-center">
+                                            <i class="fas fa-plus-circle mr-1"></i>Create Info
+                                        </a>
+                                    @endif
+                                    
+                                    <!-- Edit button - always show -->
+                                    @if($product->product_record)
+                                        <a href="{{ route('admin.product-management.edit', $product->product_record) }}" 
+                                           class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-24 justify-center">
+                                            <i class="fas fa-edit mr-1"></i>Edit
+                                        </a>
+                                    @else
+                                        <a href="{{ route('admin.product-management.create', $product->id) }}" 
+                                           class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-24 justify-center">
+                                            <i class="fas fa-edit mr-1"></i>Edit
+                                        </a>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="12" class="px-6 py-10 text-center text-gray-500">
+                                <i class="fas fa-box-open text-gray-400 mb-2 text-3xl"></i>
+                                <h5 class="text-gray-600 text-lg font-medium mb-2">No Products Found</h5>
+                                <p class="text-gray-500 text-sm">No inventory variations are available at the moment</p>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    @if($products->hasPages())
+        <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
+            {{ $products->appends(request()->query())->links() }}
+        </div>
+    @endif
 
     </div>
 
-    <!-- Bootstrap JS for alerts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Custom Styles -->
     <style>
@@ -319,9 +280,6 @@ body a:active {
             font-size: 0.75rem;
         }
         
-        .table tbody td .badge {
-            font-size: 0.75rem;
-        }
         
         .d-flex.gap-1 .btn {
             font-size: 0.65rem;
@@ -352,34 +310,11 @@ body a:active {
             transition: all 0.3s ease;
         }
         
-        .badge {
-            font-weight: 500;
-            padding: 0.4em 0.6em;
-            font-size: 0.75rem;
-            border-radius: 6px;
-        }
         
-        .card {
-            border-radius: 12px;
-        }
         
-        .form-control, .form-select {
-            border-radius: 8px;
-        }
         
-        .btn {
-            border-radius: 8px;
-        }
         
-        .table {
-            border-radius: 12px;
-            overflow: hidden;
-        }
         
-        .alert {
-            border-radius: 10px;
-            border: none;
-        }
         
         .reviews-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -536,6 +471,233 @@ body a:active {
                 }, delay);
             });
         });
+        
+        // 强制隐藏滚动条 - 使用更激进的方法
+        document.addEventListener('DOMContentLoaded', function() {
+            const tables = document.querySelectorAll('.product-module-table');
+            const scrollContainers = document.querySelectorAll('.table-scroll-container');
+            
+            // 处理主表格容器
+            tables.forEach(function(table) {
+                table.style.overflow = 'hidden';
+                table.style.position = 'relative';
+            });
+            
+            // 处理滚动容器
+            scrollContainers.forEach(function(container) {
+                container.style.scrollbarWidth = 'none';
+                container.style.msOverflowStyle = 'none';
+                container.style.overflowX = 'auto';
+                container.style.overflowY = 'hidden';
+                
+                // 强制应用样式
+                container.setAttribute('style', container.getAttribute('style') + '; scrollbar-width: none !important; -ms-overflow-style: none !important;');
+            });
+            
+            // 添加全局CSS来强制隐藏滚动条
+            const style = document.createElement('style');
+            style.textContent = `
+                .table-scroll-container::-webkit-scrollbar {
+                    display: none !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                    background: transparent !important;
+                }
+                .table-scroll-container::-webkit-scrollbar:horizontal {
+                    display: none !important;
+                    height: 0 !important;
+                    width: 0 !important;
+                }
+                .table-scroll-container::-webkit-scrollbar-track {
+                    display: none !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                }
+                .table-scroll-container::-webkit-scrollbar-thumb {
+                    display: none !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                }
+                .table-scroll-container::-webkit-scrollbar-corner {
+                    display: none !important;
+                }
+                .table-scroll-container::-webkit-scrollbar-button {
+                    display: none !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                }
+            `;
+            document.head.appendChild(style);
+        });
     </script>
 @endsection
+
+@push('styles')
+<style>
+    /* Product Module - Hide floating horizontal scrollbars only */
+    .product-module-table {
+        -ms-overflow-style: none !important;  /* Internet Explorer 10+ */
+        scrollbar-width: none !important;  /* Firefox */
+        overflow-x: auto !important;
+    }
+    
+    /* Hide floating horizontal scrollbars in webkit browsers */
+    .product-module-table::-webkit-scrollbar { 
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        background: transparent !important;
+    }
+    
+    .product-module-table::-webkit-scrollbar:horizontal {
+        display: none !important;
+        height: 0 !important;
+    }
+    
+    .product-module-table::-webkit-scrollbar-track {
+        display: none !important;
+        background: transparent !important;
+    }
+    
+    .product-module-table::-webkit-scrollbar-thumb {
+        display: none !important;
+        background: transparent !important;
+    }
+    
+    .product-module-table::-webkit-scrollbar-corner {
+        display: none !important;
+        background: transparent !important;
+    }
+    
+    /* Hide floating horizontal scrollbar buttons */
+    .product-module-table::-webkit-scrollbar-button {
+        display: none !important;
+    }
+    
+    .product-module-table::-webkit-scrollbar-button:horizontal {
+        display: none !important;
+    }
+    
+    .product-module-table::-webkit-scrollbar-track-piece {
+        display: none !important;
+    }
+    
+    .product-module-table::-webkit-scrollbar-track-piece:horizontal {
+        display: none !important;
+    }
+    
+    /* Additional overrides for floating horizontal scrollbars */
+    .product-module-table {
+        scrollbar-gutter: stable !important;
+        scrollbar-color: transparent transparent !important;
+    }
+    
+    /* 完全隐藏滚动条 - 使用嵌套div方法 */
+    .product-module-table {
+        overflow: hidden !important;
+        position: relative !important;
+    }
+    
+    .table-scroll-container {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
+    
+    /* 隐藏所有webkit滚动条 */
+    .table-scroll-container::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        background: transparent !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar:horizontal {
+        display: none !important;
+        height: 0 !important;
+        width: 0 !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar-track {
+        display: none !important;
+        background: transparent !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar-thumb {
+        display: none !important;
+        background: transparent !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar-corner {
+        display: none !important;
+        background: transparent !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar-button {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar-button:horizontal {
+        display: none !important;
+        height: 0 !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar-track-piece {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    .table-scroll-container::-webkit-scrollbar-track-piece:horizontal {
+        display: none !important;
+        height: 0 !important;
+    }
+    
+    /* 强制隐藏所有滚动条元素 */
+    .table-scroll-container *::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    .table-scroll-container *::-webkit-scrollbar-track {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    .table-scroll-container *::-webkit-scrollbar-thumb {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    /* 确保没有滚动条空间被保留 */
+    .table-scroll-container {
+        scrollbar-gutter: stable !important;
+        scrollbar-color: transparent transparent !important;
+    }
+    
+    /* 覆盖任何现有的滚动条样式 */
+    .table-scroll-container[style*="scrollbar"] {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+    }
+    
+    /* 额外的webkit滚动条隐藏 */
+    .table-scroll-container {
+        -webkit-scrollbar-width: none !important;
+        -webkit-scrollbar-height: none !important;
+    }
+</style>
+@endpush
 

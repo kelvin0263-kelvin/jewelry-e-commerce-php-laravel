@@ -78,8 +78,9 @@ class ProductStoreRequest extends FormRequest
                 'not_regex:/<script|javascript:|vbscript:|on\w+\s*=/i'
             ],
             'customer_images' => [
-                'nullable',
+                'required',
                 'array',
+                'min:1',
                 'max:5'
             ],
             'customer_images.*' => [

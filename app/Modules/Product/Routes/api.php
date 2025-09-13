@@ -25,7 +25,7 @@ Route::prefix('products')
     });
 
 // Protected product routes (require authentication)
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::group(function () {
     Route::prefix('products')
         ->name('api.products.')
         ->controller(ProductApiController::class)

@@ -221,6 +221,20 @@
         transform: translateY(-1px);
     }
     
+    .add-to-cart-btn.no-stock-btn {
+        background: #f5f5f5;
+        color: #999;
+        border-color: #ddd;
+        cursor: not-allowed;
+    }
+    
+    .add-to-cart-btn.no-stock-btn:hover {
+        background: #f5f5f5;
+        color: #999;
+        border-color: #ddd;
+        transform: none;
+    }
+    
     .pagination-container {
         display: flex;
         justify-content: center;
@@ -496,9 +510,24 @@
                             <a href="{{ route('products.show', $product->product->id) }}" class="view-details-btn">
                                 View Details
                             </a>
-                            <button class="add-to-cart-btn" onclick="addToCart({{ $product->product->id }})">
-                                Add to Cart
-                            </button>
+                            @php
+                                $totalStock = 0;
+                                if ($product->product->inventory && $product->product->inventory->variations) {
+                                    $totalStock = $product->product->inventory->variations->sum('stock');
+                                } elseif ($product->product->variation) {
+                                    $totalStock = $product->product->variation->stock ?? 0;
+                                }
+                            @endphp
+                            
+                            @if($totalStock > 0)
+                                <button class="add-to-cart-btn" onclick="addToCart({{ $product->product->id }})">
+                                    Add to Cart
+                                </button>
+                            @else
+                                <button class="add-to-cart-btn no-stock-btn" disabled>
+                                    No Stock Now
+                                </button>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -544,6 +573,13 @@
 
 <script>
 function addToCart(productId) {
+    // Check if the button is disabled (out of stock)
+    const button = event.target;
+    if (button.disabled || button.classList.contains('no-stock-btn')) {
+        alert('This product is currently out of stock.');
+        return;
+    }
+    
     fetch('/cart/add', {
         method: 'POST',
         headers: {

@@ -47,6 +47,12 @@ class AdminProductDecorator extends BaseProductDecorator
 
     private function canPublish(): bool
     {
+        // Cannot publish if product is issued
+        if ($this->product->status === 'issued') {
+            return false;
+        }
+        
+        // Can publish if not visible or not published yet
         return !$this->product->is_visible || !$this->product->published_at;
     }
 

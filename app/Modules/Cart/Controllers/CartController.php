@@ -30,23 +30,108 @@ class CartController extends Controller
     }
 
     // Add product to cart
-    public function add($productId)
+    public function add(Request $request, $productId = null)
     {
+        // Handle both GET and POST requests
+        if ($request->isMethod('post')) {
+            $data = $request->validate([
+                'product_id' => 'required|integer',
+                'quantity' => 'required|integer|min:1',
+                'price' => 'nullable|numeric|min:0'
+            ]);
+            
+            $productId = $data['product_id'];
+            $quantity = $data['quantity'];
+            $price = $data['price'] ?? null;
+        } else {
+            $quantity = 1;
+            $price = null;
+        }
+
+        // Get the product with inventory information
+        $product = \App\Modules\Product\Models\Product::with('inventory.variations')->find($productId);
+        
+        if (!$product || !$product->inventory) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Product not found or inventory not available.']);
+            }
+            return redirect()->back()->withErrors(['cart' => 'Product not found or inventory not available.']);
+        }
+
+        $inventory = $product->inventory;
+
+        // Calculate available stock
+        $availableStock = 0;
+        if ($inventory->variations()->exists()) {
+            // If variations exist, sum their stock
+            $availableStock = $inventory->variations->sum('stock');
+        } else {
+            $availableStock = $inventory->quantity ?? 0;
+        }
+
+        // Check if product is out of stock
+        if ($availableStock <= 0) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'This product is currently out of stock.']);
+            }
+            return redirect()->back()->withErrors(['cart' => 'This product is currently out of stock.']);
+        }
+
+        // Check if requested quantity exceeds available stock
+        if ($quantity > $availableStock) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => "Only {$availableStock} item(s) available in stock."]);
+            }
+            return redirect()->back()->withErrors(['cart' => "Only {$availableStock} item(s) available in stock."]);
+        }
+
+        // Check existing cart item
         $cartItem = CartItem::where('user_id', Auth::id())
             ->where('product_id', $productId)
             ->first();
 
         if ($cartItem) {
-            $cartItem->increment('quantity'); // add 1
+            // Check if adding this quantity would exceed stock
+            $newTotalQuantity = $cartItem->quantity + $quantity;
+            if ($newTotalQuantity > $availableStock) {
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => "Cannot add {$quantity} more items. Only " . ($availableStock - $cartItem->quantity) . " more available."]);
+                }
+                return redirect()->back()->withErrors(['cart' => "Cannot add {$quantity} more items. Only " . ($availableStock - $cartItem->quantity) . " more available."]);
+            }
+            
+            $cartItem->increment('quantity', $quantity);
         } else {
-            CartItem::create([
-                'user_id' => Auth::id(),
-                'product_id' => $productId,
-                'quantity' => 1,
-            ]);
+            try {
+                $finalPrice = $price ?? $product->selling_price ?? $product->price;
+                
+                if (!$finalPrice || $finalPrice <= 0) {
+                    if ($request->expectsJson()) {
+                        return response()->json(['success' => false, 'message' => 'Invalid product price.']);
+                    }
+                    return redirect()->back()->withErrors(['cart' => 'Invalid product price.']);
+                }
+                
+                CartItem::create([
+                    'user_id' => Auth::id(),
+                    'product_id' => $productId,
+                    'quantity' => $quantity,
+                    'price' => $finalPrice,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Cart creation error: ' . $e->getMessage());
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Failed to add product to cart. Please try again.']);
+                }
+                return redirect()->back()->withErrors(['cart' => 'Failed to add product to cart. Please try again.']);
+            }
         }
 
-        return redirect()->route('cart.index');
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Product added to cart successfully!']);
+        }
+
+        return redirect()->route('cart.index')->with('success', 'Product added to cart successfully!');
     }
 
     // Update quantity

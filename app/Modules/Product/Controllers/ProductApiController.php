@@ -291,7 +291,7 @@ class ProductApiController extends Controller
                 ->count(),
             'draft_products' => Product::where('status', 'draft')->count(),
             'pending_products' => Product::where('status', 'pending')->count(),
-            'issued_products' => Product::where('status', 'issued')->count(),
+            'issued_products' => Product::whereIn('status', ['issued', 'rejected'])->count(),
             'categories' => Product::distinct()->pluck('category')->filter()->count(),
             'average_price' => Product::where('is_visible', true)
                 ->whereNotNull('published_at')

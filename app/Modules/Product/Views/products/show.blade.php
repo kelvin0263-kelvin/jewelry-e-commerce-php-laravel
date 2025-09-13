@@ -322,6 +322,19 @@
         color: white;
     }
     
+    .add-to-bag-btn.no-stock-btn {
+        background: #f5f5f5;
+        color: #999;
+        border-color: #ddd;
+        cursor: not-allowed;
+    }
+    
+    .add-to-bag-btn.no-stock-btn:hover {
+        background: #f5f5f5;
+        color: #999;
+        border-color: #ddd;
+    }
+    
     .additional-actions {
         display: flex;
         flex-direction: column;
@@ -1025,9 +1038,24 @@
                 
                 <!-- Action Buttons -->
                 <div class="action-buttons">
-                    <button class="add-to-bag-btn" onclick="addToCart({{ $decoratedProduct->product->id }})">
-                        ADD TO BAG
-                    </button>
+                    @php
+                        $totalStock = 0;
+                        if ($inventory && $inventory->variations) {
+                            $totalStock = $inventory->variations->sum('stock');
+                        } elseif ($decoratedProduct->product->variation) {
+                            $totalStock = $decoratedProduct->product->variation->stock ?? 0;
+                        }
+                    @endphp
+                    
+                    @if($totalStock > 0)
+                        <button class="add-to-bag-btn" onclick="addToCart({{ $decoratedProduct->product->id }})">
+                            ADD TO BAG
+                        </button>
+                    @else
+                        <button class="add-to-bag-btn no-stock-btn" disabled>
+                            NO STOCK NOW
+                        </button>
+                    @endif
                 </div>
                 
                 <div class="additional-actions">
@@ -1228,8 +1256,14 @@
     function increaseQuantity() {
         const input = document.getElementById('quantity');
         const currentValue = parseInt(input.value);
-        if (currentValue < 99) {
+        const maxStock = selectedSKU ? selectedSKU.stock : 99;
+        
+        if (currentValue < maxStock) {
             input.value = currentValue + 1;
+        } else {
+            // Don't show alert, just prevent increasing beyond max
+            // The user can still manually type a lower value
+            console.log(`Maximum quantity reached: ${maxStock}`);
         }
     }
     
@@ -1264,6 +1298,41 @@
             updatePrice();
             updateFeatures();
             updateMarketingDescription();
+        } else {
+            // If no SKU options exist, create a default selectedSKU from the product data
+            const productId = {{ $decoratedProduct->product->id }};
+            const priceElement = document.querySelector('.price-display');
+            let price = 0;
+            if (priceElement) {
+                const priceText = priceElement.textContent;
+                const priceMatch = priceText.match(/RM\s+([\d,]+\.?\d*)/);
+                if (priceMatch) {
+                    price = parseFloat(priceMatch[1].replace(',', ''));
+                }
+            }
+            
+            // Get stock from the PHP data
+            @php
+                $totalStock = 0;
+                if ($inventory && $inventory->variations) {
+                    $totalStock = $inventory->variations->sum('stock');
+                } elseif ($decoratedProduct->product->variation) {
+                    $totalStock = $decoratedProduct->product->variation->stock ?? 0;
+                }
+            @endphp
+            
+            selectedSKU = {
+                sku: 'default',
+                productId: productId,
+                price: price,
+                sellingPrice: price,
+                discountPrice: null,
+                stock: {{ $totalStock }},
+                features: [],
+                marketingDescription: ''
+            };
+            maxStock = selectedSKU.stock;
+            updateQuantityControls();
         }
     });
     
@@ -1359,24 +1428,75 @@
     
     function updateQuantityControls() {
         const quantityInput = document.getElementById('quantity');
+        const addToBagBtn = document.querySelector('.add-to-bag-btn');
+        
         if (quantityInput && selectedSKU) {
             quantityInput.max = selectedSKU.stock;
             if (parseInt(quantityInput.value) > selectedSKU.stock) {
                 quantityInput.value = selectedSKU.stock;
+            }
+            
+            // Add input event listener to validate quantity in real-time
+            quantityInput.addEventListener('input', function() {
+                const value = parseInt(this.value);
+                if (value > selectedSKU.stock) {
+                    this.value = selectedSKU.stock;
+                    alert(`Maximum quantity available: ${selectedSKU.stock}`);
+                } else if (value < 1) {
+                    this.value = 1;
+                }
+            });
+            
+            // Update add to bag button based on stock
+            if (selectedSKU.stock <= 0) {
+                addToBagBtn.textContent = 'NO STOCK NOW';
+                addToBagBtn.disabled = true;
+                addToBagBtn.classList.add('no-stock-btn');
+                addToBagBtn.onclick = null;
+            } else {
+                addToBagBtn.textContent = 'ADD TO BAG';
+                addToBagBtn.disabled = false;
+                addToBagBtn.classList.remove('no-stock-btn');
+                addToBagBtn.onclick = function() { addToCart(selectedSKU.productId); };
             }
         }
     }
     
     
     function addToCart(productId) {
-        const quantity = document.getElementById('quantity').value;
+        const quantity = parseInt(document.getElementById('quantity').value);
+        
+        // Validate quantity
+        if (quantity < 1) {
+            alert('Please select a valid quantity.');
+            return;
+        }
+        
+        // Check stock before adding to cart
+        if (selectedSKU) {
+            if (selectedSKU.stock <= 0) {
+                alert('This product is currently out of stock.');
+                return;
+            }
+            
+            if (quantity > selectedSKU.stock) {
+                alert(`Only ${selectedSKU.stock} item(s) available in stock. Please adjust your quantity.`);
+                // Reset quantity to maximum available
+                document.getElementById('quantity').value = selectedSKU.stock;
+                return;
+            }
+        }
         
         // Determine the correct price to use
         let priceToUse;
-        if (selectedSKU && selectedSKU.discountPrice && selectedSKU.discountPrice > 0) {
-            priceToUse = selectedSKU.discountPrice;
-        } else if (selectedSKU && selectedSKU.sellingPrice) {
-            priceToUse = selectedSKU.sellingPrice;
+        if (selectedSKU) {
+            if (selectedSKU.discountPrice && selectedSKU.discountPrice > 0) {
+                priceToUse = selectedSKU.discountPrice;
+            } else if (selectedSKU.sellingPrice) {
+                priceToUse = selectedSKU.sellingPrice;
+            } else {
+                priceToUse = selectedSKU.price;
+            }
         } else {
             // Fallback to the displayed price
             const priceElement = document.querySelector('.price-display');
@@ -1389,20 +1509,58 @@
             }
         }
         
+        // Ensure we have a valid price
+        if (!priceToUse || priceToUse <= 0) {
+            alert('Unable to determine product price. Please try again.');
+            return;
+        }
+        
+        // Debug information
+        console.log('Adding to cart:', {
+            product_id: productId,
+            quantity: quantity,
+            price: priceToUse,
+            selectedSKU: selectedSKU
+        });
+        
+        // Check CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (!csrfToken) {
+            alert('CSRF token not found. Please refresh the page and try again.');
+            return;
+        }
+        
+        console.log('CSRF Token:', csrfToken.getAttribute('content'));
+        console.log('Request data:', {
+            product_id: productId,
+            quantity: quantity,
+            price: priceToUse
+        });
+        
         fetch('/cart/add', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': csrfToken.getAttribute('content')
             },
             body: JSON.stringify({
                 product_id: productId,
-                quantity: parseInt(quantity),
+                quantity: quantity,
                 price: priceToUse
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return response.json();
+        })
         .then(data => {
+            console.log('Response data:', data);
             if (data.success) {
                 alert('Product added to cart successfully!');
             } else {
@@ -1410,8 +1568,9 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            console.error('Detailed error:', error);
+            console.error('Error stack:', error.stack);
+            alert('An error occurred: ' + error.message + '. Please check the console for more details.');
         });
     }
     
