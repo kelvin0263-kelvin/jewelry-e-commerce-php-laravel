@@ -3,6 +3,7 @@
 namespace App\Modules\Product\Decorators;
 
 use App\Modules\Product\Models\Product;
+use Illuminate\Support\Facades\Storage;
 
 class CustomerProductDecorator extends BaseProductDecorator
 {
@@ -39,9 +40,20 @@ class CustomerProductDecorator extends BaseProductDecorator
     private function getMainImage(): string
     {
         if ($this->product->customer_images && count($this->product->customer_images) > 0) {
-            return asset('storage/' . $this->product->customer_images[0]);
+            $path = (string) $this->product->customer_images[0];
+            // Normalize stored path (remove leading slashes and optional "public/" prefix)
+            $path = ltrim($path, '/\\');
+            if (strpos($path, 'public/') === 0) {
+                $path = substr($path, 7);
+            }
+
+            // Only display if the file exists on the public disk
+            if (Storage::disk('public')->exists($path)) {
+                // Use a relative asset URL to avoid APP_URL port mismatches
+                return asset('storage/' . $path);
+            }
         }
-        
+
         return asset('/img/default-product.jpg');
     }
 
@@ -55,10 +67,23 @@ class CustomerProductDecorator extends BaseProductDecorator
                 asset('/img/default-product.jpg')
             ];
         }
-        
-        return array_map(function($image) {
-            return asset('storage/' . $image);
-        }, $this->product->customer_images);
+
+        $urls = [];
+        foreach ((array) $this->product->customer_images as $image) {
+            $path = (string) $image;
+            $path = ltrim($path, '/\\');
+            if (strpos($path, 'public/') === 0) {
+                $path = substr($path, 7);
+            }
+
+            if (Storage::disk('public')->exists($path)) {
+                $urls[] = asset('storage/' . $path);
+            } else {
+                $urls[] = asset('/img/default-product.jpg');
+            }
+        }
+
+        return $urls;
     }
 
     private function getRating(): float

@@ -76,10 +76,48 @@ if (document.querySelector("#chart-bars")) {
 if(document.querySelector("#chart-line")){
 const chartElement = document.querySelector("#chart-line");
 
-    // 从全局的 window.App 对象获取数据
-    const labels = JSON.parse(chartElement.dataset.labels);
-    const data = JSON.parse(chartElement.dataset.data);
-    const labelName = chartElement.dataset.labelName;
+  console.info('[Dashboard] Initializing chart-line');
+
+  // 读取并解析数据
+  const labelsRaw = chartElement.dataset.labels;
+  const dataRaw = chartElement.dataset.data;
+  const labelName = chartElement.dataset.labelName;
+
+  console.debug('[Dashboard] chart-line raw dataset', { labelsRaw, dataRaw, labelName });
+
+  let labels = [];
+  let data = [];
+  try {
+    labels = JSON.parse(labelsRaw || '[]');
+  } catch (e) {
+    console.error('[Dashboard] Failed to parse labels JSON', e, labelsRaw);
+    labels = [];
+  }
+  try {
+    data = JSON.parse(dataRaw || '[]');
+  } catch (e) {
+    console.error('[Dashboard] Failed to parse data JSON', e, dataRaw);
+    data = [];
+  }
+
+  if (!Array.isArray(labels) || !Array.isArray(data)) {
+    console.warn('[Dashboard] labels/data are not arrays', { labels, data });
+  }
+  if (labels.length === 0 || data.length === 0) {
+    console.warn('[Dashboard] Empty chart series', { labelsLength: labels.length, dataLength: data.length });
+    // Update subtitle message to indicate no data
+    try {
+      var subtitleEl = document.getElementById('sales-overview-subtitle');
+      if (subtitleEl) {
+        subtitleEl.innerHTML = '<span class="font-semibold">No sales data</span> for the selected period';
+      }
+    } catch (e) {
+      console.debug('[Dashboard] Failed to update subtitle', e);
+    }
+  }
+  if (labels.length !== data.length) {
+    console.warn('[Dashboard] Label/Data length mismatch', { labelsLength: labels.length, dataLength: data.length });
+  }
 
   var ctx1 = document.getElementById("chart-line").getContext("2d");
 
@@ -162,4 +200,21 @@ const chartElement = document.querySelector("#chart-line");
       },
     },
   });
+  // When there is no data, draw a placeholder message on the canvas
+  try {
+    if (!data || data.length === 0) {
+      const { width, height } = ctx1.canvas;
+      ctx1.save();
+      ctx1.clearRect(0, 0, width, height);
+      ctx1.fillStyle = '#9aa0a6';
+      ctx1.font = '14px Open Sans, sans-serif';
+      ctx1.textAlign = 'center';
+      ctx1.textBaseline = 'middle';
+      ctx1.fillText('No sales data to display', width / 2, height / 2);
+      ctx1.restore();
+    }
+  } catch (e) {
+    console.debug('[Dashboard] Failed to draw empty placeholder', e);
+  }
+  console.info('[Dashboard] chart-line created', { points: data.length });
 }

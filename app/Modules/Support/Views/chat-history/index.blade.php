@@ -183,15 +183,32 @@ function continueChat(conversationId) {
     
     // Trigger the chat widget to open with the existing conversation
     if (typeof window.startLiveChat === 'function') {
-        // Open the chat widget interface
+        // Open the chat widget interface with animation-aware helpers
         const selfServiceBox = document.getElementById('self-service-box');
         const chatBox = document.getElementById('chat-box');
-        
-        if (selfServiceBox) selfServiceBox.style.display = 'none';
-        if (chatBox) chatBox.style.display = 'flex';
-        
+
+        if (typeof window.closePanel === 'function') {
+            window.closePanel(selfServiceBox);
+        } else if (selfServiceBox) {
+            selfServiceBox.style.display = 'none';
+        }
+
+        if (typeof window.openPanel === 'function') {
+            window.openPanel(chatBox, '400px');
+        } else if (chatBox) {
+            chatBox.style.display = 'flex';
+        }
+
+        try { window.isPanelOpen = true; } catch (e) {}
+        try { window.isShowingSelfService = false; } catch (e) {}
+
         // Directly resume the existing conversation without going through queue
-        window.resumeExistingChat(conversationId);
+        if (typeof window.resumeExistingChat === 'function') {
+            window.resumeExistingChat(conversationId);
+        } else {
+            // Fallback: redirect to homepage and open chat
+            window.location.href = '/?open_chat=' + conversationId;
+        }
     } else {
         // Fallback: redirect to homepage and open chat
         window.location.href = '/?open_chat=' + conversationId;

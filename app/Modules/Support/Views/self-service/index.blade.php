@@ -179,13 +179,14 @@ function quickAction(action, category) {
         formHTML = `
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Order Number</label>
-                    <input type="text" id="order_number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., JW12345">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Order Number or Tracking Code</label>
+                    <input type="text" id="order_number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., 1024 or JW12345" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                    <input type="email" id="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="your@email.com">
+                    <input type="email" id="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="your@email.com" />
                 </div>
+                <div id="trackingResults" class="mt-4 hidden"></div>
             </div>
         `;
     } else if (action === 'reset_password') {
@@ -218,7 +219,62 @@ function closeModal() {
 }
 
 function submitQuickAction() {
-    // Simulate getting help for the action
+    if (currentAction === 'track_order') {
+        const orderNumber = document.getElementById('order_number')?.value?.trim();
+        const email = document.getElementById('email')?.value?.trim();
+
+        if (!orderNumber || !email) {
+            alert('Please enter both order number and email.');
+            return;
+        }
+
+        const results = document.getElementById('trackingResults');
+        if (results) {
+            results.classList.remove('hidden');
+            results.innerHTML = '<div class="text-sm text-gray-600">Looking up your order...</div>';
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        };
+
+        const payload = JSON.stringify({ order_number: orderNumber, email });
+
+        // Try API path first, then fall back to internal
+        fetch('/self-service/track-order?use_api=1', { method: 'POST', headers, body: payload })
+            .then(async (res) => {
+                if (!res.ok) throw new Error('API tracking failed');
+                return res.json();
+            })
+            .catch(() => fetch('/self-service/track-order', { method: 'POST', headers, body: payload }).then(r => r.json()))
+            .then(data => {
+                if (!data || !data.success) {
+                    throw new Error(data?.message || 'Unable to track order');
+                }
+
+                const t = data.data || {};
+                const html = `
+                    <div class="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <div class="text-sm text-gray-700 mb-1"><strong>Order #</strong>: ${t.order_id ?? '—'}</div>
+                        <div class="text-sm text-gray-700 mb-1"><strong>Status</strong>: ${t.status ?? '—'}</div>
+                        <div class="text-sm text-gray-700 mb-1"><strong>Tracking</strong>: ${t.tracking_number ?? '—'}</div>
+                        <div class="text-sm text-gray-700 mb-1"><strong>Shipping</strong>: ${t.shipping_method ?? '—'}</div>
+                        <div class="text-xs text-gray-500 mt-2">Updated: ${t.updated_at ?? '—'}</div>
+                    </div>
+                `;
+                if (results) results.innerHTML = html;
+            })
+            .catch(err => {
+                console.error(err);
+                if (results) {
+                    results.innerHTML = '<div class="text-sm text-red-600">Could not find your order. Please confirm the details or chat with an agent.</div>';
+                }
+            });
+        return;
+    }
+
+    // Default: self-service help flow
     fetch('/self-service/help', {
         method: 'POST',
         headers: {

@@ -21,8 +21,13 @@
                 d="M12 12c2.761 0 5-2.239 5-5S14.761 2 12 2 7 4.239 7 7s2.239 5 5 5Zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5Z" />
         </symbol>
         <symbol id="icon-bag" viewBox="0 0 24 24">
-            <path d="M6 7h12l-1 12H7L6 7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-            <path d="M9 7a3 3 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M6 7h12l-1 12H7L6 7z" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linejoin="round" />
+            <path d="M9 7a3 3 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="2" />
+        </symbol>
+        <symbol id="icon-heart" viewBox="0 0 24 24">
+            <path fill="currentColor"
+                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4 8.24 4 10 5.5 12 7.5 14 5.5 15.76 4 17.5 4 20 4 22 6 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
         </symbol>
     </svg>
 
@@ -39,24 +44,59 @@
             </div>
 
             {{-- Navigation Row --}}
-            <div class="w-full relative flex items-center justify-between">
-
-                {{-- Left spacer (optional, keep empty or put icons like search/location) --}}
-                <div class="w-20"></div>
+            <div class="w-full relative grid grid-cols-3 items-center">
+                <div class="w-20 justify-self-start flex items-center">
+                     @php
+                        // Derive cart count for the authenticated user (supports both implementations)
+                        $cartCount = 0;
+                        try {
+                            $cartCount += \App\Modules\Cart\Models\CartItem::where('user_id', auth()->id())->sum(
+                                'quantity',
+                            );
+                        } catch (\Throwable $e) {
+                        }
+                    @endphp
+                        <a id="wishlistLink" href="{{ route('wishlist.index') }}" aria-label="Wishlist"
+                            class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
+                            text-white after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
+                            after:transition-all after:duration-300 hover:after:w-full 
+                            focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
+                            <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                                aria-hidden="true" focusable="false">
+                                <use href="#icon-heart"></use>
+                            </svg>
+                        </a>
+                        <a id="bagLink" href="{{ route('cart.index') }}" aria-label="Shopping Bag"
+                            class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
+                       text-white after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
+                       after:transition-all after:duration-300 hover:after:w-full 
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
+                            <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                                aria-hidden="true" focusable="false">
+                                <use href="#icon-bag"></use>
+                            </svg>
+                            @if (($cartCount ?? 0) > 0)
+                                <span
+                                    class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-400 text-white text-[10px] leading-4 text-center">
+                                    {{ $cartCount }}
+                                </span>
+                            @endif
+                        </a>
+                </div>
 
                 {{-- Main Navigation --}}
-                <ul id="navLinks"
-                    class="relative flex space-x-10 text-sm font-medium text-white transition-colors duration-300">
+                <ul id="navLinks" class="relative flex space-x-10 text-sm font-medium text-white transition-colors duration-300 justify-self-center whitespace-nowrap">
 
-                    <li>
+                    <li class="group relative">
                         <a href="{{ route('home') }}"
                             class="inline-block px-2 pb-3 relative transition
-          after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
-          after:transition-all after:duration-300 hover:after:w-full">
+                            after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
+                            after:transition-all after:duration-300 hover:after:w-full">
                             Home
                         </a>
                     </li>
-                    {{-- LOVE & ENGAGEMENT --}}
+
+                    {{-- Product --}}
                     <li class="group relative">
                         <a href="{{ route('products.index') }}"
                             class="inline-block px-2 pb-3 relative transition
@@ -169,34 +209,40 @@
                     </li>
 
                     {{-- Other nav items --}}
-
-
                     <li class="group relative">
                         <a href="{{ route('faq.index') }}"
                             class="inline-block px-2 pb-3 relative transition
                           after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
                           after:transition-all after:duration-300 hover:after:w-full 
                           {{ request()->routeIs('faq.*') ? 'font-bold text-black after:w-full' : '' }}">
-                            FAQ
+                            About Us
                         </a>
                     </li>
-                    @auth
-                        <li>
-                            <a href="{{ route('tickets.index') }}"
-                                class="inline-block px-2 pb-3 relative transition
-                          after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
-                          after:transition-all after:duration-300 hover:after:w-full 
-                          {{ request()->routeIs('tickets.*') ? 'font-bold text-black after:w-full' : '' }}">
-                                My Tickets
-                            </a>
-                        </li>
-                    @endauth
 
                     <li class="group relative">
-                        <a href="#"
+                        @auth
+                            <a href="{{ route('profile.show') }}"
+                                class="inline-block px-2 pb-3 relative transition
+                                after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
+                                after:transition-all after:duration-300 hover:after:w-full 
+                                {{ request()->routeIs('profile.*') ? 'font-bold text-black after:w-full' : '' }}">
+                                Account
+                            </a>
+                        @else
+                            <a href="{{ route('login') }}" aria-label="Account"
+                                class="inline-block px-2 pb-3 relative transition
+                                after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
+                                after:transition-all after:duration-300 hover:after:w-full">
+                                Account
+                            </a>
+                        @endauth
+                    </li>
+
+                    <li class="group relative">
+                        <a  href="{{ route('faq.index') }}"
                             class="inline-block px-2 pb-3 relative transition
-              after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
-              after:transition-all after:duration-300 group-hover:after:w-full">
+                            after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
+                            after:transition-all after:duration-300 group-hover:after:w-full">
                             Support
                         </a>
 
@@ -272,47 +318,10 @@
                         </div>
                     </li>
 
-
-
-
-
-
                 </ul>
 
-            @guest
-                @php
-                    // Derive cart count for guests and logged-in users (supports both cart implementations)
-                    $cartCount = 0;
-                    try {
-                        $sessionId = session()->getId();
-                        $cartCount += \App\Modules\Product\Models\Cart::where('session_id', $sessionId)
-                            ->when(auth()->check(), function ($q) {
-                                $q->orWhere('user_id', auth()->id());
-                            })
-                            ->sum('quantity');
-                    } catch (\Throwable $e) {}
-                    try {
-                        if (auth()->check()) {
-                            $cartCount += \App\Modules\Cart\Models\CartItem::where('user_id', auth()->id())->sum('quantity');
-                        }
-                    } catch (\Throwable $e) {}
-                @endphp
-                <div class="w-28 flex items-center justify-end space-x-3">
-                    <a id="bagLink" href="{{ route('cart.index') }}" aria-label="Shopping Bag"
-                       class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
-                       text-white after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
-                       after:transition-all after:duration-300 hover:after:w-full 
-                       focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
-                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
-                             aria-hidden="true" focusable="false">
-                            <use href="#icon-bag"></use>
-                        </svg>
-                        @if(($cartCount ?? 0) > 0)
-                            <span class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-400 text-white text-[10px] leading-4 text-center">
-                                {{ $cartCount }}
-                            </span>
-                        @endif
-                    </a>
+                @guest
+                <div class="w-28 flex items-center justify-end space-x-3 justify-self-end">
                     <a href="{{ route('login') }}" aria-label="Account"
                         class="inline-flex items-center px-2 pb-3 relative text-sm font-medium text-black transition 
                   after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
@@ -327,67 +336,44 @@
                 </div>
             @endguest
 
-            @auth
-                @php
-                    // Derive cart count for the authenticated user (supports both implementations)
-                    $cartCount = 0;
-                    try {
-                        $cartCount += \App\Modules\Product\Models\Cart::where('user_id', auth()->id())->sum('quantity');
-                    } catch (\Throwable $e) {}
-                    try {
-                        $cartCount += \App\Modules\Cart\Models\CartItem::where('user_id', auth()->id())->sum('quantity');
-                    } catch (\Throwable $e) {}
-                @endphp
-                <div class="w-auto flex items-center justify-end space-x-3">
-                    <a id="bagLink" href="{{ route('cart.index') }}" aria-label="Shopping Bag"
-                       class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
-                       text-white after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
-                       after:transition-all after:duration-300 hover:after:w-full 
-                       focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
-                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
-                             aria-hidden="true" focusable="false">
-                            <use href="#icon-bag"></use>
-                        </svg>
-                        @if(($cartCount ?? 0) > 0)
-                            <span class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-400 text-white text-[10px] leading-4 text-center">
-                                {{ $cartCount }}
-                            </span>
-                        @endif
-                    </a>
-                    <x-dropdown align="right" width="48">
-                        <x-slot name="trigger">
-                            <button id="customerTrigger"
-                                class="flex items-center space-x-1 px-2 pb-3 relative text-sm font-medium text-black 
-                       transition after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 
-                       after:bg-black after:transition-all after:duration-300 hover:after:w-full">
-                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
-                            aria-hidden="true" focusable="false">
-                            <use href="#icon-account"></use>
-                        </svg>
-                                <span>Hello, {{ auth()->user()->name }}</span>
-                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                                </svg>
-                            </button>
-                        </x-slot>
 
-                        <x-slot name="content">
-                            {{-- <x-dropdown-link :href="route('dashboard')">{{ __('Dashboard') }}</x-dropdown-link> --}}
-                            <x-dropdown-link :href="route('profile.show')">{{ __('Profile') }}</x-dropdown-link>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault(); this.closest('form').submit();">
-                                    {{ __('Log Out') }}
-                                </x-dropdown-link>
-                            </form>
-                            <x-dropdown-link :href="route('orders.index')">{{ __('Orders') }}</x-dropdown-link>
+                @auth
+                    <div class="w-auto flex items-center justify-end space-x-3 justify-self-end">
 
-                        </x-slot>
-                    </x-dropdown>
-                </div>
-            @endauth
+                        <x-dropdown align="right" width="48">
+                            <x-slot name="trigger">
+                                <button id="customerTrigger"
+                                    class="flex items-center space-x-1 px-2 pb-3 relative text-sm font-medium text-black 
+                                    transition after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 
+                                    after:bg-black after:transition-all after:duration-300 hover:after:w-full">
+                                    <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                                        aria-hidden="true" focusable="false">
+                                        <use href="#icon-account"></use>
+                                    </svg>
+                                    <span>Hello, {{ auth()->user()->name }}</span>
+                                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                                    </svg>
+                                </button>
+                            </x-slot>
+
+                            <x-slot name="content">
+                                {{-- <x-dropdown-link :href="route('dashboard')">{{ __('Dashboard') }}</x-dropdown-link> --}}
+                                <x-dropdown-link :href="route('profile.show')">{{ __('Profile') }}</x-dropdown-link>
+                                <x-dropdown-link :href="route('orders.index')">{{ __('Orders') }}</x-dropdown-link>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <x-dropdown-link :href="route('logout')"
+                                        onclick="event.preventDefault(); this.closest('form').submit();">
+                                        {{ __('Log Out') }}
+                                    </x-dropdown-link>
+                                </form>
+
+                            </x-slot>
+                        </x-dropdown>
+                    </div>
+                @endauth
             </div>
         </div>
     </header>
@@ -586,7 +572,7 @@
             </div>
         </div>
         <div class="Copyright"><!--Copy right-->
-            <p>Copyright &COPY; 2024 Next.Chain All right reserved.</p>
+            <p>Copyright &COPY; 2025 TIFFANY REPLICA All right reserved.</p>
         </div>
     </footer>
 
@@ -601,6 +587,7 @@
             const logo = document.getElementById("logoText");
             const customer = document.getElementById("customerTrigger");
             const bag = document.getElementById("bagLink");
+            const wishlist = document.getElementById("wishlistLink");
 
             function setSolid() {
                 nav?.classList.add("bg-white", "shadow-md");
@@ -616,6 +603,8 @@
                 customer?.classList.remove("text-white");
                 bag?.classList.add("text-gray-800");
                 bag?.classList.remove("text-white");
+                wishlist?.classList.add("text-gray-800");
+                wishlist?.classList.remove("text-white");
             }
 
             function setTransparent() {
@@ -632,6 +621,8 @@
                 customer?.classList.remove("text-gray-800");
                 bag?.classList.add("text-white");
                 bag?.classList.remove("text-gray-800");
+                wishlist?.classList.add("text-white");
+                wishlist?.classList.remove("text-gray-800");
             }
 
             function handleScroll() {

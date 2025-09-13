@@ -4,50 +4,86 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\Order;
-use App\Models\User;
-use App\Models\Product;
+use App\Modules\Order\Models\Order;
+use App\Modules\Order\Models\OrderItem;
+use App\Modules\User\Models\User;
+use App\Modules\Product\Models\Product;
 use Illuminate\Support\Carbon;
 
 class OrderSeeder extends Seeder
 {
-     public function run(): void
-    {
-        $users = User::all();
-        $products = Product::all();
+	public function run(): void
+	{
+		$faker = \Faker\Factory::create();
+		$users = User::where('is_admin', false)->get();
+		$products = Product::all();
 
-        // Check if there are enough users and products to proceed
-        if ($users->isEmpty() || $products->isEmpty()) {
-            $this->command->info('Cannot seed orders. Please make sure you have created users and products.');
-            return;
-        }
+		if ($users->isEmpty() || $products->isEmpty()) {
+			$this->command?->warn('OrderSeeder: requires users and products. Skipping.');
+			return;
+		}
 
-        $availableProductsCount = $products->count();
+		$statuses = ['pending', 'shipped', 'delivered', 'completed', 'refund'];
+		$paymentMethods = ['credit_card', 'paypal', 'bank_transfer', 'cod'];
+		$shippingMethods = ['standard', 'express', 'pickup'];
 
-        for ($i = 0; $i < 50; $i++) {
-            $order = Order::create([
-                'user_id' => $users->random()->id,
-                'total_amount' => 0, // We'll calculate this later
-                'created_at' => Carbon::now()->subDays(rand(0, 365)),
-            ]);
+		for ($i = 0; $i < 80; $i++) {
+			$user = $users->random();
+			$createdAt = Carbon::now()->subDays(rand(0, 90))->subMinutes(rand(0, 1440));
 
-            $totalAmount = 0;
-            
-            // THE FIX IS HERE:
-            // Never try to pick more products than are available.
-            // We pick a random number between 1 and either 3 or the total number of products, whichever is smaller.
-            $productCount = rand(1, min(3, $availableProductsCount));
+			// Create order with placeholders; amounts will be updated after items
+			$order = Order::create([
+				'user_id' => $user->id,
+				'subtotal' => 0,
+				'discount' => 0,
+				'shipping_cost' => 0,
+				'total_amount' => 0,
+				'promo_code' => rand(0, 4) === 0 ? strtoupper($faker->bothify('PROMO##')) : null,
+				'payment_method' => $faker->randomElement($paymentMethods),
+				'payment_status' => 'completed',
+				'shipping_address' => $faker->streetAddress(),
+				'shipping_postal_code' => $faker->postcode(),
+				'shipping_method' => $faker->randomElement($shippingMethods),
+				'status' => $faker->randomElement($statuses),
+				'tracking_number' => rand(0, 2) ? strtoupper($faker->bothify('TRK########')) : null,
+				'refund_status' => null,
+				'refund_reason' => null,
+				'created_at' => $createdAt,
+				'updated_at' => $createdAt,
+			]);
 
-            $selectedProducts = $products->random($productCount);
+			$itemCount = rand(1, min(4, $products->count()));
+			$selected = $products->random($itemCount);
+			$subtotal = 0.0;
 
-            foreach ($selectedProducts as $product) {
-                $quantity = rand(1, 2);
-                $price = $product->price;
-                $order->products()->attach($product->id, ['quantity' => $quantity, 'price' => $price]);
-                $totalAmount += $price * $quantity;
-            }
+			foreach (is_iterable($selected) ? $selected : [$selected] as $product) {
+				$quantity = rand(1, 3);
+				$unitPrice = (float) ($product->discount_price ?? $product->selling_price ?? $product->price ?? 0);
+				$lineTotal = round($unitPrice * $quantity, 2);
+				$subtotal += $lineTotal;
 
-            $order->update(['total_amount' => $totalAmount]);
-        }
-    }
+				OrderItem::create([
+					'order_id' => $order->id,
+					'product_id' => $product->id,
+					'quantity' => $quantity,
+					'price' => $unitPrice,
+					'subtotal' => $lineTotal,
+					'created_at' => $createdAt,
+					'updated_at' => $createdAt,
+				]);
+			}
+
+			$discount = rand(0, 3) === 0 ? round($subtotal * 0.05, 2) : 0.0;
+			$shippingOptions = [0, 5.90, 8.90, 12.00];
+			$shipping = (float) $shippingOptions[array_rand($shippingOptions)];
+			$total = max(0, round($subtotal - $discount + $shipping, 2));
+
+			$order->update([
+				'subtotal' => round($subtotal, 2),
+				'discount' => $discount,
+				'shipping_cost' => $shipping,
+				'total_amount' => $total,
+			]);
+		}
+	}
 }

@@ -94,6 +94,7 @@ Route::prefix('self-service')->group(function () {
     Route::get('/{category}', [SelfServiceController::class, 'category'])->name('self-service.category');
     Route::post('/help', [SelfServiceController::class, 'help'])->name('self-service.help');
     Route::post('/escalate', [SelfServiceController::class, 'escalate'])->name('self-service.escalate');
+    Route::post('/track-order', [SelfServiceController::class, 'trackOrder'])->name('self-service.track-order');
 });
 
 /*
@@ -425,5 +426,4 @@ Route::middleware('auth')->group(function () {
 //RegisterAdmin
 Route::get('/admin/register', [RegisterAdminController::class, 'createAdmin'])->name('admin.register.form');
 Route::post('/admin/register', [RegisterAdminController::class, 'storeAdmin'])->name('admin.register');
-
 

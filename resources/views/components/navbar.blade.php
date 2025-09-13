@@ -1,12 +1,19 @@
 <header class="w-full bg-white shadow-md relative">
-       <!-- Inline SVG sprite for icons -->
-    <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false">
+    <!-- Inline SVG sprite for icons -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"
+        focusable="false">
         <symbol id="icon-account" viewBox="0 0 24 24">
-            <path fill="currentColor" d="M12 12c2.761 0 5-2.239 5-5S14.761 2 12 2 7 4.239 7 7s2.239 5 5 5Zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5Z"/>
+            <path fill="currentColor"
+                d="M12 12c2.761 0 5-2.239 5-5S14.761 2 12 2 7 4.239 7 7s2.239 5 5 5Zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5Z" />
         </symbol>
         <symbol id="icon-bag" viewBox="0 0 24 24">
-            <path d="M6 7h12l-1 12H7L6 7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-            <path d="M9 7a3 3 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M6 7h12l-1 12H7L6 7z" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linejoin="round" />
+            <path d="M9 7a3 3 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="2" />
+        </symbol>
+        <symbol id="icon-heart" viewBox="0 0 24 24">
+            <path fill="black"
+                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4 8.24 4 10 5.5 12 7.5 14 5.5 15.76 4 17.5 4 20 4 22 6 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
         </symbol>
     </svg>
     <div class="max-w-7xl mx-auto flex flex-col items-center relative">
@@ -21,12 +28,49 @@
         </div>
 
         {{-- Navigation Row --}}
-        <div class="w-full relative flex items-center justify-between">
-            <div class="w-20"></div>
+        <div class="w-full relative grid grid-cols-3 items-center">
+            <div class="w-20 justify-self-start flex items-center">
+                @php
+                    // Derive cart count for guests and logged-in users (supports both cart implementations)
+                    $cartCount = 0;
+                    try {
+                        $cartCount += \App\Modules\Cart\Models\CartItem::where('user_id', auth()->id())->sum(
+                            'quantity',
+                        );
+                    } catch (\Throwable $e) {
+                    }
+                @endphp
+                <a href="{{ route('wishlist.index') }}" aria-label="Wishlist"
+                    class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
+                            text-black after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
+                            after:transition-all after:duration-300 hover:after:w-full 
+                            focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
+                    <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                        aria-hidden="true" focusable="false">
+                        <use href="#icon-heart"></use>
+                    </svg>
+                </a>
+                <a href="{{ route('cart.index') }}" aria-label="Shopping Bag"
+                    class="inline-flex items-center px-2 pb-3 relative text-sm font-medium text-black transition 
+                       after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
+                       after:transition-all after:duration-300 hover:after:w-full hover:text-black 
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
+                    <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                        aria-hidden="true" focusable="false">
+                        <use href="#icon-bag"></use>
+                    </svg>
+                    @if (($cartCount ?? 0) > 0)
+                        <span
+                            class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-400 text-white text-[10px] leading-4 text-center">
+                            {{ $cartCount }}
+                        </span>
+                    @endif
+                </a>
+            </div>
 
             {{-- Main Navigation --}}
-            <ul class="relative flex space-x-10 text-sm font-medium text-gray-800">
-                <li>
+            <ul class="relative flex space-x-10 text-sm font-medium text-gray-800 justify-self-center whitespace-nowrap">
+                <li class="group relative">
                     <a href="{{ url('/') }}"
                         class="inline-block px-2 pb-3 relative transition
                               after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
@@ -58,18 +102,35 @@
                                 <div>
                                     <h3 class="text-gray-900 font-semibold mb-3">Categories</h3>
                                     <ul class="space-y-2 text-gray-600">
-                                        <li><a href="#"class="hover:underline transition duration-200"class="hover:underline transition duration-200"class="hover:underline transition duration-200">Engagement Rings</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200"class="hover:underline transition duration-200"class="hover:underline transition duration-200">Wedding Bands</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200"class="hover:underline transition duration-200"class="hover:underline transition duration-200">Couple’s Rings</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200"class="hover:underline transition duration-200"class="hover:underline transition duration-200">Women’s Wedding Bands</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200"class="hover:underline transition duration-200"class="hover:underline transition duration-200">Men’s Wedding Bands</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200"
+                                                class="hover:underline transition duration-200"
+                                                class="hover:underline transition duration-200">Engagement Rings</a>
+                                        </li>
+                                        <li><a href="#"class="hover:underline transition duration-200"
+                                                class="hover:underline transition duration-200"
+                                                class="hover:underline transition duration-200">Wedding Bands</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200"
+                                                class="hover:underline transition duration-200"
+                                                class="hover:underline transition duration-200">Couple’s Rings</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200"
+                                                class="hover:underline transition duration-200"
+                                                class="hover:underline transition duration-200">Women’s Wedding
+                                                Bands</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200"
+                                                class="hover:underline transition duration-200"
+                                                class="hover:underline transition duration-200">Men’s Wedding Bands</a>
+                                        </li>
                                     </ul>
                                     <h3 class="text-gray-400 font-semibold mt-6 mb-2">Shop By Shape</h3>
                                     <ul class="space-y-2 text-gray-600">
-                                        <li><a href="#"class="hover:underline transition duration-200"class="hover:underline transition duration-200">Round</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200"class="hover:underline transition duration-200">Oval</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200"class="hover:underline transition duration-200">Emerald</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200"class="hover:underline transition duration-200">Cushion</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200"
+                                                class="hover:underline transition duration-200">Round</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200"
+                                                class="hover:underline transition duration-200">Oval</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200"
+                                                class="hover:underline transition duration-200">Emerald</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200"
+                                                class="hover:underline transition duration-200">Cushion</a></li>
                                     </ul>
                                 </div>
 
@@ -77,15 +138,24 @@
                                 <div>
                                     <h3 class="text-gray-900 font-semibold mb-3">Collections</h3>
                                     <ul class="space-y-2 text-gray-600">
-                                        <li><a href="#"class="hover:underline transition duration-200">The Tiffany® Setting</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">Tiffany True®</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">Tiffany Harmony®</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">Tiffany Soleste®</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">Tiffany Novo®</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">Jean Schlumberger</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">Tiffany Together</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">Tiffany Forever</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">T&CO.™</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">The
+                                                Tiffany® Setting</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">Tiffany
+                                                True®</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">Tiffany
+                                                Harmony®</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">Tiffany
+                                                Soleste®</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">Tiffany
+                                                Novo®</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">Jean
+                                                Schlumberger</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">Tiffany
+                                                Together</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">Tiffany
+                                                Forever</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">T&CO.™</a>
+                                        </li>
                                     </ul>
                                 </div>
 
@@ -93,11 +163,16 @@
                                 <div>
                                     <h3 class="text-gray-900 font-semibold mb-3">The Tiffany Difference</h3>
                                     <ul class="space-y-2 text-gray-600">
-                                        <li><a href="#"class="hover:underline transition duration-200">A Tiffany Ring</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">Tiffany Lifetime Service</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">Responsible Sourcing</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">How to Choose an Engagement Ring</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">How to Choose a Wedding Band</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">A Tiffany
+                                                Ring</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">Tiffany
+                                                Lifetime Service</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">Responsible
+                                                Sourcing</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">How to
+                                                Choose an Engagement Ring</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">How to
+                                                Choose a Wedding Band</a></li>
                                     </ul>
                                 </div>
 
@@ -114,32 +189,39 @@
                 </li>
 
                 {{-- FAQ --}}
-                <li>
+                <li class="group relative">
                     <a href="{{ route('faq.index') }}"
                         class="inline-block px-2 pb-3 relative transition
                               after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
                               after:transition-all after:duration-300 hover:after:w-full
                               {{ request()->routeIs('faq.*') ? 'font-bold text-black after:w-full' : '' }}">
-                        FAQ
+                        About Us
                     </a>
                 </li>
+                
+                <li class="group relative">
 
-                {{-- My Tickets --}}
                 @auth
-                    <li>
-                        <a href="{{ route('tickets.index') }}"
-                            class="inline-block px-2 pb-3 relative transition
-                                  after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
-                                  after:transition-all after:duration-300 hover:after:w-full
-                                  {{ request()->routeIs('tickets.*') ? 'font-bold text-black after:w-full' : '' }}">
-                            My Tickets
-                        </a>
-                    </li>
+                    <a href="{{ route('profile.show') }}"
+                        class="inline-block px-2 pb-3 relative transition
+                                after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
+                                after:transition-all after:duration-300 hover:after:w-full 
+                                {{ request()->routeIs('profile.*') ? 'font-bold text-black after:w-full' : '' }}">
+                        Account
+                    </a>
+                @else
+                    <a href="{{ route('login') }}" aria-label="Account"
+                        class="inline-block px-2 pb-3 relative transition
+                                after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
+                                after:transition-all after:duration-300 hover:after:w-full">
+                        Account
+                    </a>
                 @endauth
+                </li>
 
                 {{-- Support --}}
                 <li class="group relative">
-                    <a href="#"
+                        <a  href="{{ route('faq.index') }}"
                         class="inline-block px-2 pb-3 relative transition
               after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
               after:transition-all after:duration-300 hover:after:w-full">
@@ -158,10 +240,18 @@
                                 <div>
                                     <h3 class="text-gray-900 font-semibold mb-3">Help Center</h3>
                                     <ul class="space-y-2 text-gray-600">
-                                        <li><a href="{{ route('faq.index') }}"class="hover:underline transition duration-200"> FAQ & Help</a></li>
-                                        <li><a href="{{ route('self-service.index') }}"class="hover:underline transition duration-200"> Self Service</a></li>
-                                        <li><a href="{{ route('tickets.index') }}"class="hover:underline transition duration-200"> Support Tickets</a></li>
-                                        <li><a href="{{ route('chat-history.index') }}"class="hover:underline transition duration-200"> Chat History</a></li>
+                                        <li><a
+                                                href="{{ route('faq.index') }}"class="hover:underline transition duration-200">
+                                                FAQ & Help</a></li>
+                                        <li><a
+                                                href="{{ route('self-service.index') }}"class="hover:underline transition duration-200">
+                                                Self Service</a></li>
+                                        <li><a
+                                                href="{{ route('tickets.index') }}"class="hover:underline transition duration-200">
+                                                Support Tickets</a></li>
+                                        <li><a
+                                                href="{{ route('chat-history.index') }}"class="hover:underline transition duration-200">
+                                                Chat History</a></li>
                                     </ul>
                                 </div>
 
@@ -174,8 +264,10 @@
                                                 Live Chat
                                             </button>
                                         </li>
-                                        <li><a href="#"class="hover:underline transition duration-200">Email Us</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">Call Center</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">Email
+                                                Us</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">Call
+                                                Center</a></li>
                                     </ul>
                                 </div>
 
@@ -183,10 +275,15 @@
                                 <div>
                                     <h3 class="text-gray-900 font-semibold mb-3">Guides</h3>
                                     <ul class="space-y-2 text-gray-600">
-                                        <li><a href="#"class="hover:underline transition duration-200">Getting Started</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">Account & Profile</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">Troubleshooting</a></li>
-                                        <li><a href="#"class="hover:underline transition duration-200">Billing & Payments</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">Getting
+                                                Started</a></li>
+                                        <li><a href="#"class="hover:underline transition duration-200">Account &
+                                                Profile</a></li>
+                                        <li><a
+                                                href="#"class="hover:underline transition duration-200">Troubleshooting</a>
+                                        </li>
+                                        <li><a href="#"class="hover:underline transition duration-200">Billing &
+                                                Payments</a></li>
                                     </ul>
                                 </div>
 
@@ -207,39 +304,7 @@
 
 
             @guest
-                @php
-                    // Derive cart count for guests and logged-in users (supports both cart implementations)
-                    $cartCount = 0;
-                    try {
-                        $sessionId = session()->getId();
-                        $cartCount += \App\Modules\Product\Models\Cart::where('session_id', $sessionId)
-                            ->when(auth()->check(), function ($q) {
-                                $q->orWhere('user_id', auth()->id());
-                            })
-                            ->sum('quantity');
-                    } catch (\Throwable $e) {}
-                    try {
-                        if (auth()->check()) {
-                            $cartCount += \App\Modules\Cart\Models\CartItem::where('user_id', auth()->id())->sum('quantity');
-                        }
-                    } catch (\Throwable $e) {}
-                @endphp
-                <div class="w-28 flex items-center justify-end space-x-3">
-                    <a href="{{ route('cart.index') }}" aria-label="Shopping Bag"
-                       class="inline-flex items-center px-2 pb-3 relative text-sm font-medium text-black transition 
-                       after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
-                       after:transition-all after:duration-300 hover:after:w-full hover:text-black 
-                       focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
-                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
-                             aria-hidden="true" focusable="false">
-                            <use href="#icon-bag"></use>
-                        </svg>
-                        @if(($cartCount ?? 0) > 0)
-                            <span class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-400 text-white text-[10px] leading-4 text-center">
-                                {{ $cartCount }}
-                            </span>
-                        @endif
-                    </a>
+                <div class="w-28 flex items-center justify-end space-x-3 justify-self-end">
                     <a href="{{ route('login') }}" aria-label="Account"
                         class="inline-flex items-center px-2 pb-3 relative text-sm font-medium text-black transition 
                   after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
@@ -256,42 +321,17 @@
 
             {{-- Customer (always right aligned) --}}
             @auth
-                @php
-                    // Derive cart count for the authenticated user (supports both implementations)
-                    $cartCount = 0;
-                    try {
-                        $cartCount += \App\Modules\Product\Models\Cart::where('user_id', auth()->id())->sum('quantity');
-                    } catch (\Throwable $e) {}
-                    try {
-                        $cartCount += \App\Modules\Cart\Models\CartItem::where('user_id', auth()->id())->sum('quantity');
-                    } catch (\Throwable $e) {}
-                @endphp
-                <div class="w-auto flex items-center justify-end space-x-3">
-                    <a href="{{ route('cart.index') }}" aria-label="Shopping Bag"
-                       class="inline-flex items-center px-2 pb-3 relative text-sm font-medium text-black transition 
-                       after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
-                       after:transition-all after:duration-300 hover:after:w-full hover:text-black 
-                       focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
-                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
-                             aria-hidden="true" focusable="false">
-                            <use href="#icon-bag"></use>
-                        </svg>
-                        @if(($cartCount ?? 0) > 0)
-                            <span class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-400 text-white text-[10px] leading-4 text-center">
-                                {{ $cartCount }}
-                            </span>
-                        @endif
-                    </a>
+                <div class="w-auto flex items-center justify-end space-x-3 justify-self-end">
                     <x-dropdown align="right" width="48">
                         <x-slot name="trigger">
                             <button id="customerTrigger"
                                 class="flex items-center space-x-1 px-2 pb-3 relative text-sm font-medium text-black 
                        transition after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 
                        after:bg-black after:transition-all after:duration-300 hover:after:w-full">
-                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
-                            aria-hidden="true" focusable="false">
-                            <use href="#icon-account"></use>
-                        </svg>
+                                <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                                    aria-hidden="true" focusable="false">
+                                    <use href="#icon-account"></use>
+                                </svg>
                                 <span>Hello, {{ auth()->user()->name }}</span>
                                 <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
@@ -303,6 +343,7 @@
                         <x-slot name="content">
                             {{-- <x-dropdown-link :href="route('dashboard')">{{ __('Dashboard') }}</x-dropdown-link> --}}
                             <x-dropdown-link :href="route('profile.show')">{{ __('Profile') }}</x-dropdown-link>
+                            <x-dropdown-link :href="route('orders.index')">{{ __('Orders') }}</x-dropdown-link>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <x-dropdown-link :href="route('logout')"
@@ -310,8 +351,6 @@
                                     {{ __('Log Out') }}
                                 </x-dropdown-link>
                             </form>
-                            <x-dropdown-link :href="route('orders.index')">{{ __('Orders') }}</x-dropdown-link>
-
                         </x-slot>
                     </x-dropdown>
                 </div>

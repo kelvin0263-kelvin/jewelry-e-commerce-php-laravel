@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SimpleUsersSeeder::class,
             InventoryAndProductsSeeder::class,
-            // OrderSeeder::class, // Enable after adding the order_product pivot migration
+            OrderSeeder::class,
         ]);
     }
 }

@@ -1,4 +1,4 @@
-<!-- Self-Service Chat Widget - Available for all users -->
+﻿<!-- Self-Service Chat Widget - Available for all users -->
 <div id="chat-widget-container" style="position: fixed; bottom: 20px; right: 20px; width: 350px; z-index: 1000;">
     <!-- Chat Header/Toggle Button -->
     <div id="chat-toggle"
@@ -8,7 +8,7 @@
 
     <!-- Self-Service Options -->
     <div id="self-service-box"
-        style="display: none; border: 1px solid #ccc; background-color: white; max-height: 500px; overflow-y: auto; border-radius: 0 0 8px 8px;">
+        style="border: 1px solid #ccc; background-color: white; border-radius: 0 0 8px 8px; overflow: hidden; max-height: 0; opacity: 0; transform: translateY(16px); transition: max-height 300ms ease, opacity 250ms ease, transform 300ms ease;">
         <!-- Header -->
         <div style="padding: 15px; border-bottom: 1px solid #eee; background-color: #f8f9fa;">
             <h3 style="margin: 0; font-size: 16px; font-weight: bold; color: #333;">How can we help you?</h3>
@@ -102,9 +102,9 @@
     </div>
 
     @auth
-        <!-- Live Chat Box (hidden by default) -->
+        <!-- Live Chat Box (hidden by default, animates open/close) -->
         <div id="chat-box"
-            style="display: none; border: 1px solid #ccc; background-color: white; height: 400px; flex-direction: column; border-radius: 0 0 8px 8px;">
+            style="display: flex; border: 1px solid #ccc; background-color: white; flex-direction: column; border-radius: 0 0 8px 8px; overflow: hidden; max-height: 0; opacity: 0; transform: translateY(16px); transition: max-height 300ms ease, opacity 250ms ease, transform 300ms ease;">
             <!-- Chat Controls -->
             <div
                 style="padding: 10px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
@@ -145,6 +145,27 @@
         return m ? decodeURIComponent(m[1]) : '';
     }
 
+    // Global slide animation helpers so they can be used anywhere
+    window.openPanel = function openPanel(el, maxHeightPx) {
+        if (!el) return;
+        el.style.maxHeight = maxHeightPx;
+        el.style.opacity = '1';
+        el.style.transform = 'translateY(0)';
+        if (el.id === 'self-service-box') {
+            el.style.overflowY = 'auto';
+        }
+    };
+
+    window.closePanel = function closePanel(el) {
+        if (!el) return;
+        el.style.maxHeight = '0px';
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(16px)';
+        if (el.id === 'self-service-box') {
+            el.style.overflowY = 'hidden';
+        }
+    };
+
     document.addEventListener('DOMContentLoaded', function() {
         const chatToggle = document.getElementById('chat-toggle');
         const selfServiceBox = document.getElementById('self-service-box');
@@ -152,6 +173,8 @@
         const chatMessages = document.getElementById('chat-messages');
         const chatForm = document.getElementById('chat-form');
         const chatInput = document.getElementById('chat-input');
+
+        // Use window.openPanel / window.closePanel everywhere
 
         // Utility: disable a button for N seconds with a live countdown, then re-enable
         function disableButtonCountdown(selector, seconds, baseLabel) {
@@ -218,6 +241,7 @@
 
         window.conversationId = null;
         let isShowingSelfService = false;
+        let isPanelOpen = false;
 
         // Check for URL parameter to open specific chat
         const urlParams = new URLSearchParams(window.location.search);
@@ -233,16 +257,18 @@
         // (Step 1) - UI Interaction Layer
         // User clicks chat toggle button to show/hide self-service options    
         chatToggle.addEventListener('click', () => {
-            if (!isShowingSelfService) {
-                // Show self-service options first
-                if (selfServiceBox) selfServiceBox.style.display = 'block';
-                if (chatBox) chatBox.style.display = 'none';
+            if (!isPanelOpen) {
+                // Open widget with self-service panel
+                openPanel(selfServiceBox, '500px');
+                closePanel(chatBox);
                 isShowingSelfService = true;
+                isPanelOpen = true;
             } else {
-                // Hide everything
-                if (selfServiceBox) selfServiceBox.style.display = 'none';
-                if (chatBox) chatBox.style.display = 'none';
+                // Close any open panel
+                closePanel(selfServiceBox);
+                closePanel(chatBox);
                 isShowingSelfService = false;
+                isPanelOpen = false;
             }
         });
 
@@ -1166,8 +1192,11 @@
             return;
         }
 
-        if (selfServiceBox) selfServiceBox.style.display = 'none';
-        if (chatBox) chatBox.style.display = 'flex';
+        closePanel(selfServiceBox);
+        openPanel(chatBox, '400px');
+        // Track panel state for the header toggle behavior
+        try { isPanelOpen = true; } catch (e) {}
+        try { isShowingSelfService = false; } catch (e) {}
 
         // Always start with queue-based chat instead of trying to resume old conversations
         // The /chat/start endpoint will handle checking for existing active conversations
@@ -1274,8 +1303,10 @@
         const chatBox = document.getElementById('chat-box');
         const selfServiceBox = document.getElementById('self-service-box');
 
-        if (chatBox) chatBox.style.display = 'none';
-        if (selfServiceBox) selfServiceBox.style.display = 'block';
+        closePanel(chatBox);
+        openPanel(selfServiceBox, '500px');
+        try { isPanelOpen = true; } catch (e) {}
+        try { isShowingSelfService = true; } catch (e) {}
 
         // Don't clear conversation ID - preserve the conversation state
         // This allows customers to return to their chat without losing their place
