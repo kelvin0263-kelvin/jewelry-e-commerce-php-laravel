@@ -34,6 +34,8 @@ class ChatController extends Controller
     {
         try {
             // Simplified query - get all conversations with users
+            // Also compute unread messages count (messages from others with null read_at)
+            $currentUserId = Auth::id();
             $conversations = Conversation::with(['user', 'agent'])
                 ->select([
                     'id', 
@@ -46,6 +48,11 @@ class ChatController extends Controller
                     'created_at',
                     'updated_at'
                 ])
+                ->withCount(['messages as unread_count' => function ($query) use ($currentUserId) {
+                    $query->whereNull('read_at')
+                        ->where('message_type', 'user')
+                        ->where('user_id', '!=', $currentUserId);
+                }])
                 ->latest()
                 ->get();
                 
@@ -116,12 +123,33 @@ class ChatController extends Controller
     //D:\Desktop\jewelry-e-commerce-php-laravel\app\Modules\Support\Views\admin\chat\index.blade.php
     public function messages($id)
     {
+        // Mark messages from others as read for this admin
+        Message::where('conversation_id', $id)
+            ->whereNull('read_at')
+            ->where('message_type', 'user')
+            ->where('user_id', '!=', Auth::id())
+            ->update(['read_at' => now()]);
+
         // Fetch messages for the conversation with user relationship
         $messages = Message::where('conversation_id', $id)
             ->with('user')
             ->orderBy('created_at', 'asc')
             ->get();
         return response()->json($messages);
+    }
+
+    /**
+     * Mark all unread user messages in a conversation as read for the current admin
+     */
+    public function markAsRead($id)
+    {
+        Message::where('conversation_id', $id)
+            ->whereNull('read_at')
+            ->where('message_type', 'user')
+            ->where('user_id', '!=', Auth::id())
+            ->update(['read_at' => now()]);
+
+        return response()->json(['success' => true]);
     }
 
     //D:\Desktop\jewelry-e-commerce-php-laravel\app\Modules\Support\Views\admin\chat\index.blade.php sent message (also use observe pattern)

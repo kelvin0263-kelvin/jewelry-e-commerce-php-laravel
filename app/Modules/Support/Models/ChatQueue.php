@@ -35,6 +35,12 @@ class ChatQueue extends Model
         'escalation_context' => 'array'
     ];
 
+    // Ensure computed attributes are present in JSON for frontend usage
+    protected $appends = [
+        'wait_time',
+        'position_in_queue',
+    ];
+
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(Conversation::class);
@@ -171,11 +177,16 @@ class ChatQueue extends Model
     // Calculate wait time in minutes
     public function getWaitTimeAttribute()
     {
-        if ($this->assigned_at) {
-            return $this->assigned_at->diffInMinutes($this->queued_at);
+        if (!$this->queued_at) {
+            return 0;
         }
-        
-        return now()->diffInMinutes($this->queued_at);
+
+        // Use absolute differences and guard against negatives
+        if ($this->assigned_at) {
+            return max(0, $this->queued_at->diffInMinutes($this->assigned_at, true));
+        }
+
+        return max(0, $this->queued_at->diffInMinutes(now(), true));
     }
 
     // Get queue position for customer

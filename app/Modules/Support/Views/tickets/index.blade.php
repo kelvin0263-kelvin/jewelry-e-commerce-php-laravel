@@ -86,13 +86,13 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span
-                                                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $ticket->status_badge_class }} text-white">
+                                                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $ticket->status_badge_class }} text-black">
                                                 {{ ucwords(str_replace('_', ' ', $ticket->status)) }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span
-                                                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $ticket->priority_badge_class }} text-white">
+                                                class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $ticket->priority_badge_class }} text-black">
                                                 {{ ucfirst($ticket->priority) }}
                                             </span>
                                         </td>

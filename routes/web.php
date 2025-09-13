@@ -299,6 +299,7 @@ Route::prefix('inventory')->name('admin.inventory.')->controller(InventoryContro
     Route::get('/chat/conversations', [ChatController::class, 'conversations'])->name('admin.chat.conversations');
     Route::get('/chat/conversations/{id}', [ChatController::class, 'show'])->name('admin.chat.show');
     Route::get('/chat/conversations/{id}/messages', [ChatController::class, 'messages'])->name('admin.chat.messages');
+    Route::post('/chat/conversations/{id}/mark-read', [ChatController::class, 'markAsRead'])->name('admin.chat.mark-read');
     Route::post('/chat/messages', [ChatController::class, 'store'])
         ->middleware('throttle:admin-chat')
         ->name('admin.chat.store');
@@ -341,11 +342,11 @@ Route::prefix('inventory')->name('admin.inventory.')->controller(InventoryContro
 require __DIR__ . '/auth.php';
 
 // Customer dashboard (still available, but home is default after login)
-Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-});
+// Route::middleware(['auth'])->group(function () {
+//     Route::get('/dashboard', function () {
+//         return view('dashboard');
+//     })->name('dashboard');
+// });
 
 // Factory Demo Routes
 Route::middleware(['auth'])->group(function () {
@@ -380,5 +381,4 @@ Route::prefix('admin')->group(function () {
     Route::post('/ordermanagement/ship/{id}', [OrderManagementController::class, 'ship'])->name('ordermanagement.ship');
     Route::post('/ordermanagement/refund/{id}', [OrderManagementController::class, 'updateRefundStatus'])->name('ordermanagement.updateRefundStatus');
 });
-
 

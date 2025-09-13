@@ -29,6 +29,19 @@ class ChatQueueController extends Controller
         
         $pendingChats = $this->queueService->getPendingChats();
         $stats = $this->queueService->getQueueStats();
+
+        // Make Avg Wait reflect current waiting customers shown in UI
+        if ($pendingChats->count() > 0) {
+            $now = now();
+            $avgWaitSeconds = (int) round(
+                $pendingChats->avg(function ($q) use ($now) {
+                    return max(0, $now->diffInSeconds($q->queued_at));
+                })
+            );
+            $stats['average_wait_time'] = $avgWaitSeconds;
+        } else {
+            $stats['average_wait_time'] = 0;
+        }
         $agents = AgentStatus::with('user')->get();
         
         return view('support::admin.chat-queue.index', compact('pendingChats', 'stats', 'agents'));
@@ -68,10 +81,26 @@ class ChatQueueController extends Controller
         // Ensure agent status and sync active chats
         $this->ensureAgentStatus();
         $this->syncActiveChatsCount();
-        
+
+        $pendingChats = $this->queueService->getPendingChats();
+        $stats = $this->queueService->getQueueStats();
+
+        // Align average wait with what's visible in the pending list
+        if ($pendingChats->count() > 0) {
+            $now = now();
+            $avgWaitSeconds = (int) round(
+                $pendingChats->avg(function ($q) use ($now) {
+                    return max(0, $now->diffInSeconds($q->queued_at));
+                })
+            );
+            $stats['average_wait_time'] = $avgWaitSeconds;
+        } else {
+            $stats['average_wait_time'] = 0;
+        }
+
         return response()->json([
-            'pending_chats' => $this->queueService->getPendingChats(),
-            'stats' => $this->queueService->getQueueStats(),
+            'pending_chats' => $pendingChats,
+            'stats' => $stats,
             'agents' => AgentStatus::with('user')->get()
         ]);
     }

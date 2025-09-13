@@ -11,7 +11,7 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
         <div class="bg-white rounded-lg shadow-md p-4">
             <div class="flex items-center">
                 <div class="p-2 bg-yellow-100 rounded-lg">
@@ -54,19 +54,7 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-4">
-            <div class="flex items-center">
-                <div class="p-2 bg-purple-100 rounded-lg">
-                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-                <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-500">Avg Wait Time</div>
-                    <div class="text-2xl font-bold text-gray-900" id="avg-wait">{{ round($stats['average_wait_time'] / 60, 1) }}m</div>
-                </div>
-            </div>
-        </div>
+        
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -92,13 +80,7 @@
                             </svg>
                             Away
                         </button>
-                        <button onclick="fixAgentStatus()" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md transition-colors">
-                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                            Fix Status
-                        </button>
+                        
                     </div>
 
                     <!-- Agents List -->
@@ -147,7 +129,7 @@
                 <div class="p-4 border-b border-gray-200">
                     <div class="flex justify-between items-center">
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-800">Pending Chats Queue (FIFO)</h3>
+                            <h3 class="text-lg font-semibold text-gray-800">Pending Chats Queue</h3>
                             <p class="text-sm text-gray-600">First in, first out - customers waiting for assistance</p>
                         </div>
                         <button onclick="refreshQueue()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors">
@@ -189,11 +171,19 @@
                                                         @endif
                                                     </div>
                                                     <p class="text-sm text-gray-500 truncate">{{ $chat->customer->email }}</p>
+                                                    @php
+                                                        $wtMin = (int) ($chat->wait_time ?? 0);
+                                                        $wtText = $wtMin < 1
+                                                            ? 'Just now'
+                                                            : ($wtMin < 60
+                                                                ? ($wtMin . 'm')
+                                                                : (floor($wtMin / 60) . 'h ' . ($wtMin % 60) . 'm'));
+                                                    @endphp
                                                     <div class="flex items-center mt-1 text-xs text-gray-400">
                                                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                         </svg>
-                                                        Waiting {{ $chat->wait_time }} minutes
+                                                        Waiting {{ $wtText }}
                                                     </div>
                                                 </div>
                                             </div>
@@ -217,9 +207,7 @@
                                                             <button onclick="assignToAgent({{ $chat->id }})" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
                                                                 Assign to Agent
                                                             </button>
-                                                            <button onclick="abandonChat({{ $chat->id }})" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left">
-                                                                Remove from Queue
-                                                            </button>
+                                                            
                                                         </div>
                                                     </div>
                                                 </div>
@@ -406,7 +394,28 @@ function updateStats(stats) {
     document.getElementById('waiting-count').textContent = stats.waiting_customers;
     document.getElementById('active-count').textContent = stats.active_chats;
     document.getElementById('available-agents').textContent = stats.available_agents;
-    document.getElementById('avg-wait').textContent = Math.round(stats.average_wait_time / 60 * 10) / 10 + 'm';
+}
+
+// Format wait time nicely: under 1m show seconds, under 60m show Xm, else Hh Mm
+function formatWait(waitMinutes, queuedAt) {
+    let minutes = 0;
+    if (waitMinutes !== undefined && waitMinutes !== null) {
+        minutes = Number(waitMinutes) || 0;
+    } else if (queuedAt) {
+        const diffMs = Date.now() - new Date(queuedAt).getTime();
+        minutes = Math.max(0, diffMs / 60000);
+    }
+
+    if (minutes < 1) {
+        const seconds = Math.max(0, Math.round(minutes * 60));
+        return `Waiting ${seconds}s`;
+    }
+    if (minutes < 60) {
+        return `Waiting ${Math.floor(minutes)}m`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const rem = Math.floor(minutes % 60);
+    return `Waiting ${hours}h ${rem}m`;
 }
 
 function updatePendingQueue(chats) {
@@ -456,7 +465,7 @@ function updatePendingQueue(chats) {
                                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                Waiting ${chat.wait_time} minutes
+                                ${formatWait(chat.wait_time, chat.queued_at)}
                             </div>
                         </div>
                     </div>
@@ -480,9 +489,7 @@ function updatePendingQueue(chats) {
                                     <button onclick="assignToAgent(${chat.id})" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
                                         Assign to Agent
                                     </button>
-                                    <button onclick="abandonChat(${chat.id})" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left">
-                                        Remove from Queue
-                                    </button>
+                                    
                                 </div>
                             </div>
                         </div>
@@ -657,30 +664,7 @@ function submitAssignment() {
     });
 }
 
-//done button trigger
-function abandonChat(queueId) {
-    if (confirm('Remove this customer from queue?')) {
-        fetch(`/admin/chat-queue/${queueId}/abandon`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Customer removed from queue');
-                refreshQueue();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Failed to remove from queue');
-        });
-    }
-}
+// (abandonChat removed by request)
 
 
 //done button trigger
@@ -803,4 +787,3 @@ function showStatusMessage(message, type = 'info') {
 }
 </script>
 @endsection
-

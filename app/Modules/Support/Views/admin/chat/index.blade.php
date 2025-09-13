@@ -133,6 +133,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     let currentConversationId = null;
     let conversationState = {}; // Track conversation states
+    let subscribedChannels = new Set(); // Prevent duplicate real-time bindings
+    let isLoadingConversations = false; // Prevent overlapping fetches
+    let autoRefreshIntervalId = null; // Auto refresh timer id
+    const AUTO_REFRESH_MS = 10000; // 10s auto refresh interval
+    const CURRENT_USER_ID = Number({{ auth()->id() }});
 
     // Function to update conversation state
     function updateConversationState(conversationId, state) {
@@ -147,10 +152,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update statistics cards
     function updateStatistics(conversations) {
-        const totalConversations = conversations.length;
-        const activeChats = conversations.filter(c => c.status === 'active').length;
-        const pendingChats = conversations.filter(c => c.status === 'pending').length;
-        const completedChats = conversations.filter(c => c.status === 'completed' || c.status === 'abandoned').length;
+        // Match list filter: show only my assigned (non-pending) conversations
+        const visible = conversations.filter(c => c.status !== 'pending' && Number(c.assigned_agent_id) === CURRENT_USER_ID);
+        const totalConversations = visible.length;
+        const activeChats = visible.filter(c => c.status === 'active').length;
+        const completedChats = visible.filter(c => c.status === 'completed' || c.status === 'abandoned').length;
+
+        // Pending chats: count unassigned pending (visible to all admins)
+        const pendingChats = conversations.filter(c => c.status === 'pending' && (c.assigned_agent_id === null || c.assigned_agent_id === undefined)).length;
 
         document.getElementById('total-conversations').textContent = totalConversations;
         document.getElementById('active-chats').textContent = activeChats;
@@ -160,11 +169,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-    // Load conversations on page load
+    // Load conversations on page load and start auto-refresh
     loadConversations();
+    startAutoRefresh();
 
     // Load all conversations
     async function loadConversations() {
+        if (isLoadingConversations) {
+            return;
+        }
+        isLoadingConversations = true;
         try {
             console.log('Attempting to fetch conversations from: /admin/chat/conversations');
             const response = await fetch('/admin/chat/conversations');
@@ -193,11 +207,24 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p class="text-sm text-gray-500">Customer conversations will appear here</p>
                     </div>
                 `;
+                isLoadingConversations = false;
                 return;
             }
 
             conversationsList.innerHTML = '';
-            conversations.filter(conversation => conversation.status !== 'pending').forEach(conversation => {
+            // Filter to my assigned non-pending conversations and sort with Active first, then recent
+            const visible = conversations
+                .filter(conversation => conversation.status !== 'pending' && conversation.assigned_agent_id === {{ auth()->id() }} )
+                .sort((a, b) => {
+                    const rank = (s) => (s === 'active' ? 0 : 1);
+                    const byRank = rank(a.status) - rank(b.status);
+                    if (byRank !== 0) return byRank;
+                    const ad = new Date(a.updated_at || a.created_at || 0);
+                    const bd = new Date(b.updated_at || b.created_at || 0);
+                    return bd - ad; // newest first
+                });
+
+            visible.forEach(conversation => {
                 const conversationElement = document.createElement('div');
                 
                 console.log('🔍 Conversation', conversation.id, 'status:', conversation.status, 'ended_at:', conversation.ended_at);
@@ -235,6 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     statusBgColor = 'bg-blue-100';
                 }
                 
+                const unread = Number(conversation.unread_count ?? 0);
                 conversationElement.className = statusClass;
                 conversationElement.setAttribute('data-conversation-id', conversation.id);
                 conversationElement.innerHTML = `
@@ -253,9 +281,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             <div class="flex justify-between items-center">
                                 <div class="text-xs text-gray-400">#${conversation.id}</div>
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusColor} ${statusBgColor}">
-                                    ${statusText}
-                                </span>
+                                <div class="flex items-center space-x-2">
+                                    <span class="inline-flex items-center justify-center px-2 h-5 rounded-full ${unread > 0 ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'} text-xs font-semibold">
+                                        ${unread}
+                                    </span>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusColor} ${statusBgColor}">
+                                        ${statusText}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -266,6 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Auto-subscribe admin to all conversation channels for real-time notifications
             subscribeToAllConversations(conversations);
+            isLoadingConversations = false;
         } catch (error) {
             console.error('Failed to load conversations:', error);
             console.error('Error details:', error.message);
@@ -278,8 +312,32 @@ document.addEventListener('DOMContentLoaded', function() {
                     </button>
                 </div>
             `;
+            isLoadingConversations = false;
         }
     }
+
+    // Auto refresh helpers
+    function startAutoRefresh() {
+        if (autoRefreshIntervalId) return;
+        autoRefreshIntervalId = setInterval(() => {
+            try { loadConversations(); } catch (e) {}
+        }, AUTO_REFRESH_MS);
+    }
+    function stopAutoRefresh() {
+        if (autoRefreshIntervalId) {
+            clearInterval(autoRefreshIntervalId);
+            autoRefreshIntervalId = null;
+        }
+    }
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            stopAutoRefresh();
+        } else {
+            loadConversations();
+            startAutoRefresh();
+        }
+    });
+    window.addEventListener('beforeunload', stopAutoRefresh);
 
     // Load messages for a specific conversation
     async function loadMessages(conversationId, userName) {
@@ -571,6 +629,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Listen for real-time messages
             listenForRealTimeMessages(conversationId);
+            // Refresh list to clear unread badge for this conversation
+            setTimeout(() => { try { loadConversations(); } catch (e) {} }, 200);
             
             // FORCE another check after a small delay to ensure UI state is correct
             setTimeout(() => {
@@ -626,6 +686,10 @@ document.addEventListener('DOMContentLoaded', function() {
         conversations.forEach(conversation => {
             const channelName = 'conversation.' + conversation.id;
             console.log('Subscribing to channel:', channelName);
+            if (subscribedChannels.has(channelName)) {
+                console.log('Already subscribed to', channelName, '— skipping');
+                return;
+            }
             
             try {
                 const channel = window.Echo.private(channelName);
@@ -663,6 +727,19 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Scroll to bottom
                             const messagesContainer = document.getElementById('messages-container');
                             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                            // Mark as read and refresh list to clear badge
+                            try {
+                                fetch(`/admin/chat/conversations/${data.message.conversation_id}/mark-read`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                    }
+                                }).then(() => {
+                                    try { loadConversations(); } catch (e) {}
+                                });
+                            } catch (e) {
+                                console.warn('Failed to mark as read:', e);
+                            }
                         } else {
                             console.log('📝 Message for different conversation:', data.message.conversation_id, 'vs current:', currentConversationId);
                         }
@@ -699,6 +776,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             loadConversations();
                         }, 500);
                     });
+                    subscribedChannels.add(channelName);
                 }
                 
             } catch (error) {
