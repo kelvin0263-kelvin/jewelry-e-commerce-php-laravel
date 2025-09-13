@@ -675,14 +675,10 @@ public function dashboard()
     ));
 }
 
-// InventoryController.php
-
 public function list()
 {
     // Get only edited inventories
     $inventories = Inventory::with('variations')
-        ->whereColumn('updated_at', '!=', 'created_at') // only edited
-        ->orderBy('updated_at', 'desc')
         ->get();
 
     // Pass data to Blade view
