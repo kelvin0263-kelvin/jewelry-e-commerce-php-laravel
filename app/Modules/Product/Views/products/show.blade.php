@@ -1049,15 +1049,12 @@
             <!-- Shipping Information -->
             <div class="shipping-info">
                 <div class="shipping-item">
-                    <i class="fas fa-truck"></i>
-                    Free Shipping on orders RM75+
+                    Free Polishing Service
                 </div>
                 <div class="shipping-item">
-                    <i class="fas fa-calendar-alt"></i>
-                    Free Extended Returns to 1/30
+                    Provide services and warranty claims
                 </div>
                 <div class="shipping-item">
-                    <i class="fas fa-box"></i>
                     Ship To Home: delivered in 2-4 business days
                 </div>
             </div>
@@ -1530,12 +1527,12 @@
                     return;
                 }
 
-                // Get product ID from the current page
-                const productId = {{ $decoratedProduct->product->id }};
+                // Get inventory ID from the current page
+                const inventoryId = {{ $decoratedProduct->product->inventory_id }};
 
                 // Prepare data for submission
                 const reviewData = {
-                    product_id: productId,
+                    inventory_id: inventoryId,
                     reviewer_name: document.getElementById('reviewerName').value,
                     rating: rating,
                     title: document.getElementById('reviewTitle').value,

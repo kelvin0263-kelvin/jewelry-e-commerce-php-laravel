@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Review extends Model
 {
     protected $fillable = [
-        'product_id',
+        'inventory_id',
         'reviewer_name',
         'rating',
         'title',
@@ -19,8 +19,20 @@ class Review extends Model
         'is_approved' => 'boolean',
     ];
 
-    public function product()
+    public function inventory()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(\App\Modules\Inventory\Models\Inventory::class, 'inventory_id');
+    }
+
+    public function products()
+    {
+        return $this->hasManyThrough(
+            Product::class,
+            \App\Modules\Inventory\Models\Inventory::class,
+            'id', // Foreign key on inventories table
+            'inventory_id', // Foreign key on products table
+            'inventory_id', // Local key on reviews table
+            'id' // Local key on inventories table
+        );
     }
 }
