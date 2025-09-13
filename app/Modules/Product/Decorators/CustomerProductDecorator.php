@@ -88,14 +88,24 @@ class CustomerProductDecorator extends BaseProductDecorator
 
     private function getRating(): float
     {
-        // TODO: Implement rating system
-        return 5.0; // Default rating for demo
+        // Get average rating from reviews for this inventory
+        $reviews = \App\Modules\Product\Models\Review::where('inventory_id', $this->product->inventory_id)
+            ->where('is_approved', true)
+            ->get();
+            
+        if ($reviews->count() === 0) {
+            return 0.0;
+        }
+        
+        return round($reviews->avg('rating'), 1);
     }
 
     private function getReviewCount(): int
     {
-        // TODO: Implement review system
-        return 1; // Default review count for demo
+        // Get count of approved reviews for this inventory
+        return \App\Modules\Product\Models\Review::where('inventory_id', $this->product->inventory_id)
+            ->where('is_approved', true)
+            ->count();
     }
 
     private function isInWishlist(): bool
