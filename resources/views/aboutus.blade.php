@@ -1,66 +1,94 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us — Tiffany Replica</title>
     <link rel="shortcut icon" href="{{ asset('images/smallIcon.jpg') }}" type="image/x-icon">
-    <title>@yield('title', 'Jewelry Store')</title>
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-        
-        <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/css/style.css', 'resources/js/app.js'])
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-        
-        <!-- Additional Styles -->
-    @stack('styles')
-
 </head>
+<body class="bg-white text-gray-800">
 
-<body class="font-sans antialiased bg-gray-100">
+    {{-- Site Navbar --}}
+    @include('components.navbar')
 
-    {{-- Flash popup messages --}}
-    @if (session('status'))
-        <div x-data="{ show: true }" x-show="show" x-transition:enter="transform transition ease-out duration-300"
-            x-transition:enter-start="translate-y-10 opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
-            x-transition:leave="transform transition ease-in duration-300"
-            x-transition:leave-start="translate-y-0 opacity-100" x-transition:leave-end="translate-y-10 opacity-0"
-            x-init="setTimeout(() => show = false, 3000)"
-            class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg text-sm z-50">
-            {{ session('status') }}
-        </div>
-    @endif
+    <main>
+        <section class="max-w-7xl mx-auto px-6 md:px-8 lg:px-10 py-16 md:py-24">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                <!-- Text column -->
+                <div>
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-serif tracking-tight text-gray-900">
+                        Meet The Tiffany Replica
+                    </h1>
+                    <p class="mt-4 text-xl text-gray-500">
+                        Crafted for Timeless Elegance
+                    </p>
+                    <p class="mt-8 leading-7 text-gray-700">
+                        Tiffany Replica was born from a love of classic beauty and the desire to make timeless jewelry
+                        accessible to everyone. Our store specializes in recreating the elegance of Tiffany-inspired
+                        designs with precision, offering pieces that embody luxury without the high price tag. Every ring,
+                        necklace, and bracelet is crafted with attention to detail, blending sophistication with everyday
+                        wearability. Whether you are celebrating a milestone, expressing love, or simply elevating your
+                        personal style, Tiffany Replica jewelry is created to shine with you in every moment. More than
+                        just accessories, our pieces are symbols of confidence, elegance, and affordable luxury.
+                    </p>
+                </div>
 
-    @if ($errors->any())
-        <div x-data="{ show: true }" x-show="show" x-transition:enter="transform transition ease-out duration-300"
-            x-transition:enter-start="translate-y-10 opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
-            x-transition:leave="transform transition ease-in duration-300"
-            x-transition:leave-start="translate-y-0 opacity-100" x-transition:leave-end="translate-y-10 opacity-0"
-            x-init="setTimeout(() => show = false, 4000)"
-            class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg text-sm z-50">
-            {{ $errors->first() }}
-        </div>
-    @endif
+                <!-- Image column -->
+                <div class="relative w-full h-64 sm:h-80 md:h-[28rem] lg:h-[32rem] overflow-hidden rounded md:rounded-none md:rounded-r-lg">
+                    <img
+                        src="{{ asset('images/aboutus1.webp') }}"
+                        alt="About Tiffany Replica"
+                        class="absolute inset-0 w-full h-full object-cover">
+                </div>
+            </div>
+        </section>
 
+        <!-- Stats / Highlights section -->
+        <section class="bg-gray-50 py-16 md:py-20">
+            <div class="max-w-7xl mx-auto px-6 md:px-8 lg:px-10">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+                    <!-- Card 1 -->
 
-    <div class="min-h-screen bg-gray-100">
-        <x-navbar />
+                    <div>
+                        <div class="text-5xl md:text-6xl font-semibold text-[#c9b57b]">500+</div>
+                        <h3 class="mt-3 text-xl md:text-2xl font-semibold text-gray-900">Timeless Designs</h3>
+                        <p class="mt-4 text-gray-600 leading-7">
+                            Our collection features over 500 carefully crafted designs inspired by Tiffany’s iconic elegance.
+                            From sparkling engagement rings to everyday classics, each piece captures the beauty of timeless
+                            jewelry, making luxury accessible to everyone.
+                        </p>
+                    </div>
 
-        <!-- Page Content -->
-        <main class="container mx-auto px-6 py-8">
-            @yield('content')
-        </main>
-    </div>
+                    <!-- Card 2 -->
+                    <div class="md:border-l md:border-gray-200 md:pl-10">
+                        <div class="text-5xl md:text-6xl font-semibold text-[#c9b57b]">1000+</div>
+                        <h3 class="mt-3 text-xl md:text-2xl font-semibold text-gray-900">Happy Customers</h3>
+                        <p class="mt-4 text-gray-600 leading-7">
+                            We’ve helped more than 1,000 customers celebrate love, milestones, and personal style with jewelry
+                            that looks and feels luxurious—without the luxury price tag. Every piece comes with our promise of
+                            quality and customer satisfaction.
+                        </p>
+                    </div>
 
-    <x-chat-widget /> {{-- Add this line --}}
+                    <!-- Card 3 -->
+                    <div class="md:border-l md:border-gray-200 md:pl-10">
+                        <div class="text-5xl md:text-6xl font-semibold text-[#c9b57b]">70%</div>
+                        <h3 class="mt-3 text-xl md:text-2xl font-semibold text-gray-900">Savings on Luxury</h3>
+                        <p class="mt-4 text-gray-600 leading-7">
+                            Why pay more for elegance? With Tiffany Replica, you can enjoy the same sophisticated look and
+                            feel as high-end jewelry at a fraction of the cost—saving up to 70% compared to traditional luxury
+                            brands, without compromising on beauty.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
 
+    {{-- Optional footer spacing --}}
+    <div class="h-10"></div>
+    
        <footer class="footer"><!--Footer-->
         <div class="container-footer">
             <div class="row"><!--Arrange All DIV IN ROW-->
@@ -136,5 +164,4 @@
         </div>
     </footer>
 </body>
-
 </html>

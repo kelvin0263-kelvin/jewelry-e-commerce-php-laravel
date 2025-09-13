@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Http;
 use App\Modules\Order\Models\Order;
 use App\Modules\User\Models\User;
 use App\Modules\Order\Controllers\OrderApiController;
+use App\Modules\Inventory\Models\Inventory;
 
 class SelfServiceController extends Controller
 {
@@ -18,17 +19,7 @@ class SelfServiceController extends Controller
         return view('support::self-service.index', compact('categories'));
     }
 
-    public function category($categorySlug)
-    {
-        $categories = $this->getSelfServiceCategories();
-        
-        if (!isset($categories[$categorySlug])) {
-            abort(404);
-        }
-
-        $category = $categories[$categorySlug];
-        return view('support::self-service.category', compact('category', 'categorySlug'));
-    }
+    // category view removed; single-page self-service
 
     public function help(Request $request)
     {
@@ -163,28 +154,182 @@ class SelfServiceController extends Controller
         }
     }
 
+    // refundStatus removed per new requirements
+
+    /**
+     * Check product/item availability by inventory ID.
+     * If ?use_api=1, calls external published check; otherwise uses internal models.
+     */
+    public function checkAvailability(Request $request)
+    {
+        $request->validate([
+            'inventory_id' => ['nullable', 'integer'],
+            'product_name' => ['nullable', 'string', 'max:255']
+        ]);
+
+        try {
+            $useApi = filter_var($request->query('use_api', false), FILTER_VALIDATE_BOOLEAN);
+
+            $inventoryId = $request->filled('inventory_id') ? (int) $request->input('inventory_id') : null;
+            $productName = $request->filled('product_name') ? trim($request->input('product_name')) : null;
+
+            $results = [];
+
+            if ($productName && !$inventoryId) {
+                // Search products by name (visible + published)
+                $products = \App\Modules\Product\Models\Product::where('is_visible', true)
+                    ->whereNotNull('published_at')
+                    ->where('name', 'like', '%' . str_replace('%', '', $productName) . '%')
+                    ->limit(5)
+                    ->get();
+
+                if ($products->isEmpty()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No matching products found'
+                    ], 404);
+                }
+
+                foreach ($products as $product) {
+                    // Resolve related inventory id
+                    $relatedInventoryId = $product->inventory_id;
+                    if (!$relatedInventoryId && $product->variation) {
+                        $relatedInventoryId = $product->variation->inventory_id;
+                    }
+
+                    if (!$relatedInventoryId) {
+                        $results[] = [
+                            'product_id' => $product->id,
+                            'name' => $product->name,
+                            'published' => (bool) $product->published_at,
+                            'available' => false,
+                            'total_stock' => 0,
+                            'url' => null,
+                        ];
+                        continue;
+                    }
+
+                    if ($useApi) {
+                        // External API published check for each match
+                        $response = Http::timeout(10)
+                            ->get(url("/api/products/check-published/{$relatedInventoryId}"));
+                        $published = $response->ok() ? (bool) ($response->json('published') ?? false) : false;
+
+                        $inventory = Inventory::find($relatedInventoryId);
+                        $totalStock = (int) ($inventory->total_stock ?? 0);
+
+                        $results[] = [
+                            'product_id' => $product->id,
+                            'name' => $product->name,
+                            'inventory_id' => $relatedInventoryId,
+                            'published' => $published,
+                            'available' => $published && $totalStock > 0,
+                            'total_stock' => $totalStock,
+                            'url' => $published ? route('products.show', $relatedInventoryId) : null,
+                        ];
+                    } else {
+                        // Internal availability using inventory stock and published variations
+                        $inventory = Inventory::with(['variations.product'])->find($relatedInventoryId);
+                        $publishedVariations = $inventory ? $inventory->variations()
+                            ->whereHas('product', function ($query) {
+                                $query->where('is_visible', true)
+                                      ->whereNotNull('published_at');
+                            })
+                            ->exists() : false;
+
+                        $totalStock = (int) ($inventory->total_stock ?? 0);
+                        $available = $publishedVariations && $totalStock > 0;
+
+                        $results[] = [
+                            'product_id' => $product->id,
+                            'name' => $product->name,
+                            'inventory_id' => $relatedInventoryId,
+                            'published' => $publishedVariations,
+                            'available' => $available,
+                            'total_stock' => $totalStock,
+                            'url' => $publishedVariations ? route('products.show', $relatedInventoryId) : null,
+                        ];
+                    }
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'data' => $results,
+                ]);
+            }
+
+            // Direct inventory check path (kept for flexibility)
+            if ($inventoryId) {
+                if ($useApi) {
+                    $response = Http::timeout(10)
+                        ->get(url("/api/products/check-published/{$inventoryId}"));
+
+                    if ($response->failed()) {
+                        throw new \Exception('Failed to check availability via API');
+                    }
+
+                    $published = (bool) ($response->json('published') ?? false);
+                    $url = $response->json('url');
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => [[
+                            'inventory_id' => $inventoryId,
+                            'published' => $published,
+                            'available' => $published,
+                            'url' => $url,
+                        ]],
+                    ]);
+                }
+
+                $inventory = Inventory::with(['variations.product'])->findOrFail($inventoryId);
+                $publishedVariations = $inventory->variations()
+                    ->whereHas('product', function ($query) {
+                        $query->where('is_visible', true)
+                              ->whereNotNull('published_at');
+                    })
+                    ->exists();
+
+                $totalStock = (int) ($inventory->total_stock ?? 0);
+                $available = $publishedVariations && $totalStock > 0;
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [[
+                        'inventory_id' => $inventoryId,
+                        'published' => $publishedVariations,
+                        'available' => $available,
+                        'total_stock' => $totalStock,
+                        'url' => $publishedVariations ? route('products.show', $inventoryId) : null,
+                    ]],
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Please provide a product name',
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to check item availability',
+                'error' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
     private function getSelfServiceCategories()
     {
         return [
             'orders' => [
                 'title' => 'Orders & Payments',
                 'icon' => '🛒',
-                'description' => 'Track orders, payment issues, cancellations'
+                'description' => 'Track orders, refunds, and payment issues'
             ],
-            'products' => [
-                'title' => 'Products & Quality', 
-                'icon' => '💎',
-                'description' => 'Product information, authenticity, care'
-            ],
-            'returns' => [
-                'title' => 'Returns & Exchanges',
-                'icon' => '↩️', 
-                'description' => 'Return items, exchanges, refunds'
-            ],
-            'account' => [
-                'title' => 'Account & Profile',
-                'icon' => '👤',
-                'description' => 'Account settings, passwords, profile'
+            'availability' => [
+                'title' => 'Product Availability',
+                'icon' => '📦',
+                'description' => 'Check if an item is published and in stock'
             ]
         ];
     }
@@ -194,7 +339,7 @@ class SelfServiceController extends Controller
         $solutions = [
             'track_order' => 'Check your email for tracking info or log into your account.',
             'payment_issue' => 'Verify card details or try a different payment method.',
-            'start_return' => 'Returns must be unworn in original packaging within 30 days.',
+            // 'refund_status' removed per new requirements
             'reset_password' => 'Check spam folder. Reset links expire in 60 minutes.'
         ];
 

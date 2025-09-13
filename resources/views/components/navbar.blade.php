@@ -190,11 +190,11 @@
 
                 {{-- FAQ --}}
                 <li class="group relative">
-                    <a href="{{ route('faq.index') }}"
+                    <a href="{{ route('aboutus') }}"
                         class="inline-block px-2 pb-3 relative transition
                               after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
                               after:transition-all after:duration-300 hover:after:w-full
-                              {{ request()->routeIs('faq.*') ? 'font-bold text-black after:w-full' : '' }}">
+                              {{ request()->routeIs('aboutus') ? 'font-bold text-black after:w-full' : '' }}">
                         About Us
                     </a>
                 </li>
@@ -259,11 +259,11 @@
                                 <div>
                                     <h3 class="text-gray-900 font-semibold mb-3">Live Support</h3>
                                     <ul class="space-y-2 text-gray-600">
-                                        <li>
+                                        {{-- <li>
                                             <button onclick="startLiveChat()" class="text-600 hover:underline">
                                                 Live Chat
                                             </button>
-                                        </li>
+                                        </li> --}}
                                         <li><a href="#"class="hover:underline transition duration-200">Email
                                                 Us</a></li>
                                         <li><a href="#"class="hover:underline transition duration-200">Call

@@ -6,6 +6,7 @@ use App\Modules\Support\Controllers\Api\TicketController;
 use App\Modules\Support\Controllers\ChatController;
 use App\Modules\Support\Controllers\ChatQueueController;
 use App\Modules\Support\Controllers\AdminTicketController;
+use App\Modules\Support\Controllers\SelfServiceController;
 
 // User support routes - require authentication
 Route::middleware('auth:sanctum')->group(function () {
@@ -78,4 +79,12 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::post('/{queue}/assign', [ChatQueueController::class, 'assign']); // POST /api/admin/support/queue/{id}/assign
     });
     
+});
+
+// Public Self-Service APIs (no auth required) — supports internal/external consumption
+Route::prefix('support/self-service')->group(function () {
+    // POST /api/support/self-service/track-order
+    Route::post('/track-order', [SelfServiceController::class, 'trackOrder']);
+    // POST /api/support/self-service/check-availability
+    Route::post('/check-availability', [SelfServiceController::class, 'checkAvailability']);
 });

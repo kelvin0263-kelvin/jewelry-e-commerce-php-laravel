@@ -52,29 +52,9 @@
                                 <button onclick="quickAction('track_order', '{{ $slug }}')" class="block w-full text-left px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition">
                                     📦 Track My Order
                                 </button>
-                                <button onclick="quickAction('modify_order', '{{ $slug }}')" class="block w-full text-left px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition">
-                                    ✏️ Cancel/Modify Order
-                                </button>
-                            @elseif($slug === 'products')
-                                <button onclick="quickAction('verify_authenticity', '{{ $slug }}')" class="block w-full text-left px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition">
-                                    ✅ Verify Authenticity
-                                </button>
-                                <button onclick="quickAction('care_instructions', '{{ $slug }}')" class="block w-full text-left px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition">
-                                    🧽 Care Instructions
-                                </button>
-                            @elseif($slug === 'returns')
-                                <button onclick="quickAction('start_return', '{{ $slug }}')" class="block w-full text-left px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition">
-                                    📤 Start a Return
-                                </button>
-                                <button onclick="quickAction('refund_status', '{{ $slug }}')" class="block w-full text-left px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition">
-                                    💰 Check Refund Status
-                                </button>
-                            @elseif($slug === 'account')
-                                <button onclick="quickAction('reset_password', '{{ $slug }}')" class="block w-full text-left px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition">
-                                    🔑 Reset Password
-                                </button>
-                                <button onclick="quickAction('update_profile', '{{ $slug }}')" class="block w-full text-left px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition">
-                                    👤 Update Profile
+                            @elseif($slug === 'availability')
+                                <button onclick="quickAction('check_availability', '{{ $slug }}')" class="block w-full text-left px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition">
+                                    📦 Check Item Availability
                                 </button>
                             @endif
                         </div>
@@ -127,18 +107,12 @@
         
         <div id="modalContent"></div>
         
-        <div class="mt-6 flex gap-3">
+        <div id="modalFooter" class="mt-6 flex gap-3">
             <button 
                 onclick="submitQuickAction()" 
                 class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition"
             >
                 Get Help
-            </button>
-            <button 
-                onclick="escalateToChat()" 
-                class="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 transition"
-            >
-                Chat with Agent
             </button>
         </div>
     </div>
@@ -148,8 +122,52 @@
 let currentAction = null;
 let currentCategory = null;
 
+// Expose category meta to JS for titles/descriptions
+const categoryMeta = @json($categories);
+
+// Single-page quick actions per category
+const categoryActions = {
+    'orders': [
+        { action: 'track_order', label: '📦 Track My Order' }
+    ],
+    'availability': [
+        { action: 'check_availability', label: '📦 Check Item Availability' }
+    ]
+};
+
+function openCategoryActions(slug) {
+    const modal = document.getElementById('quickActionModal');
+    const title = document.getElementById('modalTitle');
+    const content = document.getElementById('modalContent');
+    const footer = document.getElementById('modalFooter');
+
+    const readableTitle = (categoryMeta && categoryMeta[slug] && categoryMeta[slug].title) ? categoryMeta[slug].title : slug;
+    title.textContent = readableTitle;
+
+    const actions = categoryActions[slug] || [];
+    if (!actions.length) {
+        content.innerHTML = '<div class="text-gray-600">No quick actions available. Try search or chat with an agent.</div>';
+    } else {
+        content.innerHTML = `
+            <div class="space-y-2">
+                ${actions.map(a => `<button onclick=\"quickAction('${a.action}', '${slug}')\" class=\"w-full text-left px-4 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition\">${a.label}</button>`).join('')}
+            </div>
+        `;
+    }
+
+    // Hide footer when showing action list
+    footer.classList.add('hidden');
+    modal.classList.remove('hidden');
+}
+
 function selectCategory(slug) {
-    window.location.href = `/self-service/${slug}`;
+    currentCategory = slug;
+    const first = (categoryActions[slug] && categoryActions[slug][0]) ? categoryActions[slug][0].action : null;
+    if (first) {
+        quickAction(first, slug);
+    } else {
+        openCategoryActions(slug);
+    }
 }
 
 function quickAction(action, category) {
@@ -159,6 +177,7 @@ function quickAction(action, category) {
     const modal = document.getElementById('quickActionModal');
     const title = document.getElementById('modalTitle');
     const content = document.getElementById('modalContent');
+    const footer = document.getElementById('modalFooter');
     
     const actionTitles = {
         'track_order': 'Track Your Order',
@@ -166,9 +185,9 @@ function quickAction(action, category) {
         'verify_authenticity': 'Verify Authenticity',
         'care_instructions': 'Care Instructions',
         'start_return': 'Start a Return',
-        'refund_status': 'Check Refund Status',
         'reset_password': 'Reset Password',
-        'update_profile': 'Update Profile'
+        'update_profile': 'Update Profile',
+        'check_availability': 'Check Item Availability'
     };
     
     title.textContent = actionTitles[action] || 'Quick Help';
@@ -189,6 +208,16 @@ function quickAction(action, category) {
                 <div id="trackingResults" class="mt-4 hidden"></div>
             </div>
         `;
+    } else if (action === 'check_availability') {
+        formHTML = `
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                    <input type="text" id="product_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., Diamond Ring" />
+                </div>
+                <div id="availabilityResults" class="mt-4 hidden"></div>
+            </div>
+        `;
     } else if (action === 'reset_password') {
         formHTML = `
             <div class="space-y-4">
@@ -201,16 +230,17 @@ function quickAction(action, category) {
     } else {
         formHTML = `
             <div class="text-center">
-                <p class="text-gray-600 mb-4">We'll help you with ${actionTitles[action].toLowerCase()}. Would you like to:</p>
+                <p class="text-gray-600 mb-4">We'll help you with ${actionTitles[action].toLowerCase()}.</p>
                 <div class="space-y-2">
                     <button onclick="submitQuickAction()" class="w-full bg-blue-50 text-blue-700 p-3 rounded-lg hover:bg-blue-100">Get instant help</button>
-                    <button onclick="escalateToChat()" class="w-full bg-gray-50 text-gray-700 p-3 rounded-lg hover:bg-gray-100">Chat with an agent</button>
                 </div>
             </div>
         `;
     }
     
     content.innerHTML = formHTML;
+    // Show footer with action buttons when in a specific action
+    footer.classList.remove('hidden');
     modal.classList.remove('hidden');
 }
 
@@ -241,13 +271,12 @@ function submitQuickAction() {
 
         const payload = JSON.stringify({ order_number: orderNumber, email });
 
-        // Try API path first, then fall back to internal
-        fetch('/self-service/track-order?use_api=1', { method: 'POST', headers, body: payload })
+        // Single call. Controller decides internal vs external consumption.
+        fetch('/self-service/track-order', { method: 'POST', headers, body: payload })
             .then(async (res) => {
-                if (!res.ok) throw new Error('API tracking failed');
+                if (!res.ok) throw new Error('Tracking failed');
                 return res.json();
             })
-            .catch(() => fetch('/self-service/track-order', { method: 'POST', headers, body: payload }).then(r => r.json()))
             .then(data => {
                 if (!data || !data.success) {
                     throw new Error(data?.message || 'Unable to track order');
@@ -269,6 +298,66 @@ function submitQuickAction() {
                 console.error(err);
                 if (results) {
                     results.innerHTML = '<div class="text-sm text-red-600">Could not find your order. Please confirm the details or chat with an agent.</div>';
+                }
+            });
+        return;
+    } else if (currentAction === 'check_availability') {
+        const productName = document.getElementById('product_name')?.value?.trim();
+
+        if (!productName) {
+            alert('Please enter a product name.');
+            return;
+        }
+
+        const results = document.getElementById('availabilityResults');
+        if (results) {
+            results.classList.remove('hidden');
+            results.innerHTML = '<div class="text-sm text-gray-600">Checking availability...</div>';
+        }
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        };
+
+        const payload = JSON.stringify({ product_name: productName });
+
+        // Single call; controller decides external/internal by use_api
+        fetch('/self-service/check-availability', { method: 'POST', headers, body: payload })
+            .then(async (res) => {
+                if (!res.ok) throw new Error('Availability check failed');
+                return res.json();
+            })
+            .then(data => {
+                if (!data || !data.success) {
+                    throw new Error(data?.message || 'Unable to check availability');
+                }
+                const items = Array.isArray(data.data) ? data.data : [];
+                if (!items.length) throw new Error('No matching products found');
+
+                const html = items.map((a) => {
+                    const badge = a.available ? 'bg-green-100 text-green-800 border-green-200' : (a.published ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : 'bg-gray-100 text-gray-800 border-gray-200');
+                    const statusText = a.available ? 'available' : (a.published ? 'published (out of stock)' : 'unpublished');
+                    return `
+                        <div class=\"p-4 rounded-xl bg-white border border-gray-200 mb-3\">
+                            <div class=\"flex items-center justify-between mb-2\">
+                                <div class=\"text-base font-semibold text-gray-900\">${a.name ?? 'Product'}</div>
+                                <span class=\"inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs border ${badge}\">${statusText}</span>
+                            </div>
+                            <div class=\"grid grid-cols-2 gap-3 text-sm text-gray-700 mb-2\">
+                                <div><strong>Inventory ID</strong>: ${a.inventory_id ?? '—'}</div>
+                                <div><strong>Total Stock</strong>: ${a.total_stock ?? '—'}</div>
+                            </div>
+                            ${a.url ? `<a href=\"${a.url}\" class=\"text-blue-600 hover:underline text-sm\">View product</a>` : ''}
+                        </div>
+                    `;
+                }).join('');
+                if (results) results.innerHTML = html;
+            })
+            .catch(err => {
+                console.error(err);
+                if (results) {
+                    results.innerHTML = '<div class="text-sm text-red-600">Could not check availability. Try another product name or chat with an agent.</div>';
                 }
             });
         return;
@@ -360,15 +449,15 @@ function searchHelp() {
         'track': 'orders',
         'order': 'orders', 
         'payment': 'orders',
-        'return': 'returns',
-        'refund': 'returns',
-        'exchange': 'returns',
+        'return': 'orders',
+        'refund': 'orders',
+        'exchange': 'orders',
         'account': 'account',
         'password': 'account',
         'profile': 'account',
-        'authentic': 'products',
-        'care': 'products',
-        'quality': 'products'
+        'authentic': 'orders',
+        'care': 'orders',
+        'quality': 'orders'
     };
     
     const lowerQuery = query.toLowerCase();

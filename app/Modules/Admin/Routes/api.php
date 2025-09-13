@@ -2,7 +2,6 @@
 // app/Modules/Admin/Routes/api.php
 
 use Illuminate\Support\Facades\Route;
-use App\Modules\Admin\Controllers\Api\ReportController;
 use App\Modules\Admin\Controllers\CustomerController;
 use App\Modules\Admin\Controllers\DashboardController;
 
@@ -24,15 +23,6 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::post('/{customer}/unblock', [CustomerController::class, 'unblock']); // POST /api/admin/customers/{id}/unblock
     });
     
-    // Reports routes
-    Route::prefix('admin/reports')->group(function () {
-        Route::get('/customer-segments', [ReportController::class, 'customerSegments']);
-        Route::get('/sales', [ReportController::class, 'salesReport']);
-        Route::get('/products', [ReportController::class, 'productPerformance']);
-        Route::get('/orders', [ReportController::class, 'orderAnalytics']);
-        Route::get('/revenue', [ReportController::class, 'revenueReport']);
-        Route::get('/export/customers', [ReportController::class, 'exportCustomers']);
-        Route::get('/export/sales', [ReportController::class, 'exportSales']);
-    });
+    
     
 });

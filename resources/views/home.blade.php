@@ -210,7 +210,7 @@
 
                     {{-- Other nav items --}}
                     <li class="group relative">
-                        <a href="{{ route('faq.index') }}"
+                        <a href="{{ route('aboutus') }}"
                             class="inline-block px-2 pb-3 relative transition
                           after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
                           after:transition-all after:duration-300 hover:after:w-full 
@@ -277,11 +277,11 @@
                                     <div>
                                         <h3 class="text-gray-900 font-semibold mb-3">Live Support</h3>
                                         <ul class="space-y-2 text-gray-600">
-                                            <li>
+                                            {{-- <li>
                                                 <button onclick="startLiveChat()" class="text-600 hover:underline">
                                                     Live Chat
                                                 </button>
-                                            </li>
+                                            </li> --}}
                                             <li><a href="#"class="hover:underline transition duration-200">Email
                                                     Us</a></li>
                                             <li><a href="#"class="hover:underline transition duration-200"> Call
@@ -322,10 +322,10 @@
 
                 @guest
                 <div class="w-28 flex items-center justify-end space-x-3 justify-self-end">
-                    <a href="{{ route('login') }}" aria-label="Account"
-                        class="inline-flex items-center px-2 pb-3 relative text-sm font-medium text-black transition 
-                  after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
-                  after:transition-all after:duration-300 hover:after:w-full hover:text-black 
+                    <a id="customerTrigger" href="{{ route('login') }}" aria-label="Account"
+                        class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
+                  text-white after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
+                  after:transition-all after:duration-300 hover:after:w-full 
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
 
                         <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
@@ -465,7 +465,7 @@
                     </h3>
                     <p class="mt-4 text-gray-500 max-w-xs mx-auto">Complimentary shipping and returns on all orders.
                     </p>
-                    <a href="#"
+                    <a href="{{ route('self-service.index') }}"
                         class="inline-block mt-6 text-gray-800 hover:text-black tracking-widest text-xs border-b border-[#c9b57b] hover:border-black pb-1">LEARN
                         MORE</a>
                 </div>
@@ -479,7 +479,7 @@
                     <h3 class="mt-8 text-2xl md:text-3xl font-serif text-gray-800 leading-tight">At Your<br>Service
                     </h3>
                     <p class="mt-4 text-gray-500 max-w-xs mx-auto">Our client care experts are always here to help.</p>
-                    <a href="#"
+                    <a href="{{ route('tickets.index') }}"
                         class="inline-block mt-6 text-gray-800 hover:text-black tracking-widest text-xs border-b border-[#c9b57b] hover:border-black pb-1">CONTACT
                         US</a>
                 </div>
@@ -494,7 +494,7 @@
                     </h3>
                     <p class="mt-4 text-gray-500 max-w-xs mx-auto">Your purchase comes wrapped in our Blue Box
                         packaging.</p>
-                    <a href="#"
+                    <a href="{{ route('aboutus') }}"
                         class="inline-block mt-6 text-gray-800 hover:text-black tracking-widest text-xs border-b border-[#c9b57b] hover:border-black pb-1">EXPLORE</a>
                 </div>
             </div>
@@ -505,26 +505,26 @@
         <div class="container-footer">
             <div class="row"><!--Arrange All DIV IN ROW-->
                 <div class="footer-col">
-                    <h4>company</h4>
+                    <h4>Company</h4>
                     <ul>
-                        <li><a href="../About-us/aboutus.html">about us</a></li>
-                        <li><a href="../Services/termNcondition.html">privacy policy</a></li>
+                        <li><a href="{{ route('aboutus') }}">About Us</a></li>
+                        <li><a href="{{ route('home') }}">Privacy Policy</a></li>
 
                     </ul>
                 </div>
                 <div class="footer-col">
-                    <h4>get help</h4>
+                    <h4>Get Help</h4>
                     <ul>
-                        <li><a href="../Services/service.html">FAQ</a></li>
+                        <li><a href="{{ route('faq.index') }}">FAQ</a></li>
 
 
                     </ul>
                 </div>
                 <div class="footer-col">
-                    <h4>Services</h4>
+                    <h4>Shop</h4>
                     <ul>
-                        <li><a href="../Product-Page/product.html?filter=all">Renting</a></li>
-                        <li><a href="../Product-Page/product.html?filter=all">Investing</a></li>
+                        <li><a href="{{ route('products.index') }}">Shop All Jewelry</a></li>
+                        <li><a href="{{ route('wishlist.index') }}">Wishlist</a></li>
 
                     </ul>
                 </div>

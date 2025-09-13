@@ -89,14 +89,13 @@
                         >
                             Call 1-800-JEWELRY
                         </a>
-                        @if(Route::has('chat.conversations'))
-                            <a 
-                                href="{{ route('chat.conversations') }}" 
-                                class="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition duration-150"
-                            >
-                                Live Chat
-                            </a>
-                        @endif
+                        <button 
+                            type="button"
+                            onclick="if (typeof window.startLiveChat === 'function') { window.startLiveChat(); } else { try { startLiveChat(); } catch(e) { console.warn('Chat widget not ready'); } }"
+                            class="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition duration-150"
+                        >
+                            Live Chat
+                        </button>
                     </div>
                 </div>
             </div>

@@ -14,8 +14,6 @@ use App\Modules\Product\Controllers\ReviewController;
 // Admin controllers
 use App\Modules\Admin\Controllers\DashboardController;
 use App\Modules\Admin\Controllers\CustomerController;
-use App\Modules\Admin\Controllers\ApiCustomerController as ApiCustomerController;
-use App\Modules\Admin\Controllers\ReportController;
 use App\Modules\Inventory\Controllers\InventoryController;
 use App\Modules\Product\Controllers\ProductManagementController;
 use App\Modules\Product\Controllers\Admin\ReviewController as AdminReviewController;
@@ -61,6 +59,8 @@ Route::middleware('auth')->group(function () {
 */
 
 Route::view('/', 'home')->name('home');
+Route::view('/about-us', 'aboutus')->name('aboutus');
+Route::view('/privacy-policy', 'privacy')->name('privacy');
 
 // Product catalog (read-only for customers)
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
@@ -90,11 +90,11 @@ Route::get('/faq', [FaqController::class, 'index'])->name('faq.index')->middlewa
 
 // Self-Service knowledge base
 Route::prefix('self-service')->group(function () {
-    Route::get('/', [SelfServiceController::class, 'index'])->name('self-service.index');
-    Route::get('/{category}', [SelfServiceController::class, 'category'])->name('self-service.category');
+    Route::get('/', [SelfServiceController::class, 'index'])->middleware('auth')->name('self-service.index');
     Route::post('/help', [SelfServiceController::class, 'help'])->name('self-service.help');
     Route::post('/escalate', [SelfServiceController::class, 'escalate'])->name('self-service.escalate');
     Route::post('/track-order', [SelfServiceController::class, 'trackOrder'])->name('self-service.track-order');
+    Route::post('/check-availability', [SelfServiceController::class, 'checkAvailability'])->name('self-service.check-availability');
 });
 
 /*
@@ -242,7 +242,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('admin.customers.show');
     Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('admin.customers.edit');
     Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('admin.customers.update');
-    Route::get('/customers/segmentation', [ApiCustomerController::class, 'segmentation'])->name('admin.customers.segmentation');
+    
 
 
 // Inventory management
@@ -294,9 +294,6 @@ Route::prefix('inventory')->name('admin.inventory.')->controller(InventoryContro
         Route::post('/{review}/reject', [AdminReviewController::class, 'reject'])->name('admin.reviews.reject');
         Route::delete('/{review}', [AdminReviewController::class, 'destroy'])->name('admin.reviews.destroy');
     });
-
-    // Reports
-    Route::get('/reports/product-performance', [ReportController::class, 'productPerformance'])->name('admin.reports.product-performance');
 
     // Admin chat panel
     Route::get('/chat', function () {
@@ -426,4 +423,3 @@ Route::middleware('auth')->group(function () {
 //RegisterAdmin
 Route::get('/admin/register', [RegisterAdminController::class, 'createAdmin'])->name('admin.register.form');
 Route::post('/admin/register', [RegisterAdminController::class, 'storeAdmin'])->name('admin.register');
-

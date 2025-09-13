@@ -12,10 +12,6 @@ class AdminServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Register services
-        $this->app->singleton(
-            \App\Modules\Admin\Services\CustomerSegmentationService::class,
-            \App\Modules\Admin\Services\CustomerSegmentationService::class
-        );
     }
 
     /**
