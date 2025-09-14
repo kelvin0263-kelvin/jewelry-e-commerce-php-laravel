@@ -472,29 +472,29 @@ body a:active {
             });
         });
         
-        // 强制隐藏滚动条 - 使用更激进的方法
+       
         document.addEventListener('DOMContentLoaded', function() {
             const tables = document.querySelectorAll('.product-module-table');
             const scrollContainers = document.querySelectorAll('.table-scroll-container');
             
-            // 处理主表格容器
+            
             tables.forEach(function(table) {
                 table.style.overflow = 'hidden';
                 table.style.position = 'relative';
             });
             
-            // 处理滚动容器
+           
             scrollContainers.forEach(function(container) {
                 container.style.scrollbarWidth = 'none';
                 container.style.msOverflowStyle = 'none';
                 container.style.overflowX = 'auto';
                 container.style.overflowY = 'hidden';
                 
-                // 强制应用样式
+                
                 container.setAttribute('style', container.getAttribute('style') + '; scrollbar-width: none !important; -ms-overflow-style: none !important;');
             });
             
-            // 添加全局CSS来强制隐藏滚动条
+            
             const style = document.createElement('style');
             style.textContent = `
                 .table-scroll-container::-webkit-scrollbar {
@@ -592,7 +592,7 @@ body a:active {
         scrollbar-color: transparent transparent !important;
     }
     
-    /* 完全隐藏滚动条 - 使用嵌套div方法 */
+    
     .product-module-table {
         overflow: hidden !important;
         position: relative !important;
@@ -607,7 +607,7 @@ body a:active {
         height: 100% !important;
     }
     
-    /* 隐藏所有webkit滚动条 */
+    
     .table-scroll-container::-webkit-scrollbar {
         display: none !important;
         width: 0 !important;
@@ -662,7 +662,7 @@ body a:active {
         height: 0 !important;
     }
     
-    /* 强制隐藏所有滚动条元素 */
+ 
     .table-scroll-container *::-webkit-scrollbar {
         display: none !important;
         width: 0 !important;
@@ -681,19 +681,19 @@ body a:active {
         height: 0 !important;
     }
     
-    /* 确保没有滚动条空间被保留 */
+ 
     .table-scroll-container {
         scrollbar-gutter: stable !important;
         scrollbar-color: transparent transparent !important;
     }
     
-    /* 覆盖任何现有的滚动条样式 */
+ 
     .table-scroll-container[style*="scrollbar"] {
         scrollbar-width: none !important;
         -ms-overflow-style: none !important;
     }
     
-    /* 额外的webkit滚动条隐藏 */
+
     .table-scroll-container {
         -webkit-scrollbar-width: none !important;
         -webkit-scrollbar-height: none !important;

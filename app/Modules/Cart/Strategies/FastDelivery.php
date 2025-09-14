@@ -9,11 +9,6 @@ class FastDelivery implements ShippingStrategy
         // RM5 for fast delivery
         return 5.00;
     }
-
-    public function getEstimate(): string
-    {
-        return "1-2 business days";
-    }
 }
 
 ?>

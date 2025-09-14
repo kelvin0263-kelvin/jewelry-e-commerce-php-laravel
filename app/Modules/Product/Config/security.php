@@ -1,16 +1,6 @@
 <?php
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Product Module Security Configuration
-    |--------------------------------------------------------------------------
-    |
-    | This file contains security-related configuration for the Product Module.
-    | It includes settings for input validation, rate limiting, and security
-    | monitoring.
-    |
-    */
 
     'input_validation' => [
         'max_search_length' => 100,

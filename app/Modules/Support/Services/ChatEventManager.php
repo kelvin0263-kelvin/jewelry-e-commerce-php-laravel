@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Author: TAN CHUN KEAT
+ * Date: 2025-09-15
+ */
 namespace App\Modules\Support\Services;
 
 use App\Modules\Support\Contracts\ChatObserverInterface;
@@ -13,24 +16,11 @@ use SplObjectStorage;
  */
 class ChatEventManager implements ChatSubjectInterface
 {
-    /**
-     * @var SplObjectStorage Collection of observers
-     */
+
     private SplObjectStorage $observers;
-
-    /**
-     * @var array Event history for debugging
-     */
     private array $eventHistory = [];
-
-    /**
-     * @var static Singleton instance
-     */
     private static ?ChatEventManager $instance = null;
 
-    /**
-     * Constructor
-     */
     public function __construct()
     {
         $this->observers = new SplObjectStorage();

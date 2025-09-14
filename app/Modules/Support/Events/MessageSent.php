@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Author: TAN CHUN KEAT
+ * Date: 2025-09-15
+ */
 namespace App\Modules\Support\Events;
 
 use App\Modules\Support\Models\Message;
@@ -7,20 +10,16 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-// --- THE CHANGE IS HERE ---
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow; // Use this instead of ShouldBroadcast
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow; 
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-// The class now implements ShouldBroadcastNow to force synchronous broadcasting
 class MessageSent implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
      * The message instance.
-     *
-     * @var \App\Modules\Support\Models\Message
      */
     public $message;
 
@@ -34,8 +33,7 @@ class MessageSent implements ShouldBroadcastNow
 
     /**
      * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
+
      */
     public function broadcastOn(): array
     {

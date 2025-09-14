@@ -28,9 +28,8 @@ class RingItem extends InventoryItem
         return $basePrice + $stonePremium;
     }
 
-    /**
-     * Get stone premium for a given stone type
-     */
+    
+    //Get stone premium for a given stone type
     public static function getStonePremium(string $stoneType): int
     {
         $stonePremiums = [
@@ -45,9 +44,7 @@ class RingItem extends InventoryItem
         return $stonePremiums[$stoneType] ?? 0;
     }
 
-    /**
-     * Get all available stone types with their premiums
-     */
+    //Get all available stone types with their premiums
     public static function getStoneTypes(): array
     {
         return [

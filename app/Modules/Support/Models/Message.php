@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Author: TAN CHUN KEAT
+ * Date: 2025-09-15
+ */
 // relationship（Eloquent） 只影响查询，不会决定删除行为。
 
 // migration 的 onDelete('cascade') 才决定是否级联删除。  
@@ -17,11 +20,7 @@ class Message extends Model
 {
      use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+
     protected $fillable = [
         'conversation_id',
         'user_id',

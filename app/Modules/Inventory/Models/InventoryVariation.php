@@ -40,10 +40,8 @@ class InventoryVariation extends Model
     {
         return $this->hasOne(\App\Modules\Product\Models\Product::class, 'inventory_variation_id');
     }
-
-    /** =========================
-     * Booted model events
-     * ========================= */
+    
+    //Booted model events
     protected static function booted()
     {
         static::deleting(function ($variation) {

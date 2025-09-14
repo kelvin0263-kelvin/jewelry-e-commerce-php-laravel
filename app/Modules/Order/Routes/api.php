@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Modules\Order\Controllers\OrderApiController;
 
-Route::middleware('auth:sanctum')->prefix('orders')->group(function () {
+Route::prefix('orders')->group(function () {
     Route::get('/', [OrderApiController::class, 'index']);                    // GET /api/orders
     Route::get('/{id}', [OrderApiController::class, 'show']);                 // GET /api/orders/{id}
     Route::get('/status/{status}', [OrderApiController::class, 'getOrdersByStatus']); // GET /api/orders/status/{status}

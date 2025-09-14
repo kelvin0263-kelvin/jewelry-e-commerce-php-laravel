@@ -33,9 +33,12 @@ class ProductController extends Controller
             ]);
         }
 
+        // Get the first published product ID (this ensures we show the correct product based on inventory ID)
+        $firstProduct = $publishedProducts->first()->product;
+
         return response()->json([
             'published' => true,
-            'url' => route('products.show', $inventoryId)
+            'url' => route('products.show', $firstProduct->id)
         ]);
     }
 
@@ -388,7 +391,6 @@ class ProductController extends Controller
             'color' => 'nullable|string|max:50',
         ]);
 
-        // TODO: Implement cart functionality
         return response()->json(['message' => 'Cart functionality coming soon', 'data' => $data]);
     }
 

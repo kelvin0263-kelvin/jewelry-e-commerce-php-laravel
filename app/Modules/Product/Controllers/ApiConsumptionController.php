@@ -8,10 +8,7 @@ use Illuminate\Support\Facades\Http;
 
 class ApiConsumptionController extends Controller
 {
-    /**
-     * Demo: consume another module's API (Inventory) and render in a Product view.
-     * Add `?use_api=1` to force HTTP; otherwise tries internal fallback when possible.
-     */
+    
     public function inventory(Request $request)
     {
         $error = null;

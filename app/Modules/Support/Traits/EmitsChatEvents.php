@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Author: TAN CHUN KEAT
+ * Date: 2025-09-15
+ */
 namespace App\Modules\Support\Traits;
 
 use App\Modules\Support\Services\ChatEventManager;

@@ -11,7 +11,7 @@ class InventoryApiController extends Controller
 {
     public function index()
     {
-        $inventories = Inventory::with('variations')->latest()->get()->map(function($inv) {
+        $inventories = Inventory::with('variations')->latest()->get()->map(function ($inv) {
             return $this->formatInventory($inv);
         });
 
@@ -80,49 +80,49 @@ class InventoryApiController extends Controller
 
     // PUT /api/inventory/{id}
     public function update(Request $request, $id)
-{
-    $inventory = Inventory::with('variations')->find($id);
-    if (!$inventory) {
-        return response()->json(['success' => false, 'error' => 'Inventory not found'], 404);
+    {
+        $inventory = Inventory::with('variations')->find($id);
+        if (!$inventory) {
+            return response()->json(['success' => false, 'error' => 'Inventory not found'], 404);
+        }
+
+        $data = $request->validate([
+            'name' => 'sometimes|required|string',
+            'type' => 'sometimes|required|in:RingItem,NecklaceItem,EarringsItem,BraceletItem',
+            'description' => 'nullable|string',
+            'status' => 'nullable|in:draft,published',
+            // Type-specific fields
+            'stone_type' => 'nullable|string|max:50',
+            'ring_size' => 'nullable|integer|min:4|max:12',
+            'necklace_length' => 'nullable|integer|min:30|max:80',
+            'has_pendant' => 'nullable|boolean',
+            'earring_style' => 'nullable|string|max:50',
+            'is_pair' => 'nullable|boolean',
+            'bracelet_clasp' => 'nullable|string|max:50',
+            'adjustable' => 'nullable|boolean',
+            // Variations
+            'variations' => 'nullable|array',
+            'variations.*.id' => 'nullable|integer|exists:inventory_variations,id',
+            'variations.*.sku' => 'nullable|string|max:50',
+            'variations.*.color' => 'nullable|string|max:50',
+            'variations.*.size' => 'nullable|string|max:50',
+            'variations.*.material' => 'nullable|string|max:100',
+            'variations.*.stock' => 'nullable|integer|min:0',
+        ]);
+
+        $inventory->update($data);
+
+        // Handle variations
+        $this->handleVariations($inventory, $data['variations'] ?? []);
+
+        // Reload variations to include updated ones
+        $inventory->load('variations');
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->formatInventory($inventory)
+        ]);
     }
-
-    $data = $request->validate([
-        'name' => 'sometimes|required|string',
-        'type' => 'sometimes|required|in:RingItem,NecklaceItem,EarringsItem,BraceletItem',
-        'description' => 'nullable|string',
-        'status' => 'nullable|in:draft,published',
-        // Type-specific fields
-        'stone_type' => 'nullable|string|max:50',
-        'ring_size' => 'nullable|integer|min:4|max:12',
-        'necklace_length' => 'nullable|integer|min:30|max:80',
-        'has_pendant' => 'nullable|boolean',
-        'earring_style' => 'nullable|string|max:50',
-        'is_pair' => 'nullable|boolean',
-        'bracelet_clasp' => 'nullable|string|max:50',
-        'adjustable' => 'nullable|boolean',
-        // Variations
-        'variations' => 'nullable|array',
-        'variations.*.id' => 'nullable|integer|exists:inventory_variations,id',
-        'variations.*.sku' => 'nullable|string|max:50',
-        'variations.*.color' => 'nullable|string|max:50',
-        'variations.*.size' => 'nullable|string|max:50',
-        'variations.*.material' => 'nullable|string|max:100',
-        'variations.*.stock' => 'nullable|integer|min:0',
-    ]);
-
-    $inventory->update($data);
-
-    // Handle variations
-    $this->handleVariations($inventory, $data['variations'] ?? []);
-
-    // Reload variations to include updated ones
-    $inventory->load('variations');
-
-    return response()->json([
-        'success' => true,
-        'data' => $this->formatInventory($inventory)
-    ]);
-}
 
 
     // DELETE /api/inventory/{id}
@@ -149,7 +149,7 @@ class InventoryApiController extends Controller
             'description' => $inv->description,
             'status' => $inv->status,
             'quantity' => $inv->variations->sum('stock'),
-            'variations' => $inv->variations->map(function($v) {
+            'variations' => $inv->variations->map(function ($v) {
                 return [
                     'id' => $v->id,
                     'sku' => $v->sku,
@@ -187,25 +187,42 @@ class InventoryApiController extends Controller
     /**
      * Handle creating/updating variations using the factory pattern
      */
-   protected function handleVariations($inventory, $variations)
-{
-    if (empty($variations)) return;
+    protected function handleVariations($inventory, $variations)
+    {
+        if (empty($variations))
+            return;
 
-    foreach ($variations as $var) {
-        $item = $inventory->createInventoryItem($var);
+        foreach ($variations as $var) {
+            $item = $inventory->createInventoryItem($var);
 
-        $sku = $var['sku'] ?? 'INV-' . strtoupper(substr(md5(uniqid()), 0, 6));
+            $sku = $var['sku'] ?? 'INV-' . strtoupper(substr(md5(uniqid()), 0, 6));
 
-        if (!empty($var['id'])) {
-            // Update existing variation
-            $variation = $inventory->variations()->find($var['id']);
-            if ($variation) {
-                $variation->update([
+            if (!empty($var['id'])) {
+                // Update existing variation
+                $variation = $inventory->variations()->find($var['id']);
+                if ($variation) {
+                    $variation->update([
+                        'sku' => $sku,
+                        'color' => $var['color'] ?? $variation->color,
+                        'size' => $var['size'] ?? $variation->size,
+                        'material' => $var['material'] ?? $variation->material,
+                        'stock' => $var['stock'] ?? $variation->stock,
+                        'price' => $item->calculateValue(),
+                        'properties' => [
+                            'description' => $item->getDescription(),
+                            'calculated_value' => $item->calculateValue(),
+                            'variation_data' => $var,
+                        ],
+                    ]);
+                }
+            } else {
+                // Create new variation
+                $inventory->variations()->create([
                     'sku' => $sku,
-                    'color' => $var['color'] ?? $variation->color,
-                    'size' => $var['size'] ?? $variation->size,
-                    'material' => $var['material'] ?? $variation->material,
-                    'stock' => $var['stock'] ?? $variation->stock,
+                    'color' => $var['color'] ?? null,
+                    'size' => $var['size'] ?? null,
+                    'material' => $var['material'] ?? null,
+                    'stock' => $var['stock'] ?? 0,
                     'price' => $item->calculateValue(),
                     'properties' => [
                         'description' => $item->getDescription(),
@@ -214,23 +231,7 @@ class InventoryApiController extends Controller
                     ],
                 ]);
             }
-        } else {
-            // Create new variation
-            $inventory->variations()->create([
-                'sku' => $sku,
-                'color' => $var['color'] ?? null,
-                'size' => $var['size'] ?? null,
-                'material' => $var['material'] ?? null,
-                'stock' => $var['stock'] ?? 0,
-                'price' => $item->calculateValue(),
-                'properties' => [
-                    'description' => $item->getDescription(),
-                    'calculated_value' => $item->calculateValue(),
-                    'variation_data' => $var,
-                ],
-            ]);
         }
     }
-}
 
 }

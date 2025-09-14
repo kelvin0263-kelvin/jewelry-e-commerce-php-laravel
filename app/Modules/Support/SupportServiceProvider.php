@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Author: TAN CHUN KEAT
+ * Date: 2025-09-15
+ */
 namespace App\Modules\Support;
 
 use Illuminate\Support\ServiceProvider;
@@ -26,36 +29,34 @@ class SupportServiceProvider extends ServiceProvider
 {
     /**
      * The event listener mappings for the application.
-     *
-     * @var array<class-string, array<int, class-string>>
      */
-    protected $listen = [
-        TicketCreated::class => [
-            NotifyCustomerTicketCreated::class,
-            NotifyAdminsNewTicket::class,
-            LogTicketActivity::class . '@handleTicketCreated',
-            UpdateTicketMetrics::class . '@handleTicketCreated',
-        ],
-        TicketStatusChanged::class => [
-            LogTicketActivity::class . '@handleTicketStatusChanged',
-            UpdateTicketMetrics::class . '@handleTicketStatusChanged',
-        ],
-        TicketAssigned::class => [
-            SendTicketAssignmentNotification::class,
-            LogTicketActivity::class . '@handleTicketAssigned',
-        ],
-        TicketReplyAdded::class => [
-            SendReplyNotification::class,
-            LogTicketActivity::class . '@handleTicketReplyAdded',
-        ],
-        TicketEscalated::class => [
-            LogTicketActivity::class . '@handleTicketEscalated',
-        ],
-        TicketResolved::class => [
-            LogTicketActivity::class . '@handleTicketResolved',
-            UpdateTicketMetrics::class . '@handleTicketResolved',
-        ],
-    ];
+    // protected $listen = [
+    //     TicketCreated::class => [
+    //         NotifyCustomerTicketCreated::class,
+    //         NotifyAdminsNewTicket::class,
+    //         LogTicketActivity::class . '@handleTicketCreated',
+    //         UpdateTicketMetrics::class . '@handleTicketCreated',
+    //     ],
+    //     TicketStatusChanged::class => [
+    //         LogTicketActivity::class . '@handleTicketStatusChanged',
+    //         UpdateTicketMetrics::class . '@handleTicketStatusChanged',
+    //     ],
+    //     TicketAssigned::class => [
+    //         SendTicketAssignmentNotification::class,
+    //         LogTicketActivity::class . '@handleTicketAssigned',
+    //     ],
+    //     TicketReplyAdded::class => [
+    //         SendReplyNotification::class,
+    //         LogTicketActivity::class . '@handleTicketReplyAdded',
+    //     ],
+    //     TicketEscalated::class => [
+    //         LogTicketActivity::class . '@handleTicketEscalated',
+    //     ],
+    //     TicketResolved::class => [
+    //         LogTicketActivity::class . '@handleTicketResolved',
+    //         UpdateTicketMetrics::class . '@handleTicketResolved',
+    //     ],
+    // ];
 
     /**
      * Register services.
@@ -88,8 +89,8 @@ class SupportServiceProvider extends ServiceProvider
         ->middleware('api')
         ->group(__DIR__.'/Routes/api.php');
 
-        // Register event listeners
-        $this->registerEventListeners();
+            // Register event listeners (disabled intentionally)
+        // $this->registerEventListeners();
 
         // Configure logging channel
         $this->configureLogging();

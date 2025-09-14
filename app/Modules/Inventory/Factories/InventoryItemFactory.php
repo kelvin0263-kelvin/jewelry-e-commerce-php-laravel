@@ -10,7 +10,7 @@ class InventoryItemFactory
     public static function resolve(string $type): InventoryFactory
     {
         return match ($type) {
-            'RingItem'     => new RingItemFactory(),
+            'RingItem' => new RingItemFactory(),
             'NecklaceItem' => new NecklaceItemFactory(),
             'EarringsItem' => new EarringsItemFactory(),
             'BraceletItem' => new BraceletItemFactory(),

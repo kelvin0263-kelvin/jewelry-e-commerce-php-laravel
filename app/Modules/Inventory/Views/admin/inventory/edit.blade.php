@@ -483,7 +483,7 @@
 
             if (e.target.name && (e.target.name.includes('[material]') || e.target.name.includes('[size]'))) {
                 const variation = e.target.closest('.variation-item');
-                updateVariationPrice(variation); // ✅ use variation, not firstVariation
+                updateVariationPrice(variation); // use variation, not firstVariation
             }
         });
 

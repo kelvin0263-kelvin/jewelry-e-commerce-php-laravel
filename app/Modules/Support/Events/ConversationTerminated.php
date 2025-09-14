@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Author: TAN CHUN KEAT
+ * Date: 2025-09-15
+ */
 namespace App\Modules\Support\Events;
 
 use App\Modules\Support\Models\Conversation;
@@ -21,8 +24,6 @@ class ConversationTerminated implements ShouldBroadcastNow
 
     /**
      * Create a new event instance.
-     *
-     * @return void
      */
     public function __construct(Conversation $conversation, string $terminatedBy, ?string $reason = null)
     {
@@ -33,8 +34,6 @@ class ConversationTerminated implements ShouldBroadcastNow
 
     /**
      * Get the channels the event should broadcast on.
-     *
-     * @return \Illuminate\Broadcasting\Channel|array
      */
     public function broadcastOn()
     {

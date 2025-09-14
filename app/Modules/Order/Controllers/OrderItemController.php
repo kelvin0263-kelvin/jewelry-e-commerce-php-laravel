@@ -4,7 +4,6 @@ namespace App\Modules\Order\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Order\Models\Order;
-use App\Modules\Inventory\Models\InventoryVariation;
 use Illuminate\Support\Facades\Auth;
 
 class OrderItemController extends Controller
@@ -34,7 +33,7 @@ class OrderItemController extends Controller
                 'subtotal' => $unitPrice * $item->quantity,
             ]);
 
-            // ✅ Reduce stock (check variation first, then inventory)
+            // Reduce stock (check variation first, then inventory)
             if ($item->product->variation) {
                 $item->product->variation->decrement('stock', $item->quantity);
             } elseif ($item->product->inventory) {

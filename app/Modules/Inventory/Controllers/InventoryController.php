@@ -14,9 +14,7 @@ use Illuminate\Support\Facades\log;
 
 class InventoryController extends Controller
 {
-    /** =========================================
-     *  LIST INVENTORIES
-     *  ========================================= */
+    /* LIST INVENTORIES */
     public function index()
     {
         $inventories = Inventory::with('variations') // ✅ eager load variations
@@ -30,9 +28,7 @@ class InventoryController extends Controller
         return view('inventory::admin.inventory.index', compact('inventories'));
     }
 
-    /** =========================================
-     *  CREATE INVENTORY PAGE
-     *  ========================================= */
+    /*CREATE INVENTORY PAGE */
     public function create()
     {
         return view('inventory::admin.inventory.create');
@@ -46,19 +42,17 @@ class InventoryController extends Controller
     ];
 
 
-    /** =========================================
-     *  STORE INVENTORY
-     *  ========================================= */
-public function store(Request $request)
+    /*STORE INVENTORY */
+    public function store(Request $request)
     {
         $stonePremiums = [
-    'Diamond' => 500,
-    'Ruby' => 300,
-    'Sapphire' => 250,
-    'Emerald' => 200,
-    'Pearl' => 150,
-    'Amethyst' => 100,
-];
+            'Diamond' => 500,
+            'Ruby' => 300,
+            'Sapphire' => 250,
+            'Emerald' => 200,
+            'Pearl' => 150,
+            'Amethyst' => 100,
+        ];
 
         $data = $request->validate([
             'name' => 'required|string',
@@ -87,14 +81,14 @@ public function store(Request $request)
             'variations.*.image_path' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        
 
-        // ✅ Check duplicate SKUs inside request itself and globally (case-insensitive)
+
+        // Check duplicate SKUs inside request itself and globally (case-insensitive)
         if (!empty($data['variations'])) {
             // Normalize request SKUs
             $requestSkuNormalized = [];
             foreach ($data['variations'] as $v) {
-                $sku = trim((string)($v['sku'] ?? ''));
+                $sku = trim((string) ($v['sku'] ?? ''));
                 if ($sku !== '') {
                     $requestSkuNormalized[] = strtolower($sku);
                 }
@@ -108,10 +102,14 @@ public function store(Request $request)
             // Check duplicates in database (GLOBAL, case-insensitive)
             $conflicts = [];
             foreach ($data['variations'] as $v) {
-                $sku = trim((string)($v['sku'] ?? ''));
-                if ($sku === '') { continue; }
+                $sku = trim((string) ($v['sku'] ?? ''));
+                if ($sku === '') {
+                    continue;
+                }
                 $exists = InventoryVariation::whereRaw('LOWER(sku) = ?', [strtolower($sku)])->exists();
-                if ($exists) { $conflicts[] = strtoupper($sku); }
+                if ($exists) {
+                    $conflicts[] = strtoupper($sku);
+                }
             }
             if (!empty($conflicts)) {
                 $conflicts = array_values(array_unique($conflicts));
@@ -122,10 +120,10 @@ public function store(Request $request)
         // ------------------------
         // Calculate inventory price from range
         // ------------------------
-        $range = $this->priceRanges[$data['type']] ?? [0,0];
+        $range = $this->priceRanges[$data['type']] ?? [0, 0];
         $data['price'] = ($range[0] + $range[1]) / 2;
 
-        // ✅ Create main inventory
+        // Create main inventory
         $inventory = Inventory::create($data);
 
         Log::info('Inventory created', [
@@ -136,7 +134,7 @@ public function store(Request $request)
         ]);
 
 
-        // ✅ Handle variations
+        //  Handle variations
         if (!empty($data['variations'])) {
             Log::info('Processing variations', ['count' => count($data['variations']), 'variations' => $data['variations']]);
             foreach ($data['variations'] as $variation) {
@@ -145,25 +143,25 @@ public function store(Request $request)
                 if (isset($variation['image_path']) && $variation['image_path'] instanceof \Illuminate\Http\UploadedFile) {
                     $file = $variation['image_path'];
 
-                    // ✅ Secure: Check MIME type
+                    // Secure: Check MIME type
                     $allowedMimes = ['image/jpeg', 'image/png'];
                     if (!in_array($file->getMimeType(), $allowedMimes)) {
                         return back()->withInput()->with('error', 'Uploaded file must be a valid image (JPG, PNG).');
                     }
 
-                    // ✅ Secure: Sanitize filename
+                    // Secure: Sanitize filename
                     $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $file->getClientOriginalName());
 
                     // Move the file
                     $file->move(public_path('images'), $filename);
 
-                    // ✅ Save only relative path
+                    // Save only relative path
                     $imagePath = 'images/' . $filename;
                 }
 
 
 
-                // ✅ Generate SKU if missing
+                // Generate SKU if missing
                 $sku = !empty($variation['sku']) ? strtoupper($variation['sku']) : null;
                 if (!$sku) {
                     do {
@@ -207,9 +205,7 @@ public function store(Request $request)
     }
 
 
-    /** =========================================
-     *  EDIT INVENTORY
-     *  ========================================= */
+    /*EDIT INVENTORY */
     public function edit($id)
     {
         $inventory = Inventory::with('variations', 'product')->findOrFail($id);
@@ -222,9 +218,7 @@ public function store(Request $request)
         return view('inventory::admin.inventory.edit', compact('inventory'));
     }
 
-    /** =========================================
-     *  UPDATE INVENTORY
-     *  ========================================= */
+    /*UPDATE INVENTORY */
     public function update(Request $request, $id)
     {
         $inventory = Inventory::with('product', 'variations')->findOrFail($id);
@@ -283,9 +277,7 @@ public function store(Request $request)
             ]
         );
 
-        // ------------------------
-        // Check duplicate SKUs (GLOBAL uniqueness)
-        // ------------------------
+        // Check duplicate SKUs (GLOBAL uniqueness)// 
         if (!empty($data['variations'])) {
             // Normalize and collect SKUs from request
             $requestSkus = [];
@@ -323,16 +315,12 @@ public function store(Request $request)
                 return back()->withInput()->with('error', 'These SKUs already exist: ' . implode(', ', $conflicts));
             }
         }
-        
-        // ------------------------
+
         // Calculate price from range
-        // ------------------------
-        $range = $this->priceRanges[$data['type']] ?? [0,0];
+        $range = $this->priceRanges[$data['type']] ?? [0, 0];
         $data['price'] = ($range[0] + $range[1]) / 2;
 
-        // ------------------------
         // Update inventory
-        // ------------------------
         $inventory->update($data);
 
         Log::info('Inventory updated', [
@@ -343,9 +331,7 @@ public function store(Request $request)
         ]);
 
 
-        // ------------------------
         // Update or create product (only sync when inventory is published)
-        // ------------------------
         if ($inventory->status === 'published') {
             if ($inventory->product) {
                 $inventory->product->update([
@@ -377,9 +363,7 @@ public function store(Request $request)
             // If product already exists, do NOT update it during draft updates
         }
 
-        // ------------------------
         // Delete removed variations
-        // ------------------------
         if ($request->has('variations')) {
             foreach ($request->variations as $variationData) {
                 if (!empty($variationData['id']) && !empty($variationData['delete'])) {
@@ -396,9 +380,7 @@ public function store(Request $request)
             }
         }
 
-        // ------------------------
         // Update or create variations
-        // ------------------------
         if (!empty($data['variations'])) {
             foreach ($data['variations'] as $variation) {
                 // If variation already exists, get it, else create a new one
@@ -406,7 +388,7 @@ public function store(Request $request)
                     ? InventoryVariation::find($variation['id'])
                     : new InventoryVariation(['inventory_id' => $inventory->id]);
 
-                 // ✅ Ensure SKU
+                // Ensure SKU
                 if (!empty($variation['sku'])) {
                     $sku = strtoupper(trim($variation['sku']));
                 } elseif (!empty($variation['id']) && $variationModel) {
@@ -422,18 +404,18 @@ public function store(Request $request)
                 if (isset($variation['image_path']) && $variation['image_path'] instanceof \Illuminate\Http\UploadedFile) {
                     $file = $variation['image_path'];
 
-                    // ✅ Delete old image if it exists
+                    // Delete old image if it exists
                     if (!empty($variationModel->image_path) && file_exists(public_path($variationModel->image_path))) {
                         unlink(public_path($variationModel->image_path));
                     }
 
-                    // ✅ Secure: Check MIME type
+                    // Secure: Check MIME type
                     $allowedMimes = ['image/jpeg', 'image/png'];
                     if (!in_array($file->getMimeType(), $allowedMimes)) {
                         return back()->withInput()->with('error', 'Uploaded file must be a valid image (JPG, PNG).');
                     }
 
-                    // ✅ Secure: Sanitize filename
+                    // Secure: Sanitize filename
                     $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $file->getClientOriginalName());
 
                     // Move the file
@@ -489,12 +471,10 @@ public function store(Request $request)
     }
 
 
-    /** =========================================
-     *  DELETE INVENTORY
-     *  ========================================= */
+    // DELETE INVENTORY
     public function destroy($id)
     {
-        
+
 
         $inventory = Inventory::with('variations.product', 'product')->findOrFail($id);
 
@@ -524,7 +504,7 @@ public function store(Request $request)
                 }
                 $variation->product->delete();
             }
-            
+
             // Delete variation images
             if ($variation->image_path) {
                 Storage::disk('public')->delete($variation->image_path);
@@ -547,7 +527,7 @@ public function store(Request $request)
 
         // Delete all variations
         $inventory->variations()->delete();
-        
+
         // Finally delete the inventory
         $inventory->delete();
 
@@ -555,9 +535,8 @@ public function store(Request $request)
             ->with('success', 'Inventory and all associated products deleted successfully');
     }
 
-    /** =========================================
-     *  TOGGLE STATUS
-     *  ========================================= */
+
+    //  TOGGLE STATUS
     public function toggleStatus($id)
     {
         $inventory = Inventory::with(['product', 'variations.product'])->findOrFail($id);
@@ -579,14 +558,16 @@ public function store(Request $request)
                     $unpublishedProducts[] = $variation->product->name;
                 }
             }
-            
+
             // Set flag to show inventory unpublish notification with product details
             if (!empty($unpublishedProducts)) {
-                session(['inventory_unpublished' => [
-                    'inventory_name' => $inventory->name,
-                    'products' => $unpublishedProducts,
-                    'message' => 'Products have been delisted: ' . implode(', ', $unpublishedProducts)
-                ]]);
+                session([
+                    'inventory_unpublished' => [
+                        'inventory_name' => $inventory->name,
+                        'products' => $unpublishedProducts,
+                        'message' => 'Products have been delisted: ' . implode(', ', $unpublishedProducts)
+                    ]
+                ]);
             }
         } else {
             // When publishing inventory, reset issued products back to normal
@@ -610,7 +591,7 @@ public function store(Request $request)
                     ]);
                 }
             }
-            
+
             // Update the main product status and sync data
             if ($inventory->product) {
                 // Check if product was previously draft (new product)
@@ -624,11 +605,13 @@ public function store(Request $request)
                         'published_by' => auth()->id(),
                     ]);
                     // Set flag to show new product added notification with product details
-                    session(['new_product_added' => [
-                        'sku' => $inventory->variations->first()?->sku ?? $inventory->id,
-                        'name' => $inventory->name,
-                        'changes' => 'New product added to inventory'
-                    ]]);
+                    session([
+                        'new_product_added' => [
+                            'sku' => $inventory->variations->first()?->sku ?? $inventory->id,
+                            'name' => $inventory->name,
+                            'changes' => 'New product added to inventory'
+                        ]
+                    ]);
                 } else {
                     $inventory->product->update([
                         'name' => $inventory->name,
@@ -640,17 +623,21 @@ public function store(Request $request)
                     ]);
                     // Set flag to show inventory changes notification
                     if ($hasIssuedProducts && !empty($republishedProducts)) {
-                        session(['inventory_republished' => [
-                            'inventory_name' => $inventory->name,
-                            'products' => $republishedProducts,
-                            'message' => 'Products have been relisted: ' . implode(', ', $republishedProducts)
-                        ]]);
+                        session([
+                            'inventory_republished' => [
+                                'inventory_name' => $inventory->name,
+                                'products' => $republishedProducts,
+                                'message' => 'Products have been relisted: ' . implode(', ', $republishedProducts)
+                            ]
+                        ]);
                     } else {
                         // For regular republish without issued products
-                        session(['inventory_republished' => [
-                            'inventory_name' => $inventory->name,
-                            'message' => 'Inventory has been republished'
-                        ]]);
+                        session([
+                            'inventory_republished' => [
+                                'inventory_name' => $inventory->name,
+                                'message' => 'Inventory has been republished'
+                            ]
+                        ]);
                     }
                 }
             } else {
@@ -661,11 +648,13 @@ public function store(Request $request)
                     'status' => 'draft', // New products start as draft, not published
                 ]);
                 // Set flag to show new product added notification with product details
-                session(['new_product_added' => [
-                    'sku' => $inventory->variations->first()?->sku ?? $inventory->id,
-                    'name' => $inventory->name,
-                    'changes' => 'New product added to inventory'
-                ]]);
+                session([
+                    'new_product_added' => [
+                        'sku' => $inventory->variations->first()?->sku ?? $inventory->id,
+                        'name' => $inventory->name,
+                        'changes' => 'New product added to inventory'
+                    ]
+                ]);
             }
         }
 
@@ -682,39 +671,39 @@ public function store(Request $request)
             ->with('success', "Inventory status updated to {$inventory->status}");
     }
 
-public function dashboard()
-{
-    $inventories = Inventory::with('variations')->get(); // fetch all inventories
+    public function dashboard()
+    {
+        $inventories = Inventory::with('variations')->get(); // fetch all inventories
 
-    $totalProducts = $inventories->count(); // total inventory items
-    $totalStock = $inventories->sum(function ($inv) {
-        return $inv->variations->sum('stock'); // sum of all variation stock
-    });
-    $lowStockCount = $inventories->filter(function ($inv) {
-        return $inv->variations->sum('stock') < $inv->min_stock_level;
-    })->count();
-    $totalVariations = $inventories->sum(function ($inv) {
-        return $inv->variations->count(); // total number of variations
-    });
+        $totalProducts = $inventories->count(); // total inventory items
+        $totalStock = $inventories->sum(function ($inv) {
+            return $inv->variations->sum('stock'); // sum of all variation stock
+        });
+        $lowStockCount = $inventories->filter(function ($inv) {
+            return $inv->variations->sum('stock') < $inv->min_stock_level;
+        })->count();
+        $totalVariations = $inventories->sum(function ($inv) {
+            return $inv->variations->count(); // total number of variations
+        });
 
-    return view('inventory::admin.inventory.dashboard', compact(
-        'inventories',     // pass inventories if your Blade needs it
-        'totalProducts',
-        'totalStock',
-        'lowStockCount',
-        'totalVariations'
-    ));
-}
+        return view('inventory::admin.inventory.dashboard', compact(
+            'inventories',     // pass inventories if your Blade needs it
+            'totalProducts',
+            'totalStock',
+            'lowStockCount',
+            'totalVariations'
+        ));
+    }
 
-public function list()
-{
-    // Get only edited inventories
-    $inventories = Inventory::with('variations')
-        ->get();
+    public function list()
+    {
+        // Get only edited inventories
+        $inventories = Inventory::with('variations')
+            ->get();
 
-    // Pass data to Blade view
-    return view('inventory::admin.inventory.list', compact('inventories'));
-}
+        // Pass data to Blade view
+        return view('inventory::admin.inventory.list', compact('inventories'));
+    }
 
 
 

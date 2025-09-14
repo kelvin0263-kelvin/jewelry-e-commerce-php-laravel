@@ -1,6 +1,8 @@
 <?php
-// app/Modules/Admin/Routes/api.php
-
+/**
+ * Author: TAN CHUN KEAT
+ * Date: 2025-09-15
+ */
 use Illuminate\Support\Facades\Route;
 use App\Modules\Admin\Controllers\CustomerController;
 use App\Modules\Admin\Controllers\DashboardController;

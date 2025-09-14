@@ -67,7 +67,7 @@
 
                                             <!-- Plus -->
                                             @php
-                                                // ✅ Check variation-specific stock first, then fallback to inventory stock
+                                                // Check variation-specific stock first, then fallback to inventory stock
                                                 if ($item->product->variation) {
                                                     $availableStock = $item->product->variation->stock ?? 0;
                                                 } elseif ($item->product->inventory) {

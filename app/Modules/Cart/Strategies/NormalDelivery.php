@@ -10,10 +10,6 @@ class NormalDelivery implements ShippingStrategy
         return 2.50;
     }
 
-    public function getEstimate(): string
-    {
-        return "3-5 business days";
-    }
 }
 
 

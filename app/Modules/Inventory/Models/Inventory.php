@@ -38,9 +38,7 @@ class Inventory extends Model
         'price' => 'decimal:2',
     ];
 
-    /** =========================
-     * Relationships
-     * ========================= */
+    // Relationships
     public function product()
     {
         return $this->hasOne(Product::class, 'inventory_id');
@@ -51,9 +49,7 @@ class Inventory extends Model
         return $this->hasMany(InventoryVariation::class, 'inventory_id');
     }
 
-    /** =========================
-     * Attributes
-     * ========================= */
+    // Attributes
     public function getTotalStockAttribute()
     {
         return $this->variations->sum('stock');
@@ -64,22 +60,22 @@ class Inventory extends Model
         return $this->total_stock <= $this->min_stock_level;
     }
 
-    /** =========================
-     * Booted model events
-     * ========================= */
+    // Booted model events
     protected static function booted()
     {
         static::created(function ($inventory) {
             if ($inventory->status === 'published') {
                 $inventory->createProductIfNotExists();
-                
+
                 // Set session flag for new product notification
-                session(['new_product_added' => [
-                    'sku' => $inventory->variations->first()?->sku ?? 'N/A',
-                    'name' => $inventory->name,
-                    'updated_at' => $inventory->created_at->format('M d, Y H:i'),
-                    'changes' => 'New product created and published from inventory module'
-                ]]);
+                session([
+                    'new_product_added' => [
+                        'sku' => $inventory->variations->first()?->sku ?? 'N/A',
+                        'name' => $inventory->name,
+                        'updated_at' => $inventory->created_at->format('M d, Y H:i'),
+                        'changes' => 'New product created and published from inventory module'
+                    ]
+                ]);
             }
         });
 
@@ -96,7 +92,7 @@ class Inventory extends Model
                     $variation->product->delete();
                 }
             }
-            
+
             // Delete the main product associated with the inventory
             if ($inventory->product) {
                 $inventory->product->delete();
@@ -104,9 +100,8 @@ class Inventory extends Model
         });
     }
 
-    /** =========================
-     * Helpers
-     * ========================= */
+
+    //Helpers
     public function createProductIfNotExists()
     {
         if (!$this->product()->exists()) {
@@ -120,14 +115,12 @@ class Inventory extends Model
         }
     }
 
-    /** =========================
-     * Factory helper
-     * ========================= */
+    // Factory helper
     public function createInventoryItem(array $variation = [])
     {
         // Merge variation data with inventory data, giving priority to variation data
         $data = array_merge($this->toArray(), $variation);
-        
+
         return \App\Modules\Inventory\Factories\InventoryItemFactory::create(
             $this->type,
             $variation['material'] ?? 'Unknown',
@@ -136,41 +129,36 @@ class Inventory extends Model
         );
     }
 
-    /**
-     * Get type-specific options for this inventory type
-     */
+    // Get type-specific options for this inventory type
     public function getTypeOptions()
     {
         return \App\Modules\Inventory\Factories\InventoryItemFactory::getTypeOptions($this->type);
     }
 
-    /**
-     * Validate type-specific data for this inventory
-     */
+
+    //Validate type-specific data for this inventory
+
     public function validateTypeData()
     {
         return \App\Modules\Inventory\Factories\InventoryItemFactory::validateTypeData($this->type, $this->toArray());
     }
 
-    /**
-     * Get calculated value using factory pattern
-     */
+ 
+    // Get calculated value using factory pattern
     public function getCalculatedValue()
     {
         $item = $this->createInventoryItem();
         return $item->calculateValue();
     }
 
-    /**
-     * Get description using factory pattern
-     */
+    // Get description using factory pattern
     public function getItemDescription()
     {
         $item = $this->createInventoryItem();
         return $item->getDescription();
     }
 
-     public static array $typePriceRange = [
+    public static array $typePriceRange = [
         'RingItem' => '600 - 1000',
         'NecklaceItem' => '400 - 1100',
         'EarringsItem' => '400 - 600',

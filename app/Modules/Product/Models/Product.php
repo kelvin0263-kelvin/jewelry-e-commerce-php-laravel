@@ -2,10 +2,10 @@
 
 namespace App\Modules\Product\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory; // ✅ Import HasFactory
+use Illuminate\Database\Eloquent\Factories\HasFactory; 
 use Illuminate\Database\Eloquent\Model;
-use App\Modules\Inventory\Models\Inventory; // ✅ Import Inventory
-use App\Modules\User\Models\User; // ✅ Import User
+use App\Modules\Inventory\Models\Inventory; 
+use App\Modules\User\Models\User; 
 
 class Product extends Model
 {

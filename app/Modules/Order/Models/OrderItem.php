@@ -16,13 +16,13 @@ class OrderItem extends Model
     ];
 
 
-    // ✅ Each OrderItem belongs to one Order
+    // Each OrderItem belongs to one Order
     public function order()
     {
         return $this->belongsTo(Order::class);
     }
 
-    // ✅ Each OrderItem belongs to one Product
+    // Each OrderItem belongs to one Product
     public function product()
     {
         return $this->belongsTo(Product::class);

@@ -23,4 +23,16 @@ class Review extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function inventory()
+    {
+        return $this->hasOneThrough(
+            \App\Modules\Inventory\Models\Inventory::class,
+            Product::class,
+            'id', // Foreign key on products table
+            'id', // Foreign key on inventories table
+            'product_id', // Local key on reviews table
+            'inventory_id' // Local key on products table
+        );
+    }
 }

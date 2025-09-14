@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Author: TAN CHUN KEAT
+ * Date: 2025-09-15
+ */
 namespace App\Modules\Support\Controllers;
 
 use App\Http\Controllers\Controller;
@@ -10,7 +13,7 @@ use App\Modules\Support\Services\ChatQueueService;
 use App\Modules\Support\Traits\EmitsChatEvents;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Modules\Support\Events\MessageSent; // 我们很快会创建这个事件
+use App\Modules\Support\Events\MessageSent; 
 use App\Modules\Support\Events\ConversationTerminated;
 use App\Modules\Support\Services\ChatEventManager;
 use Illuminate\Support\Facades\Broadcast;
@@ -25,6 +28,7 @@ class ChatController extends Controller
     {
         $this->chatEventManager = $chatEventManager;
     }
+    
     use EmitsChatEvents;
     /**
      * 获取当前管理员的所有聊天会话 （x)

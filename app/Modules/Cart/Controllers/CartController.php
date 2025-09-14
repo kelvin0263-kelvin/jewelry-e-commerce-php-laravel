@@ -13,9 +13,8 @@ use App\Modules\Cart\Strategies\NoPromocode;
 use App\Modules\Cart\Strategies\TenPercentPromocode;
 use App\Modules\Cart\Strategies\CreditCardPayment;
 use App\Modules\Cart\Strategies\OnlineBankingPayment;
-use App\Modules\Order\Models\Order;
-use App\Modules\Order\Models\OrderItem;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Http;
 
 class CartController extends Controller
 {
@@ -25,15 +24,40 @@ class CartController extends Controller
         $cartItems = CartItem::where('user_id', Auth::id())->with('product')->get();
         return view('cart::cart', compact('cartItems'));  // loads Views/cart.blade.php
 
-
-
     }
 
     // Add product to cart
     public function add(Request $request, $productId = null)
     {
-        // Load product + relations we'll need
-        $product = Product::with(['variation', 'inventory.variations'])->findOrFail($productId);
+        $product = null;
+        
+        try {
+            // Auto-detect: if request has 'use_api' query param, consume externally
+            $useApi = $request->query('use_api', false);
+
+            if ($useApi) {
+                // External API consumption (simulate another module)
+                $response = Http::timeout(10)
+                    ->get(url('/api/products/' . $productId));
+
+                if ($response->failed()) {
+                    throw new \Exception('Failed to fetch product from API');
+                }
+                
+                $productData = $response->json();
+                $product = (object) $productData['data'];
+            } else {
+                // Internal service consumption
+                $product = Product::with(['variation', 'inventory.variations'])->findOrFail($productId);
+            }
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['product' => $e->getMessage()]);
+        }
+
+        // Ensure product is available
+        if (!$product) {
+            return redirect()->back()->withErrors(['product' => 'Product not found']);
+        }
 
         // Determine available stock (variation first, then inventory)
         $availableStock = 0;
@@ -101,7 +125,7 @@ class CartController extends Controller
                 ->withErrors(['cart' => 'Product not found.']);
         }
 
-        // ✅ Get available stock (variation-specific or inventory stock)
+        // Get available stock (variation-specific or inventory stock)
         if ($product->variation) {
             $availableStock = $product->variation->stock ?? 0;
         } elseif ($product->inventory) {
@@ -231,7 +255,7 @@ class CartController extends Controller
         $maskedCard = null;
 
         if ($request->payment === 'credit_card') {
-            // ⚠️ Encrypt sensitive fields
+            // Encrypt sensitive fields
             $details = [
                 'card_number' => Crypt::encryptString($request->card_number),
                 'name_on_card' => $request->name_on_card,
@@ -239,7 +263,7 @@ class CartController extends Controller
                 'cvv' => Crypt::encryptString($request->cvv),
             ];
 
-            // ✅ Save only masked info in DB
+            // Save only masked info in DB
             $last4 = substr($request->card_number, -4);
             $maskedCard = "Credit Card (**** **** **** {$last4})";
 
@@ -261,7 +285,7 @@ class CartController extends Controller
             return redirect()->back()->withInput()->withErrors(['payment' => $paymentResult['message']]);
         }
 
-        // Save order (⚠️ only save masked info, not raw/encrypted details)
+        // Save order (only save masked info, not raw/encrypted details)
         $orderController = app(\App\Modules\Order\Controllers\OrderController::class);
         $order = $orderController->createOrder(
             $subtotal,
@@ -269,7 +293,7 @@ class CartController extends Controller
             $shippingCost,
             $total,
             $request,
-            $maskedCard // ✅ masked card/account goes to DB
+            $maskedCard // masked card/account goes to DB
         );
 
         $orderItemController = app(\App\Modules\Order\Controllers\OrderItemController::class);

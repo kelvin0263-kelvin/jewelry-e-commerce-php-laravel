@@ -11,8 +11,8 @@ class BraceletItemFactory implements InventoryFactory
     {
         // Use variation data if available, otherwise fall back to inventory data
         $claspType = $inventoryData['bracelet_clasp'] ?? 'Standard';
-        $adjustable = (bool)($inventoryData['adjustable'] ?? false);
-        
+        $adjustable = (bool) ($inventoryData['adjustable'] ?? false);
+
         return new BraceletItem(
             $material,
             $price,
@@ -25,15 +25,15 @@ class BraceletItemFactory implements InventoryFactory
     {
         return [
             'bracelet_clasp' => 'required|string|max:50',
-            'adjustable'     => 'required|boolean',
+            'adjustable' => 'required|boolean',
         ];
     }
 
     public function getTypeOptions(): array
     {
         return [
-            'bracelet_clasps'     => ['Standard', 'Magnetic', 'Toggle', 'Lobster', 'Box'],
-            'adjustable_options'  => [true, false],
+            'bracelet_clasps' => ['Standard', 'Magnetic', 'Toggle', 'Lobster', 'Box'],
+            'adjustable_options' => [true, false],
         ];
     }
 

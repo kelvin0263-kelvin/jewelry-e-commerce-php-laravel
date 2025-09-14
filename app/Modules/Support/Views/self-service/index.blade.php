@@ -1,3 +1,7 @@
+{{-- 
+Author: TAN CHUN KEAT
+Date: 2025-09-15 
+--}}
 @extends('layouts.app')
 
 @section('title', 'Help Center - Jewelry Store')

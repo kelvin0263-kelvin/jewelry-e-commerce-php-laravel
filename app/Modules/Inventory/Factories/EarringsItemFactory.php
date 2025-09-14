@@ -11,8 +11,8 @@ class EarringsItemFactory implements InventoryFactory
     {
         // Use variation data if available, otherwise fall back to inventory data
         $style = $inventoryData['earring_style'] ?? 'Stud';
-        $isPair = (bool)($inventoryData['is_pair'] ?? true);
-        
+        $isPair = (bool) ($inventoryData['is_pair'] ?? true);
+
         return new EarringsItem(
             $material,
             $price,
@@ -25,7 +25,7 @@ class EarringsItemFactory implements InventoryFactory
     {
         return [
             'earring_style' => 'required|string|max:50',
-            'is_pair'       => 'required|boolean',
+            'is_pair' => 'required|boolean',
         ];
     }
 
@@ -33,7 +33,7 @@ class EarringsItemFactory implements InventoryFactory
     {
         return [
             'earring_styles' => ['Stud', 'Hoop', 'Drop', 'Chandelier', 'Cluster', 'Dangle'],
-            'pair_options'   => [true, false],
+            'pair_options' => [true, false],
         ];
     }
 

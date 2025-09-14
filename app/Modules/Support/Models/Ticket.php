@@ -1,13 +1,12 @@
 <?php
-
+/**
+ * Author: TAN CHUN KEAT
+ * Date: 2025-09-15
+ */
 namespace App\Modules\Support\Models;
 
 use App\Modules\User\Models\User;
-use App\Modules\Support\Events\TicketCreated;
-use App\Modules\Support\Events\TicketStatusChanged;
-use App\Modules\Support\Events\TicketAssigned;
-use App\Modules\Support\Events\TicketEscalated;
-use App\Modules\Support\Events\TicketResolved;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -245,12 +244,12 @@ class Ticket extends Model
             'status' => $newStatus
         ]);
 
-        // Fire events
-        if ($oldStatus !== $newStatus) {
-            TicketStatusChanged::dispatch($this, $oldStatus, $newStatus);
-        }
+        // // Fire events
+        // if ($oldStatus !== $newStatus) {
+        //     TicketStatusChanged::dispatch($this, $oldStatus, $newStatus);
+        // }
         
-        TicketAssigned::dispatch($this, $this->fresh()->assignedAgent, $previousAgent);
+        // TicketAssigned::dispatch($this, $this->fresh()->assignedAgent, $previousAgent);
     }
 
     public function markAsResolved($agentId = null): void
@@ -265,9 +264,9 @@ class Ticket extends Model
             'resolution_time_hours' => $resolutionTimeHours
         ]);
 
-        // Fire events
-        TicketStatusChanged::dispatch($this, $oldStatus, 'resolved');
-        TicketResolved::dispatch($this, $resolvedBy, $resolutionTimeHours);
+        // // Fire events
+        // TicketStatusChanged::dispatch($this, $oldStatus, 'resolved');
+        // TicketResolved::dispatch($this, $resolvedBy, $resolutionTimeHours);
     }
 
     public function close($agentId = null): void
@@ -279,10 +278,10 @@ class Ticket extends Model
             'closed_at' => now()
         ]);
 
-        // Fire event
-        if ($oldStatus !== 'closed') {
-            TicketStatusChanged::dispatch($this, $oldStatus, 'closed');
-        }
+        // // Fire event
+        // if ($oldStatus !== 'closed') {
+        //     TicketStatusChanged::dispatch($this, $oldStatus, 'closed');
+        // }
     }
 
     public function reopen(): void
@@ -296,7 +295,7 @@ class Ticket extends Model
         ]);
 
         // Fire event
-        TicketStatusChanged::dispatch($this, $oldStatus, 'open');
+        // TicketStatusChanged::dispatch($this, $oldStatus, 'open');
     }
 
     public function escalate(string $reason = 'Manual escalation'): void
@@ -317,7 +316,7 @@ class Ticket extends Model
         ]);
 
         // Fire event
-        TicketEscalated::dispatch($this, $reason, $oldPriority, $newPriority);
+        // TicketEscalated::dispatch($this, $reason, $oldPriority, $newPriority);
     }
 
     public function recordFirstResponse(): void
@@ -343,7 +342,7 @@ class Ticket extends Model
 
         static::created(function ($ticket) {
             // Fire TicketCreated event
-            TicketCreated::dispatch($ticket);
+            // TicketCreated::dispatch($ticket);
         });
 
         static::updating(function ($ticket) {
@@ -360,11 +359,11 @@ class Ticket extends Model
         static::updated(function ($ticket) {
             // Fire TicketStatusChanged event if status was changed
             if (isset($ticket->_statusChanged)) {
-                TicketStatusChanged::dispatch(
-                    $ticket,
-                    $ticket->_statusChanged['old'],
-                    $ticket->_statusChanged['new']
-                );
+                // TicketStatusChanged::dispatch(
+                //     $ticket,
+                //     $ticket->_statusChanged['old'],
+                //     $ticket->_statusChanged['new']
+                // );
                 unset($ticket->_statusChanged);
             }
         });

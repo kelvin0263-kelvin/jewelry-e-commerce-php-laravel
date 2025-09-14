@@ -5,7 +5,6 @@ namespace App\Modules\Order\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Modules\Order\Models\Order;
-use App\Modules\Order\Models\OrderItem;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 

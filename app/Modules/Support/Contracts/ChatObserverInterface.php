@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Author: TAN CHUN KEAT
+ * Date: 2025-09-15
+ */
 namespace App\Modules\Support\Contracts;
 
 /**
@@ -7,12 +10,6 @@ namespace App\Modules\Support\Contracts;
  */
 interface ChatObserverInterface
 {
-    /**
-     * Handle chat event updates
-     * 
-     * @param string $event The event type
-     * @param array $data The event data
-     * @return void
-     */
+
     public function update(string $event, array $data): void;
 }

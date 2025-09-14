@@ -1,9 +1,12 @@
 <?php
-
+/**
+ * Author: TAN CHUN KEAT
+ * Date: 2025-09-15
+ */
 namespace App\Modules\Support\Models;
 
 use App\Modules\User\Models\User;
-use App\Modules\Support\Events\TicketReplyAdded;
+// use App\Modules\Support\Events\TicketReplyAdded;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -124,7 +127,7 @@ class TicketReply extends Model
             }
 
             // Fire TicketReplyAdded event
-            TicketReplyAdded::dispatch($ticket, $reply);
+            // TicketReplyAdded::dispatch($ticket, $reply);
         });
     }
 }

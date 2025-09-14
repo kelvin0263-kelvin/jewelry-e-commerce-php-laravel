@@ -13,9 +13,8 @@ use App\Modules\Cart\Strategies\NoPromocode;
 use App\Modules\Cart\Strategies\TenPercentPromocode;
 use App\Modules\Cart\Strategies\CreditCardPayment;
 use App\Modules\Cart\Strategies\OnlineBankingPayment;
-use App\Modules\Order\Models\Order;
-use App\Modules\Order\Models\OrderItem;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Http;
 
 class CartApiController extends Controller
 {
@@ -60,9 +59,44 @@ class CartApiController extends Controller
      */
     public function add(Request $request, $productId)
     {
+        $product = null;
+        
         try {
-            $product = Product::with(['variation', 'inventory.variations'])->findOrFail($productId);
+            // Auto-detect: if request has 'use_api' query param, consume externally
+            $useApi = $request->query('use_api', false);
 
+            if ($useApi) {
+                // External API consumption (simulate another module)
+                $response = Http::timeout(10)
+                    ->get(url('/api/products/' . $productId));
+
+                if ($response->failed()) {
+                    throw new \Exception('Failed to fetch product from API');
+                }
+
+                $productData = $response->json();
+                $product = (object) $productData['data'];
+            } else {
+                // Internal service consumption
+                $product = Product::with(['variation', 'inventory.variations'])->findOrFail($productId);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch product',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+
+        // Ensure product is available
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found'
+            ], 404);
+        }
+
+        try {
             $availableStock = 0;
             if ($product->variation) {
                 $availableStock = (int) ($product->variation->stock ?? 0);
@@ -104,6 +138,7 @@ class CartApiController extends Controller
                     'user_id' => Auth::id(),
                     'product_id' => $productId,
                     'quantity' => 1,
+                    'price' => $product->discount_price ?? $product->price, // save product price
                 ]);
                 $message = 'Product added to cart successfully';
             }

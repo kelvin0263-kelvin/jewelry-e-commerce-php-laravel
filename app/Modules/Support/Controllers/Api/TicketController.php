@@ -1,5 +1,8 @@
 <?php
-// app/Modules/Support/Controllers/Api/TicketController.php
+/**
+ * Author: TAN CHUN KEAT
+ * Date: 2025-09-15
+ */
 namespace App\Modules\Support\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -28,14 +31,14 @@ class TicketController extends Controller
             
             // Filter by priority
             if ($request->has('priority') && $request->priority !== 'all') {
-                $query->where('priority', $request->priority);
+                $query->where('priority', $this->normalizePriority($request->priority));
             }
             
-            // Search by subject or content
+            // Search by subject or description
             if ($request->has('search') && !empty($request->search)) {
                 $query->where(function($q) use ($request) {
                     $q->where('subject', 'like', '%' . $request->search . '%')
-                      ->orWhere('content', 'like', '%' . $request->search . '%');
+                      ->orWhere('description', 'like', '%' . $request->search . '%');
                 });
             }
             
@@ -57,23 +60,33 @@ class TicketController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
+            // Normalize incoming values to match model enums
+            $request->merge([
+                'category' => $this->normalizeCategory($request->input('category')),
+                'priority' => $this->normalizePriority($request->input('priority')),
+            ]);
+
             $validated = $request->validate([
                 'subject' => 'required|string|max:255',
                 'content' => 'required|string',
-                'category' => 'required|string|in:general,technical,billing,complaint,feature_request',
-                'priority' => 'sometimes|string|in:low,medium,high,urgent',
+                'category' => ['required','string', Rule::in(array_keys(Ticket::getCategories()))],
+                'priority' => ['sometimes','string', Rule::in(array_keys(Ticket::getPriorities()))],
             ]);
 
-            $validated['user_id'] = Auth::id();
-            $validated['status'] = 'open';
-            $validated['priority'] = $validated['priority'] ?? 'medium';
+            $data = [
+                'subject' => $validated['subject'],
+                'description' => $validated['content'],
+                'category' => $validated['category'],
+                'priority' => $validated['priority'] ?? 'normal',
+                'user_id' => Auth::id(),
+                'status' => 'open',
+            ];
 
-            $ticket = Ticket::create($validated);
-            
+            $ticket = Ticket::create($data);
+
             return (new TicketResource($ticket))
-                    ->response()
-                    ->setStatusCode(201)
-                    ->header('Location', route('api.tickets.show', $ticket));
+                ->response()
+                ->setStatusCode(201);
                     
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -131,9 +144,14 @@ class TicketController extends Controller
             }
 
             // Users can only update certain fields
+            // Normalize incoming values
+            if ($request->has('priority')) {
+                $request->merge(['priority' => $this->normalizePriority($request->input('priority'))]);
+            }
+
             $validated = $request->validate([
                 'subject' => 'sometimes|string|max:255',
-                'priority' => 'sometimes|string|in:low,medium,high,urgent',
+                'priority' => ['sometimes','string', Rule::in(array_keys(Ticket::getPriorities()))],
             ]);
 
             $ticket->update($validated);
@@ -178,15 +196,13 @@ class TicketController extends Controller
             ]);
 
             $reply = $ticket->replies()->create([
-                'content' => $validated['content'],
+                'message' => $validated['content'],
                 'user_id' => Auth::id(),
-                'is_admin_reply' => false
+                'reply_type' => 'customer',
+                'is_internal' => false,
             ]);
 
-            // Update ticket status to 'awaiting_agent' if it was closed
-            if ($ticket->status === 'closed') {
-                $ticket->update(['status' => 'awaiting_agent']);
-            }
+            // Ticket status transitions are handled in TicketReply model events
 
             return response()->json([
                 'status' => 'success',
@@ -290,13 +306,12 @@ class TicketController extends Controller
     public function categories(): JsonResponse
     {
         try {
-            $categories = [
-                ['value' => 'general', 'label' => 'General Inquiry'],
-                ['value' => 'technical', 'label' => 'Technical Support'],
-                ['value' => 'billing', 'label' => 'Billing & Payment'],
-                ['value' => 'complaint', 'label' => 'Complaint'],
-                ['value' => 'feature_request', 'label' => 'Feature Request']
-            ];
+            // Return canonical categories from the model
+            $categoriesMap = Ticket::getCategories(); // [value => label]
+            $categories = [];
+            foreach ($categoriesMap as $value => $label) {
+                $categories[] = ['value' => $value, 'label' => $label];
+            }
 
             return response()->json([
                 'status' => 'success',
@@ -309,5 +324,40 @@ class TicketController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Normalize priority input to model-supported values
+     */
+    private function normalizePriority(?string $priority): ?string
+    {
+        if (!$priority) return null;
+        $map = [
+            'medium' => 'normal',
+        ];
+        $normalized = strtolower($priority);
+        return $map[$normalized] ?? $normalized;
+    }
+
+    /**
+     * Normalize category input to model-supported values
+     */
+    private function normalizeCategory(?string $category): ?string
+    {
+        if (!$category) return null;
+        $normalized = strtolower($category);
+        $map = [
+            'general' => 'general_inquiry',
+            'technical' => 'technical_support',
+            'billing' => 'billing_question',
+            'shipping' => 'shipping_delivery',
+            'order' => 'order_problem',
+            'account' => 'account_help',
+            'refund' => 'return_refund',
+            'returns' => 'return_refund',
+            'feature_request' => 'other',
+            'complaint' => 'other',
+        ];
+        return $map[$normalized] ?? $normalized;
     }
 }

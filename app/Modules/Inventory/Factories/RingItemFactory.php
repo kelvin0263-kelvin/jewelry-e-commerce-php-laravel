@@ -11,8 +11,8 @@ class RingItemFactory implements InventoryFactory
     {
         // Use variation data if available, otherwise fall back to inventory data
         $stoneType = $inventoryData['material'] ?? $inventoryData['stone_type'] ?? 'Diamond';
-        $ringSize = (int)($inventoryData['size'] ?? $inventoryData['ring_size'] ?? 7);
-        
+        $ringSize = (int) ($inventoryData['size'] ?? $inventoryData['ring_size'] ?? 7);
+
         return new RingItem(
             $material,
             $price,
@@ -25,7 +25,7 @@ class RingItemFactory implements InventoryFactory
     {
         return [
             'stone_type' => 'required|string|max:50',
-            'ring_size'  => 'required|integer|min:4|max:12',
+            'ring_size' => 'required|integer|min:4|max:12',
         ];
     }
 
@@ -33,7 +33,7 @@ class RingItemFactory implements InventoryFactory
     {
         return [
             'stone_types' => ['Diamond', 'Ruby', 'Sapphire', 'Emerald', 'Pearl', 'Amethyst'],
-            'ring_sizes'  => range(4, 12),
+            'ring_sizes' => range(4, 12),
         ];
     }
 
@@ -41,7 +41,7 @@ class RingItemFactory implements InventoryFactory
     {
         $errors = [];
         $rules = $this->getValidationRules();
-        
+
         foreach ($rules as $field => $rule) {
             if (!isset($data[$field]) || empty($data[$field])) {
                 $errors[] = "Field '{$field}' is required for RingItem";

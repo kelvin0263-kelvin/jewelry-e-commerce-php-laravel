@@ -4,7 +4,7 @@
 
 @push('styles')
     <style>
-        /* 完全按照图片设计 */
+        
         .product-page {
             background-color: #faf8f5;
             min-height: 100vh;
