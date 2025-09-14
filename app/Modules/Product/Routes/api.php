@@ -2,6 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Modules\Product\Controllers\ProductApiController;
+use App\Modules\Product\Controllers\ProductController;
+
+// Public AJAX endpoints served by web ProductController
+Route::get('/products/sku-details', [ProductController::class, 'getSkuDetails'])->name('products.sku-details');
+Route::get('/products/check-published/{inventoryId}', [ProductController::class, 'checkPublished'])->name('products.check-published');
 
 // Public product routes (no authentication required)
 Route::prefix('products')
@@ -38,7 +43,11 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
             
             // Delete product
             Route::delete('/{product}', 'destroy')->name('destroy');
+
+            
         });
+
+    
 });
 
 

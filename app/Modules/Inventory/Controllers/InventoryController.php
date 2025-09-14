@@ -51,6 +51,15 @@ class InventoryController extends Controller
      *  ========================================= */
 public function store(Request $request)
     {
+        $stonePremiums = [
+    'Diamond' => 500,
+    'Ruby' => 300,
+    'Sapphire' => 250,
+    'Emerald' => 200,
+    'Pearl' => 150,
+    'Amethyst' => 100,
+];
+
         $data = $request->validate([
             'name' => 'required|string',
             'type' => 'required|in:RingItem,NecklaceItem,EarringsItem,BraceletItem',
@@ -74,8 +83,11 @@ public function store(Request $request)
             'variations.*.size' => 'nullable|string|max:50',
             'variations.*.material' => 'nullable|string|max:100',
             'variations.*.stock' => 'nullable|integer|min:0',
+            'variations.*.price' => 'nullable|numeric|min:0',
             'variations.*.image_path' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
+
+        
 
         // ✅ Check duplicate SKUs inside request itself and globally (case-insensitive)
         if (!empty($data['variations'])) {
@@ -126,6 +138,7 @@ public function store(Request $request)
 
         // ✅ Handle variations
         if (!empty($data['variations'])) {
+            Log::info('Processing variations', ['count' => count($data['variations']), 'variations' => $data['variations']]);
             foreach ($data['variations'] as $variation) {
                 $imagePath = null;
 
@@ -162,6 +175,14 @@ public function store(Request $request)
 
                 // Create inventory item using factory pattern
                 $item = $inventory->createInventoryItem($variation);
+                $calculatedPrice = $item->calculateValue();
+
+                Log::info('Creating variation', [
+                    'sku' => $sku,
+                    'variation_data' => $variation,
+                    'calculated_price' => $calculatedPrice,
+                    'item_description' => $item->getDescription()
+                ]);
 
                 $inventory->variations()->create([
                     'sku' => $sku,
@@ -169,11 +190,11 @@ public function store(Request $request)
                     'size' => $variation['size'] ?? null,
                     'material' => $variation['material'] ?? null,
                     'stock' => $variation['stock'] ?? 0,
-                    'price' => $item->calculateValue(),
+                    'price' => $calculatedPrice,   // ✅ Use model calculation instead of request price
                     'image_path' => $imagePath,
                     'properties' => [
                         'description' => $item->getDescription(),
-                        'calculated_value' => $item->calculateValue(),
+                        'calculated_value' => $calculatedPrice,
                         'variation_data' => $variation,
                         'factory_created_at' => now()->toISOString(),
                     ],
@@ -239,7 +260,9 @@ public function store(Request $request)
                 'variations.*.color' => 'nullable|string|max:50',
                 'variations.*.size' => 'nullable|string|max:50',
                 'variations.*.material' => 'nullable|string|max:100',
+                'variations.*.price' => 'nullable|numeric|min:0',
                 'variations.*.stock' => 'nullable|integer|min:0|max:999999',
+
                 'variations.*.image_path' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ],
             [
@@ -422,6 +445,14 @@ public function store(Request $request)
 
 
                 $item = $inventory->createInventoryItem($variation);
+                $calculatedPrice = $item->calculateValue();
+
+                Log::info('Updating variation', [
+                    'sku' => $sku,
+                    'variation_data' => $variation,
+                    'calculated_price' => $calculatedPrice,
+                    'item_description' => $item->getDescription()
+                ]);
 
                 $variationData = [
                     'sku' => $sku,
@@ -429,11 +460,11 @@ public function store(Request $request)
                     'size' => $variation['size'] ?? null,
                     'material' => $variation['material'] ?? null,
                     'stock' => $variation['stock'] ?? 0,
-                    'price' => $item->calculateValue(),
+                    'price' => $calculatedPrice,   // ✅ Use model calculation instead of request price
                     'image_path' => $imagePath ?? ($variation['old_image'] ?? null),
                     'properties' => [
                         'description' => $item->getDescription(),
-                        'calculated_value' => $item->calculateValue(),
+                        'calculated_value' => $calculatedPrice,
                         'variation_data' => $variation,
                         'factory_updated_at' => now()->toISOString(),
                     ],

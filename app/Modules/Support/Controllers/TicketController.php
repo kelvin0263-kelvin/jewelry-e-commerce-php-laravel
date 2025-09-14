@@ -107,7 +107,8 @@ class TicketController extends Controller
             'contact_phone' => 'nullable|string|max:20',
             'preferred_contact_method' => 'required|in:email,phone,portal', // only the 3 value 
             'attachments' => 'nullable|array|max:5', // max is 5 only
-            'attachments.*' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf,doc,docx,txt|mimetypes:image/jpeg,image/png,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document' //must less than 5mb and must fullfill mimetype and extension
+            // Keep only generic file + size checks here; type/integrity checks happen in secureStoreAttachments
+            'attachments.*' => 'nullable|file|max:5120'
         ]);
 
         // Handle file uploads securely (private storage + server-side sniffing) and return an array which contains file name / path / size / type
@@ -185,7 +186,8 @@ class TicketController extends Controller
         $validated = $request->validate([
             'message' => 'required|string|max:2000',
             'attachments' => 'nullable|array|max:5',
-            'attachments.*' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,pdf,doc,docx,txt|mimetypes:image/jpeg,image/png,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            // Keep only generic file + size checks here; type/integrity checks happen in secureStoreAttachments
+            'attachments.*' => 'nullable|file|max:5120'
         ]);
 
         // Handle file uploads securely

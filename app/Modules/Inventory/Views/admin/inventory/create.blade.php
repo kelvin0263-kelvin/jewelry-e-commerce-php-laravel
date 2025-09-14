@@ -39,8 +39,7 @@
     @endif
 
     <!-- Form -->
-    <form id="inventoryForm" action="{{ route('admin.inventory.store') }}" method="POST" enctype="multipart/form-data"
-          class="space-y-6">
+    <form id="inventoryForm" action="{{ route('admin.inventory.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
         @csrf
 
         <!-- Section: Basic Information -->
@@ -270,20 +269,21 @@
                     <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
                         <input type="text" name="variations[0][sku]" placeholder="SKU" class="input-field">
                         <input type="text" name="variations[0][color]" placeholder="Color" class="input-field">
-                       <!-- Size (read-only from ring_size if type is Ring) -->
+                        <!-- Size (read-only from ring_size if type is Ring) -->
                         <input type="text" name="variations[0][size]" placeholder="Size"
-                            value="{{ old('ring_size', $inventory->ring_size ?? '') }}"
                             class="input-field @if(old('type', $inventory->type ?? '') == 'RingItem') bg-gray-100 cursor-not-allowed @endif"
                             @if(old('type', $inventory->type ?? '') == 'RingItem') readonly @endif>
 
                         <!-- Material (read-only from stone_type if type is Ring) -->
                         <input type="text" name="variations[0][material]" placeholder="Material"
-                            value="{{ old('stone_type', $inventory->stone_type ?? '') }}"
                             class="input-field @if(old('type', $inventory->type ?? '') == 'RingItem') bg-gray-100 cursor-not-allowed @endif"
                             @if(old('type', $inventory->type ?? '') == 'RingItem') readonly @endif>
 
                        
                         <input type="number" name="variations[0][stock]" placeholder="Stock" class="input-field">
+                        <input type="number" step="0.01" name="variations[0][price]" 
+                            class="input-field bg-gray-100 cursor-not-allowed" readonly placeholder="Auto-calculated">
+
                     </div>
                     <div class="mt-3">
                         <input type="file" name="variations[0][image_path]"
@@ -294,6 +294,12 @@
             </div>
         </div>
     </form>
+
+
+
+
+
+
 </div>
 
 <script>
@@ -305,6 +311,22 @@ const priceRanges = {
     EarringsItem: '400 - 600',
     BraceletItem: '50 - 100'
 };
+
+function updateVariationPrice(variation) {
+    // For now, let the server calculate the price using the model
+    // This will be calculated on the backend using the factory pattern
+    const priceInput = variation.querySelector('input[name$="[price]"]');
+    if (priceInput) {
+        priceInput.value = ''; // Clear the price field - let server calculate
+        priceInput.placeholder = 'Auto-calculated';
+        
+        // Debug: Log the variation data
+        const material = variation.querySelector('[name$="[material]"]')?.value || '';
+        const size = variation.querySelector('[name$="[size]"]')?.value || '';
+        console.log('Updating variation price:', { material, size, variation: variation });
+    }
+}
+
 
 function showTypeSpecificFields() {
     const type = document.getElementById('type').value;
@@ -358,36 +380,34 @@ function syncFirstVariation() {
             materialInput.value = '';
         }
     }
+
+    // ✅ always recalc price after syncing
+    updateVariationPrice(firstVariation);
 }
 
 function addVariation() {
     const container = document.getElementById('variations-container');
     const type = document.getElementById('type').value;
 
-    // Grab defaults from the top section
-    const ringSize = document.getElementById('ring_size')?.value || '';
-    const stoneType = document.getElementById('stone_type')?.value || '';
-
     let extraFields = '';
 
     if (type === 'RingItem') {
     extraFields = `
-
         <select name="variations[${variationIndex}][size]" class="input-field">
             <option value="">Select Size</option>
             ${[...Array(7)].map((_,i)=> {
                 const size = i+4;
-                return `<option value="${size}" ${ringSize == size ? 'selected' : ''}>${size}</option>`;
+                return `<option value="${size}">Size ${size}</option>`;
             }).join('')}
         </select>
         <select name="variations[${variationIndex}][material]" class="input-field">
             <option value="">Select Stone</option>
-            <option value="Diamond" ${stoneType === 'Diamond' ? 'selected' : ''}>Diamond</option>
-            <option value="Ruby" ${stoneType === 'Ruby' ? 'selected' : ''}>Ruby</option>
-            <option value="Sapphire" ${stoneType === 'Sapphire' ? 'selected' : ''}>Sapphire</option>
-            <option value="Emerald" ${stoneType === 'Emerald' ? 'selected' : ''}>Emerald</option>
-            <option value="Pearl" ${stoneType === 'Pearl' ? 'selected' : ''}>Pearl</option>
-            <option value="Amethyst" ${stoneType === 'Amethyst' ? 'selected' : ''}>Amethyst</option>
+            <option value="Diamond">Diamond</option>
+            <option value="Ruby">Ruby</option>
+            <option value="Sapphire">Sapphire</option>
+            <option value="Emerald">Emerald</option>
+            <option value="Pearl">Pearl</option>
+            <option value="Amethyst">Amethyst</option>
         </select>
     `;
     }else {
@@ -405,6 +425,9 @@ function addVariation() {
             <input type="text" name="variations[${variationIndex}][color]" placeholder="Color" class="input-field">
             ${extraFields}
             <input type="number" name="variations[${variationIndex}][stock]" placeholder="Stock" class="input-field">
+            <input type="number" step="0.01" name="variations[${variationIndex}][price]" 
+                 class="input-field bg-gray-100 cursor-not-allowed" readonly placeholder="Auto-calculated">
+
         </div>
         <div class="mt-3 flex justify-between items-center">
             <input type="file" name="variations[${variationIndex}][image_path]"
@@ -416,6 +439,7 @@ function addVariation() {
             </button>
         </div>`;
     container.appendChild(div);
+    updateVariationPrice(div);   // ✅ auto fill new variation price
     variationIndex++;
     updateQuantity();
 }
@@ -440,14 +464,34 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 document.getElementById('ring_size')?.addEventListener('change', syncFirstVariation);
-document.getElementById('stone_type')?.addEventListener('change', syncFirstVariation);
-document.getElementById('type')?.addEventListener('change', syncFirstVariation);
+document.getElementById('stone_type')?.addEventListener('change', function() {
+    syncFirstVariation(); // this updates variation’s material field
+    const firstVariation = document.querySelector('.variation-item');
+    if (firstVariation) updateVariationPrice(firstVariation); // ✅ force price update
+});document.getElementById('type')?.addEventListener('change', syncFirstVariation);
 
 document.addEventListener('input', function(e) {
     if (e.target.name && e.target.name.includes('[stock]')) {
         updateQuantity();
     }
+    if (e.target.name && (e.target.name.includes('[material]') || e.target.name.includes('[size]'))) {
+        const variation = e.target.closest('.variation-item');
+        if (variation) {
+            updateVariationPrice(variation);   // ✅ use variation, not firstVariation
+        }
+    }
 });
+
+// Add change event listeners for select elements
+document.addEventListener('change', function(e) {
+    if (e.target.name && (e.target.name.includes('[material]') || e.target.name.includes('[size]'))) {
+        const variation = e.target.closest('.variation-item');
+        if (variation) {
+            updateVariationPrice(variation);
+        }
+    }
+});
+
 </script>
 
 <style>
@@ -456,4 +500,3 @@ document.addEventListener('input', function(e) {
 }
 </style>
 @endsection
-

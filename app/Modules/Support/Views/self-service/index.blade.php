@@ -79,7 +79,7 @@
                     href="mailto:support@jewelrystore.com" 
                     class="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition duration-150 flex items-center justify-center"
                 >
-                    ✉️ Email Support
+                    ✉ Email Support
                 </a>
                 <a 
                     href="tel:1-800-JEWELRY" 
@@ -150,7 +150,7 @@ function openCategoryActions(slug) {
     } else {
         content.innerHTML = `
             <div class="space-y-2">
-                ${actions.map(a => `<button onclick=\"quickAction('${a.action}', '${slug}')\" class=\"w-full text-left px-4 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition\">${a.label}</button>`).join('')}
+                ${actions.map(a => `<button onclick="quickAction('${a.action}', '${slug}')" class="w-full text-left px-4 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition">${a.label}</button>`).join('')}
             </div>
         `;
     }
@@ -239,6 +239,34 @@ function quickAction(action, category) {
     }
     
     content.innerHTML = formHTML;
+
+    // Footer buttons: for selected actions show both Internal and HTTP API modes
+    if (action === 'track_order' || action === 'check_availability') {
+        footer.innerHTML = `
+            <button 
+                onclick="submitQuickAction(false)" 
+                class="flex-1 bg-gray-100 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-200 transition"
+            >
+                Use Internal
+            </button>
+            <button 
+                onclick="submitQuickAction(true)" 
+                class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition"
+            >
+                Use HTTP API
+            </button>
+        `;
+    } else {
+        footer.innerHTML = `
+            <button 
+                onclick="submitQuickAction()" 
+                class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition"
+            >
+                Get Help
+            </button>
+        `;
+    }
+
     // Show footer with action buttons when in a specific action
     footer.classList.remove('hidden');
     modal.classList.remove('hidden');
@@ -248,7 +276,7 @@ function closeModal() {
     document.getElementById('quickActionModal').classList.add('hidden');
 }
 
-function submitQuickAction() {
+function submitQuickAction(useApi = false) {
     if (currentAction === 'track_order') {
         const orderNumber = document.getElementById('order_number')?.value?.trim();
         const email = document.getElementById('email')?.value?.trim();
@@ -266,15 +294,26 @@ function submitQuickAction() {
 
         const headers = {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         };
 
         const payload = JSON.stringify({ order_number: orderNumber, email });
 
-        // Single call. Controller decides internal vs external consumption.
-        fetch('/self-service/track-order', { method: 'POST', headers, body: payload })
+        const url = useApi ? '/self-service/track-order?use_api=1' : '/self-service/track-order';
+        fetch(url, { method: 'POST', headers, body: payload })
             .then(async (res) => {
-                if (!res.ok) throw new Error('Tracking failed');
+                if (!res.ok) {
+                    const raw = await res.text();
+                    let message = 'Tracking failed';
+                    try {
+                        const json = JSON.parse(raw);
+                        message = json?.error || json?.message || raw || message;
+                    } catch (e) {
+                        message = raw || message;
+                    }
+                    throw new Error(message);
+                }
                 return res.json();
             })
             .then(data => {
@@ -297,7 +336,8 @@ function submitQuickAction() {
             .catch(err => {
                 console.error(err);
                 if (results) {
-                    results.innerHTML = '<div class="text-sm text-red-600">Could not find your order. Please confirm the details or chat with an agent.</div>';
+                    const msg = (err && err.message) ? err.message : 'Unable to track order';
+                    results.innerHTML = `<div class="text-sm text-red-600">${msg}</div>`;
                 }
             });
         return;
@@ -317,15 +357,26 @@ function submitQuickAction() {
 
         const headers = {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         };
 
         const payload = JSON.stringify({ product_name: productName });
 
-        // Single call; controller decides external/internal by use_api
-        fetch('/self-service/check-availability', { method: 'POST', headers, body: payload })
+        const url = useApi ? '/self-service/check-availability?use_api=1' : '/self-service/check-availability';
+        fetch(url, { method: 'POST', headers, body: payload })
             .then(async (res) => {
-                if (!res.ok) throw new Error('Availability check failed');
+                if (!res.ok) {
+                    const raw = await res.text();
+                    let message = 'Availability check failed';
+                    try {
+                        const json = JSON.parse(raw);
+                        message = json?.error || json?.message || raw || message;
+                    } catch (e) {
+                        message = raw || message;
+                    }
+                    throw new Error(message);
+                }
                 return res.json();
             })
             .then(data => {
@@ -357,7 +408,8 @@ function submitQuickAction() {
             .catch(err => {
                 console.error(err);
                 if (results) {
-                    results.innerHTML = '<div class="text-sm text-red-600">Could not check availability. Try another product name or chat with an agent.</div>';
+                    const msg = (err && err.message) ? err.message : 'Unable to check availability';
+                    results.innerHTML = `<div class=\"text-sm text-red-600\">${msg}</div>`;
                 }
             });
         return;

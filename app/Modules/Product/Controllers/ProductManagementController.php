@@ -11,6 +11,7 @@ use App\Modules\Inventory\Models\InventoryVariation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
 class ProductManagementController extends Controller
 {
@@ -61,7 +62,36 @@ class ProductManagementController extends Controller
             }
         }
 
+        // Optional external API consumption to constrain inventories
+        $inventoryIds = null;
+        try {
+            $useApi = filter_var($request->query('use_api', false), FILTER_VALIDATE_BOOLEAN);
+            if ($useApi) {
+                $response = Http::timeout(10)->get(url('/api/inventory'), $request->only('simulate_timeout'));
+                if ($response->failed()) {
+                    throw new \Exception('Failed to fetch inventories from API');
+                }
+                $json = $response->json();
+                if (empty($json['success'])) {
+                    throw new \Exception('Inventory API returned unsuccessful response');
+                }
+                $inventoryIds = array_column($json['data'] ?? [], 'id');
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Inventory API list consumption failed, continuing with Eloquent', [
+                'error' => $e->getMessage(),
+            ]);
+            // Surface the error if triggered via API usage
+            if ($request->boolean('use_api')) {
+                session()->flash('error', $e->getMessage());
+            }
+            $inventoryIds = null; // fallback to no constraint
+        }
+
         $query = \App\Modules\Inventory\Models\Inventory::with(['variations.product']);
+        if (is_array($inventoryIds)) {
+            $query->whereIn('id', !empty($inventoryIds) ? $inventoryIds : [-1]);
+        }
 
         // Inventory Summary Page Independent Search functionality
         if ($request->has('search') && $request->search) {
@@ -266,10 +296,46 @@ class ProductManagementController extends Controller
      */
     public function showSkuDetails($inventoryId)
     {
+        // Apply API usage pattern with optional external API consumption
         $inventory = \App\Modules\Inventory\Models\Inventory::findOrFail($inventoryId);
-        
+
+        try {
+            // Auto-detect: if request has 'use_api' query param, consume externally
+            $useApi = filter_var(request()->query('use_api', false), FILTER_VALIDATE_BOOLEAN);
+
+            if ($useApi) {
+                // External API consumption: call Inventory module API
+                $response = Http::timeout(10)
+                    ->get(url("/api/inventory/{$inventoryId}"), request()->only('simulate_timeout'));
+
+                if ($response->failed()) {
+                    throw new \Exception('Failed to fetch inventory from API');
+                }
+
+                $json = $response->json();
+                if (empty($json['success'])) {
+                    throw new \Exception('Inventory API returned unsuccessful response');
+                }
+
+                $variationIds = array_column($json['data']['variations'] ?? [], 'id');
+            } else {
+                // Internal service consumption (fallback to Eloquent)
+                $variationIds = InventoryVariation::where('inventory_id', $inventoryId)->pluck('id')->all();
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Inventory API consumption failed, falling back to Eloquent', [
+                'inventory_id' => $inventoryId,
+                'error' => $e->getMessage(),
+            ]);
+            if (request()->boolean('use_api')) {
+                return redirect()->route('admin.product-management.index')
+                    ->with('error', $e->getMessage());
+            }
+            $variationIds = InventoryVariation::where('inventory_id', $inventoryId)->pluck('id')->all();
+        }
+
         $query = InventoryVariation::with(['inventory', 'product'])
-            ->where('inventory_id', $inventoryId);
+            ->whereIn('id', !empty($variationIds) ? $variationIds : [-1]);
 
         $variations = $query->paginate(15);
         

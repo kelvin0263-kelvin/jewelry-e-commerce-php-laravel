@@ -23,8 +23,16 @@ class RingItem extends InventoryItem
     public function calculateValue(): float
     {
         $basePrice = $this->basePrice ?? 500;
+        $stonePremium = self::getStonePremium($this->stoneType);
 
-        // Stone premium
+        return $basePrice + $stonePremium;
+    }
+
+    /**
+     * Get stone premium for a given stone type
+     */
+    public static function getStonePremium(string $stoneType): int
+    {
         $stonePremiums = [
             'Diamond' => 500,
             'Ruby' => 300,
@@ -33,9 +41,23 @@ class RingItem extends InventoryItem
             'Pearl' => 150,
             'Amethyst' => 100,
         ];
-        $stonePremium = $stonePremiums[$this->stoneType] ?? 0;
 
-        return $basePrice + $stonePremium;
+        return $stonePremiums[$stoneType] ?? 0;
+    }
+
+    /**
+     * Get all available stone types with their premiums
+     */
+    public static function getStoneTypes(): array
+    {
+        return [
+            'Diamond' => 500,
+            'Ruby' => 300,
+            'Sapphire' => 250,
+            'Emerald' => 200,
+            'Pearl' => 150,
+            'Amethyst' => 100,
+        ];
     }
 
 

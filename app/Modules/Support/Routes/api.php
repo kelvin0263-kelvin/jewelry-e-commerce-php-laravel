@@ -24,7 +24,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Chat functionality for users
     Route::prefix('support/chat')->group(function () {
         // Start chat (queue)
-        Route::post('/start', [ChatController::class, 'startChat']);
+        Route::post('/start', [ChatController::class, 'startChat'])
+            ->middleware('throttle:chat-start');
         // Queue status
         Route::get('/queue/{conversationId}', [ChatController::class, 'getQueueStatus']);
         // Leave queue
@@ -36,9 +37,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/conversations', [ChatController::class, 'createConversation']); // POST /api/support/chat/conversations
         Route::get('/conversations/{conversation}', [ChatController::class, 'show']); // GET /api/support/chat/conversations/{id}
         Route::get('/conversations/{conversation}/messages', [ChatController::class, 'messages']); // GET /api/support/chat/conversations/{id}/messages
-        Route::post('/conversations/{conversation}/messages', [ChatController::class, 'sendMessage']); // POST /api/support/chat/conversations/{id}/messages
+        Route::post('/conversations/{conversation}/messages', [ChatController::class, 'sendMessage']) // POST /api/support/chat/conversations/{id}/messages
+            ->middleware('throttle:chat-send');
         // Alternative message endpoint without conversation in path
-        Route::post('/messages', [ChatController::class, 'sendMessage']); // POST /api/support/chat/messages
+        Route::post('/messages', [ChatController::class, 'sendMessage']) // POST /api/support/chat/messages
+            ->middleware('throttle:chat-send');
     });
     
     // FAQ and self-service
@@ -68,7 +71,8 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::get('/conversations', [ChatController::class, 'adminConversations']); // GET /api/admin/support/chat/conversations
         Route::get('/conversations/{conversation}', [ChatController::class, 'show']); // GET /api/admin/support/chat/conversations/{id}
         Route::get('/conversations/{conversation}/messages', [ChatController::class, 'messages']); // GET /api/admin/support/chat/conversations/{id}/messages
-        Route::post('/conversations/{conversation}/messages', [ChatController::class, 'sendMessage']); // POST /api/admin/support/chat/conversations/{id}/messages
+        Route::post('/conversations/{conversation}/messages', [ChatController::class, 'sendMessage']) // POST /api/admin/support/chat/conversations/{id}/messages
+            ->middleware('throttle:admin-chat');
         Route::post('/conversations/{conversation}/transfer', [ChatController::class, 'transfer']); // POST /api/admin/support/chat/conversations/{id}/transfer
     });
     

@@ -111,27 +111,25 @@ class ProductController extends Controller
      */
     public function show($productOrInventoryId)
     {
-        // Check if it's a numeric ID (could be product ID or inventory ID)
+        // Disambiguate: prefer explicit product IDs first to avoid collisions
         if (is_numeric($productOrInventoryId)) {
-            // First try to find as inventory ID (since admin links use inventory IDs)
-            $inventory = \App\Modules\Inventory\Models\Inventory::find($productOrInventoryId);
-            
-            if ($inventory) {
-                // It's an inventory ID, show inventory with SKU selection
-                return $this->showInventoryWithSKUSelection($productOrInventoryId);
-            } else {
-                // Try to find as product ID
-                $product = Product::find($productOrInventoryId);
-                if ($product) {
-                    return $this->showProduct($product);
-                } else {
-                    abort(404, 'Product or inventory not found');
-                }
+            // Try product by ID first
+            $product = Product::find($productOrInventoryId);
+            if ($product) {
+                return $this->showProduct($product);
             }
-        } else {
-            // It's a product model instance
-            return $this->showProduct($productOrInventoryId);
+
+            // Fallback to inventory by ID
+            $inventory = \App\Modules\Inventory\Models\Inventory::find($productOrInventoryId);
+            if ($inventory) {
+                return $this->showInventoryWithSKUSelection($productOrInventoryId);
+            }
+
+            abort(404, 'Product or inventory not found');
         }
+
+        // Non-numeric: assume a Product model instance or slug (future-proof)
+        return $this->showProduct($productOrInventoryId);
     }
 
     /**

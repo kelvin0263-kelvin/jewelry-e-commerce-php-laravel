@@ -31,14 +31,14 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('chat-send', function (Request $request) {
             $key = 'chat-send:' . ($request->user()?->id ?? 'guest') . '|' . $request->ip();
             return [
-                Limit::perMinute(30)->by($key),
+                Limit::perMinute(15)->by($key),
             ];
         });
 
         RateLimiter::for('chat-start', function (Request $request) {
             $key = 'chat-start:' . ($request->user()?->id ?? 'guest') . '|' . $request->ip();
             return [
-                Limit::perMinute(5)->by($key),
+                Limit::perMinute(3)->by($key),
             ];
         });
 

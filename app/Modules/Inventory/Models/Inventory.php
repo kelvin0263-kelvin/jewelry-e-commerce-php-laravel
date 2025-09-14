@@ -125,11 +125,14 @@ class Inventory extends Model
      * ========================= */
     public function createInventoryItem(array $variation = [])
     {
+        // Merge variation data with inventory data, giving priority to variation data
+        $data = array_merge($this->toArray(), $variation);
+        
         return \App\Modules\Inventory\Factories\InventoryItemFactory::create(
             $this->type,
             $variation['material'] ?? 'Unknown',
             $variation['price'] ?? $this->price ?? 0,
-            $this->toArray() // Pass all inventory data including type-specific fields
+            $data // Pass merged data with variation taking priority
         );
     }
 

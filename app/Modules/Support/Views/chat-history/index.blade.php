@@ -163,10 +163,11 @@
                                 View all conversations
                             </a>
                         @else
-                            <a href="{{ route('dashboard') }}" 
+                            <button type="button"
+                               onclick="if (typeof window.startLiveChat === 'function') { window.startLiveChat(); } else { try { startLiveChat(); } catch(e) { console.warn('Chat widget not ready'); } }"
                                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
                                 Start a new chat
-                            </a>
+                            </button>
                         @endif
                     </div>
                 </div>

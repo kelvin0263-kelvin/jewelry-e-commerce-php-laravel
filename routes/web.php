@@ -65,8 +65,7 @@ Route::view('/privacy-policy', 'privacy')->name('privacy');
 // Product catalog (read-only for customers)
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{productOrInventoryId}', [ProductController::class, 'show'])->name('products.show');
-Route::get('/api/products/sku-details', [ProductController::class, 'getSkuDetails'])->name('products.sku-details');
-Route::get('/api/products/check-published/{inventoryId}', [ProductController::class, 'checkPublished'])->name('products.check-published');
+// Moved to module API routes: app/Modules/Product/Routes/api.php
 
 // Product actions for customers (auth required)
 Route::middleware('auth')->group(function () {
@@ -122,19 +121,14 @@ Route::middleware('auth')->group(function () {
 
     // Ticketing
     Route::resource('tickets', TicketController::class)
-        ->except(['edit', 'update', 'destroy'])
-        ->middleware('throttle:ticket-post');
+        ->except(['edit', 'update', 'destroy']);
     Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])
-        ->middleware('throttle:ticket-post')
         ->name('tickets.reply');
     Route::patch('tickets/{ticket}/rate', [TicketController::class, 'rate'])
-        ->middleware('throttle:ticket-post')
         ->name('tickets.rate');
     Route::patch('tickets/{ticket}/close', [TicketController::class, 'close'])
-        ->middleware('throttle:ticket-post')
         ->name('tickets.close');
     Route::patch('tickets/{ticket}/reopen', [TicketController::class, 'reopen'])
-        ->middleware('throttle:ticket-post')
         ->name('tickets.reopen');
     Route::get('tickets/download/attachment', [TicketController::class, 'downloadAttachment'])->name('tickets.download');
 });
