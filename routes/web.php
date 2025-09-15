@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 // Public controllers
 use App\Modules\Product\Controllers\ProductController;
@@ -417,3 +418,26 @@ Route::middleware('auth')->group(function () {
 //RegisterAdmin
 Route::get('/admin/register', [RegisterAdminController::class, 'createAdmin'])->name('admin.register.form');
 Route::post('/admin/register', [RegisterAdminController::class, 'storeAdmin'])->name('admin.register');
+
+
+// Serve public disk media without requiring a public/storage symlink
+Route::get('/media/{path}', function (string $path) {
+    $path = ltrim($path, '/');
+
+    // Basic hardening: prevent traversal and limit to expected folder
+    if (str_contains($path, '..')) {
+        abort(403);
+    }
+
+    // Optionally restrict to product images only
+    if (!str_starts_with($path, 'products/')) {
+        abort(403);
+    }
+
+    if (!Storage::disk('public')->exists($path)) {
+        abort(404);
+    }
+
+    // Stream the file with correct headers
+    return Storage::disk('public')->response($path);
+})->where('path', '.*')->name('media');

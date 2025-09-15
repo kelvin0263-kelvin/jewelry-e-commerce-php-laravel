@@ -49,12 +49,12 @@ class CustomerProductDecorator extends BaseProductDecorator
 
             // Only display if the file exists on the public disk
             if (Storage::disk('public')->exists($path)) {
-                // Use a relative asset URL to avoid APP_URL port mismatches
-                return asset('storage/' . $path);
+                // Serve via media endpoint to avoid symlink issues
+                return '/media/' . ltrim($path, '/\\');
             }
         }
 
-        return asset('/img/default-product.jpg');
+        return '/img/default-product.jpg';
     }
 
     private function getGalleryImages(): array
@@ -77,14 +77,15 @@ class CustomerProductDecorator extends BaseProductDecorator
             }
 
             if (Storage::disk('public')->exists($path)) {
-                $urls[] = asset('storage/' . $path);
+                $urls[] = '/media/' . ltrim($path, '/\\');
             } else {
-                $urls[] = asset('/img/default-product.jpg');
+                $urls[] = '/img/default-product.jpg';
             }
         }
 
         return $urls;
     }
+
 
     private function getRating(): float
     {

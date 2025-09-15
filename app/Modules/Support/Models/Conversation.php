@@ -13,12 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Conversation extends Model
 {
-     /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-
+ 
      use HasFactory;
     protected $fillable = [
         'user_id',
