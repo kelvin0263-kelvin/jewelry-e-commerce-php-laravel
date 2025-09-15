@@ -177,6 +177,20 @@ class SelfServiceController extends Controller
                         $inventory = Inventory::find($relatedInventoryId);
                         $totalStock = (int) ($inventory->total_stock ?? 0);
 
+                        // Resolve product URL using inventory -> first published product
+                        $firstPublishedProductId = null;
+                        if ($published && $inventory) {
+                            $firstPublishedProductId = optional(
+                                $inventory->variations()
+                                    ->whereHas('product', function ($query) {
+                                        $query->where('is_visible', true)
+                                              ->whereNotNull('published_at');
+                                    })
+                                    ->with('product')
+                                    ->first()
+                            )->product->id ?? null;
+                        }
+
                         $results[] = [
                             'product_id' => $product->id,
                             'name' => $product->name,
@@ -184,7 +198,7 @@ class SelfServiceController extends Controller
                             'published' => $published,
                             'available' => $published && $totalStock > 0,
                             'total_stock' => $totalStock,
-                            'url' => $published ? route('products.show', $relatedInventoryId) : null,
+                            'url' => ($published && $firstPublishedProductId) ? route('products.show', $firstPublishedProductId) : null,
                         ];
                     } else {
                         // Internal availability using inventory stock and published variations
@@ -199,6 +213,20 @@ class SelfServiceController extends Controller
                         $totalStock = (int) ($inventory->total_stock ?? 0);
                         $available = $publishedVariations && $totalStock > 0;
 
+                        // Resolve first published product for this inventory to build correct URL
+                        $firstPublishedProductId = null;
+                        if ($publishedVariations && $inventory) {
+                            $firstPublishedProductId = optional(
+                                $inventory->variations()
+                                    ->whereHas('product', function ($query) {
+                                        $query->where('is_visible', true)
+                                              ->whereNotNull('published_at');
+                                    })
+                                    ->with('product')
+                                    ->first()
+                            )->product->id ?? null;
+                        }
+
                         $results[] = [
                             'product_id' => $product->id,
                             'name' => $product->name,
@@ -206,7 +234,7 @@ class SelfServiceController extends Controller
                             'published' => $publishedVariations,
                             'available' => $available,
                             'total_stock' => $totalStock,
-                            'url' => $publishedVariations ? route('products.show', $relatedInventoryId) : null,
+                            'url' => $firstPublishedProductId ? route('products.show', $firstPublishedProductId) : null,
                         ];
                     }
                 }
@@ -230,12 +258,36 @@ class SelfServiceController extends Controller
                     $published = (bool) ($response->json('published') ?? false);
                     $url = $response->json('url');
 
+                    // Fallback: resolve product ID from inventory when API URL is missing
+                    $firstPublishedProductId = null;
+                    $totalStock = null;
+                    if ($published) {
+                        $inventory = Inventory::with(['variations.product'])->find($inventoryId);
+                        if ($inventory) {
+                            $totalStock = (int) ($inventory->total_stock ?? 0);
+                            $firstPublishedProductId = optional(
+                                $inventory->variations()
+                                    ->whereHas('product', function ($query) {
+                                        $query->where('is_visible', true)
+                                              ->whereNotNull('published_at');
+                                    })
+                                    ->with('product')
+                                    ->first()
+                            )->product->id ?? null;
+                            if (!$url && $firstPublishedProductId) {
+                                $url = route('products.show', $firstPublishedProductId);
+                            }
+                        }
+                    }
+
                     return response()->json([
                         'success' => true,
                         'data' => [[
                             'inventory_id' => $inventoryId,
                             'published' => $published,
                             'available' => $published,
+                            'total_stock' => $totalStock,
+                            'product_id' => $firstPublishedProductId,
                             'url' => $url,
                         ]],
                     ]);
@@ -252,6 +304,20 @@ class SelfServiceController extends Controller
                 $totalStock = (int) ($inventory->total_stock ?? 0);
                 $available = $publishedVariations && $totalStock > 0;
 
+                // Resolve first published product for this inventory to build correct URL
+                $firstPublishedProductId = null;
+                if ($publishedVariations) {
+                    $firstPublishedProductId = optional(
+                        $inventory->variations()
+                            ->whereHas('product', function ($query) {
+                                $query->where('is_visible', true)
+                                      ->whereNotNull('published_at');
+                            })
+                            ->with('product')
+                            ->first()
+                    )->product->id ?? null;
+                }
+
                 return response()->json([
                     'success' => true,
                     'data' => [[
@@ -259,7 +325,8 @@ class SelfServiceController extends Controller
                         'published' => $publishedVariations,
                         'available' => $available,
                         'total_stock' => $totalStock,
-                        'url' => $publishedVariations ? route('products.show', $inventoryId) : null,
+                        'product_id' => $firstPublishedProductId,
+                        'url' => $firstPublishedProductId ? route('products.show', $firstPublishedProductId) : null,
                     ]],
                 ]);
             }
