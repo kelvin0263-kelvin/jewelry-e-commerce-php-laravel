@@ -253,8 +253,10 @@
                                     </div>
                                     <div>
                                         <label class="block font-medium">Stock</label>
-                                        <input type="number" name="variations[{{ $index }}][stock]"
-                                            value="{{ $variation->stock }}" class="w-full border rounded p-2">
+                                        <input type="number" name="variations[{{ $index }}][stock]" value="{{ $variation->stock }}" min="0" class="w-full border rounded p-2">
+                                        @error('variations.'.$index.'.stock')
+                                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                                        @enderror
                                     </div>
                                 </div>
 
@@ -420,8 +422,7 @@
             </div>
             <div>
                 <label class="block font-medium">Stock</label>
-                <input type="number" name="variations[${index}][stock]" class="w-full border rounded p-2">
-            </div>
+            <input type="number" name="variations[${index}][stock]" value="1" min="0" class="w-full border rounded p-2">            </div>
         </div>
 
         <div class="mb-3">

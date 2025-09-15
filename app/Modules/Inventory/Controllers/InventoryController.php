@@ -76,7 +76,7 @@ class InventoryController extends Controller
             'variations.*.color' => 'nullable|string|max:50',
             'variations.*.size' => 'nullable|string|max:50',
             'variations.*.material' => 'nullable|string|max:100',
-            'variations.*.stock' => 'nullable|integer|min:0',
+            'variations.*.stock' => 'nullable|integer|min:0|max:9999999',
             'variations.*.price' => 'nullable|numeric|min:0',
             'variations.*.image_path' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
@@ -187,8 +187,8 @@ class InventoryController extends Controller
                     'color' => $variation['color'] ?? null,
                     'size' => $variation['size'] ?? null,
                     'material' => $variation['material'] ?? null,
-                    'stock' => $variation['stock'] ?? 0,
-                    'price' => $calculatedPrice,   // ✅ Use model calculation instead of request price
+                    'stock' => $variation['stock'] ?? 1,
+                    'price' => $calculatedPrice,   
                     'image_path' => $imagePath,
                     'properties' => [
                         'description' => $item->getDescription(),
@@ -199,7 +199,7 @@ class InventoryController extends Controller
                 ]);
             }
         }
-
+        $this->updateInventoryTotalStock($inventory);
         return redirect()->route('admin.inventory.index')
             ->with('success', 'Inventory created successfully');
     }
@@ -441,8 +441,8 @@ class InventoryController extends Controller
                     'color' => $variation['color'] ?? null,
                     'size' => $variation['size'] ?? null,
                     'material' => $variation['material'] ?? null,
-                    'stock' => $variation['stock'] ?? 0,
-                    'price' => $calculatedPrice,   // ✅ Use model calculation instead of request price
+                    'stock' => $variation['stock'] ?? 1,
+                    'price' => $calculatedPrice,   
                     'image_path' => $imagePath ?? ($variation['old_image'] ?? null),
                     'properties' => [
                         'description' => $item->getDescription(),
@@ -466,6 +466,7 @@ class InventoryController extends Controller
             }
         }
 
+        $this->updateInventoryTotalStock($inventory);
         return redirect()->route('admin.inventory.index')
             ->with('success', 'Inventory, Product, and Variations updated successfully');
     }
@@ -705,6 +706,17 @@ class InventoryController extends Controller
         return view('inventory::admin.inventory.list', compact('inventories'));
     }
 
+    // Added at the end of InventoryController.php
+    private function updateInventoryTotalStock($inventory)
+    {
+        $totalStock = $inventory->variations()->sum('stock');
+        $inventory->update(['quantity' => $totalStock]);
+        
+        Log::info('Updated inventory total stock', [
+            'inventory_id' => $inventory->id,
+            'total_stock' => $totalStock,
+            'variations_count' => $inventory->variations()->count()]);
+    }
 
 
 }

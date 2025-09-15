@@ -222,7 +222,7 @@ class InventoryApiController extends Controller
                     'color' => $var['color'] ?? null,
                     'size' => $var['size'] ?? null,
                     'material' => $var['material'] ?? null,
-                    'stock' => $var['stock'] ?? 0,
+                    'stock' => $var['stock'] ?? 1,
                     'price' => $item->calculateValue(),
                     'properties' => [
                         'description' => $item->getDescription(),

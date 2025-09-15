@@ -285,7 +285,7 @@
                                     @if(old('type', $inventory->type ?? '') == 'RingItem') readonly @endif>
 
 
-                                <input type="number" name="variations[0][stock]" placeholder="Stock" class="input-field">
+                                <input type="number" name="variations[0][stock]" placeholder="Stock" value="1" min="1" class="input-field">
                                 <input type="number" step="0.01" name="variations[0][price]"
                                     class="input-field bg-gray-100 cursor-not-allowed" readonly
                                     placeholder="Auto-calculated">

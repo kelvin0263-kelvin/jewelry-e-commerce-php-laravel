@@ -169,4 +169,11 @@ class Inventory extends Model
     {
         return self::$typePriceRange[$this->type] ?? '0';
     }
+
+    public function updateTotalStock()
+    {
+        $totalStock = $this->variations()->sum('stock');
+        $this->update(['quantity' => $totalStock]);
+        return $totalStock;
+    }
 }

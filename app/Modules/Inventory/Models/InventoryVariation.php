@@ -40,15 +40,30 @@ class InventoryVariation extends Model
     {
         return $this->hasOne(\App\Modules\Product\Models\Product::class, 'inventory_variation_id');
     }
-    
+
     //Booted model events
     protected static function booted()
     {
+        static::created(function ($variation) {
+            // Update inventory total stock when variation is created
+            $variation->inventory->updateTotalStock();
+        });
+
+        static::updated(function ($variation) {
+            // Update inventory total stock when variation is updated
+            $variation->inventory->updateTotalStock();
+        });
+
         static::deleting(function ($variation) {
             // Delete the product associated with this variation
             if ($variation->product) {
                 $variation->product->delete();
             }
+        });
+
+        static::deleted(function ($variation) {
+            // Update inventory total stock when variation is deleted
+            $variation->inventory->updateTotalStock();
         });
     }
 }
