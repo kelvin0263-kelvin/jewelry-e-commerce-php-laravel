@@ -1,3 +1,5 @@
+<!-- Author: Ng Yanding-->
+<!-- Date: 2025-09-15-->
 @extends('layouts.admin')
 
 @section('title', 'Inventory Dashboard')

@@ -1,5 +1,6 @@
 <?php
-
+// Author: Ng Yanding
+// Date: 2025-09-15
 namespace App\Modules\Inventory\Factories;
 
 use App\Modules\Inventory\Models\EarringsItem;

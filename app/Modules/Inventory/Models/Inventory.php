@@ -1,5 +1,6 @@
 <?php
-
+// Author: Ng Yanding
+// Date: 2025-09-15
 namespace App\Modules\Inventory\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
