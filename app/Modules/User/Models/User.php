@@ -1,4 +1,8 @@
 <?php
+/**
+ * Author: Miko Tan See Qian
+ * Date: 2025-09-15
+ */
 
 namespace App\Modules\User\Models;
 

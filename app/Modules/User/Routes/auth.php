@@ -1,4 +1,8 @@
 <?php
+/**
+ * Author: Miko Tan See Qian
+ * Date: 2025-09-15
+ */
 
 use App\Modules\User\Controllers\Auth\AuthenticatedSessionController;
 use App\Modules\User\Controllers\Auth\ConfirmablePasswordController;

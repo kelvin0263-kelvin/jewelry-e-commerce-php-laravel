@@ -1,8 +1,15 @@
+{{-- 
+Author: SIA XIAO HUI
+Date: 2025-09-15 
+--}}
+
 @extends('layouts.admin')
 
 @section('title', 'Create Product Information')
 
 @section('content')
+
+
     <!-- Header -->
     <div class="mb-6 flex items-start justify-between">
         <div>

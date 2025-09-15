@@ -1,3 +1,7 @@
+{{-- 
+Author: Miko Tan See Qian
+Date: 2025-09-15 
+--}}
 @extends('layouts.auth')
 @section('content')
     <div class="mb-4 text-sm text-gray-700">

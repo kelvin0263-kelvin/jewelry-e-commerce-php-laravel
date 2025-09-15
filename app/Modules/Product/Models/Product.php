@@ -1,4 +1,8 @@
 <?php
+/**
+ * Author: SIA XIAO HUI
+ * Date: 2025-09-15
+ */
 
 namespace App\Modules\Product\Models;
 
@@ -53,7 +57,7 @@ public function publisher()
     return $this->belongsTo(User::class, 'published_by');
 }
 
-// 关联下架者 (Admin user)
+
 public function issuer()
 {
     return $this->belongsTo(User::class, 'issued_by');
@@ -95,9 +99,6 @@ public static function forCustomers()
     return self::whereHas('inventory', fn($q) => $q->where('status', 'published'));
 }
 
-/** =========================
- * Booted model events
- * ========================= */
 protected static function booted()
 {
     static::deleting(function ($product) {

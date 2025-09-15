@@ -1,5 +1,10 @@
 @extends('layouts.app')
 
+<!-- 
+ * Author: LEE KAI FONG
+ * Date: 2025-09-15
+-->
+
 @section('content')
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-10">

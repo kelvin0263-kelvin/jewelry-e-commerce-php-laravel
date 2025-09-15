@@ -1,4 +1,8 @@
 <?php
+/**
+ * Author: SIA XIAO HUI
+ * Date: 2025-09-15
+ */
 
 namespace App\Modules\Product\Controllers;
 
@@ -73,7 +77,7 @@ class ProductManagementController extends Controller
                            $this->searchInVariations($inventory->variations, $sanitizedSearch);
                 });
                 
-                // 记录Inventory搜索活动
+                
                 $this->logSecurityEvent('Inventory search performed', [
                     'search_term' => $sanitizedSearch,
                     'original_term' => $request->search

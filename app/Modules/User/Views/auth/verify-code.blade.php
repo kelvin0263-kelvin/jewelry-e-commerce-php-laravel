@@ -1,3 +1,7 @@
+{{-- 
+Author: Miko Tan See Qian
+Date: 2025-09-15 
+--}}
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 

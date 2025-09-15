@@ -1,3 +1,8 @@
+{{-- 
+Author: SIA XIAO HUI
+Date: 2025-09-15 
+--}}
+
 @extends('layouts.app')
 
 @section('title', 'Products')

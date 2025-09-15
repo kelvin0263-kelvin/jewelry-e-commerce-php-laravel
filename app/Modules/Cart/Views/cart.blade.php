@@ -1,7 +1,10 @@
 @extends('layouts.app')
 
 @section('title', 'My Shopping Bag')
-
+<!--
+ * Author: LEE KAI FONG
+ * Date: 2025-09-15
+-->
 
 @section('content')
     @if ($errors->any())

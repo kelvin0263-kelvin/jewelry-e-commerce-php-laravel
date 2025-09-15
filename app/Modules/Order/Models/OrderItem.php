@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Author: LEE KAI FONG
+ * Date: 2025-09-15
+ */
 namespace App\Modules\Order\Models;
 use App\Modules\Product\Models\Product;
 

@@ -2,6 +2,11 @@
 
 @section('title', 'Checkout')
 
+<!--
+ * Author: LEE KAI FONG
+ * Date: 2025-09-15
+-->
+
 @section('content')
     <div class="py-12">
         <div class="max-w-4xl mx-auto px-6 lg:px-8">

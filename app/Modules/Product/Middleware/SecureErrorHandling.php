@@ -1,4 +1,8 @@
 <?php
+/**
+ * Author: SIA XIAO HUI
+ * Date: 2025-09-15
+ */
 
 namespace App\Modules\Product\Middleware;
 
@@ -26,15 +30,15 @@ class SecureErrorHandling
      */
     private function handleException(\Exception $e, Request $request): Response
     {
-        // 记录详细错误信息到日志
+        
         $this->logError($e, $request);
 
-        // 根据环境返回适当的错误响应
+        
         if (config('app.debug')) {
-            // 开发环境：显示详细错误信息
+            
             return $this->getDebugResponse($e);
         } else {
-            // 生产环境：隐藏敏感信息
+            
             return $this->getProductionResponse($e);
         }
     }
@@ -58,7 +62,7 @@ class SecureErrorHandling
             'session_id' => session()->getId()
         ];
 
-        // 根据错误类型选择日志级别
+        
         if ($e instanceof \Illuminate\Database\QueryException) {
             Log::error('Product Module Database Error', $errorData);
         } elseif ($e instanceof \Illuminate\Validation\ValidationException) {
@@ -91,10 +95,10 @@ class SecureErrorHandling
      */
     private function getProductionResponse(\Exception $e): Response
     {
-        // 过滤敏感信息
+        
         $safeMessage = $this->filterSensitiveInfo($e->getMessage());
         
-        // 根据错误类型返回适当的用户友好消息
+        
         if ($e instanceof \Illuminate\Database\QueryException) {
             $message = 'A database error occurred. Please try again later.';
         } elseif ($e instanceof \Illuminate\Validation\ValidationException) {
@@ -110,7 +114,7 @@ class SecureErrorHandling
         return response()->json([
             'error' => true,
             'message' => $message,
-            'error_id' => uniqid('err_', true) // 用于追踪错误
+            'error_id' => uniqid('err_', true) 
         ], 500);
     }
 
@@ -119,13 +123,13 @@ class SecureErrorHandling
      */
     private function filterSensitiveInfo(string $message): string
     {
-        // 移除数据库连接信息
+        
         $message = preg_replace('/mysql:\/\/[^@]+@/', 'mysql://***:***@', $message);
         
-        // 移除文件路径信息
+        
         $message = preg_replace('/\/[^\s]+\.php/', '/***.php', $message);
         
-        // 移除敏感配置信息
+        
         $sensitivePatterns = [
             '/password[=:]\s*[^\s]+/i',
             '/secret[=:]\s*[^\s]+/i',

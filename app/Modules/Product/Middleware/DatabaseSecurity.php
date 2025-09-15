@@ -1,4 +1,8 @@
 <?php
+/**
+ * Author: SIA XIAO HUI
+ * Date: 2025-09-15
+ */
 
 namespace App\Modules\Product\Middleware;
 
@@ -15,18 +19,18 @@ class DatabaseSecurity
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // 启用数据库查询日志记录
+        
         DB::enableQueryLog();
         
         try {
             $response = $next($request);
             
-            // 记录查询日志
+            
             $this->logQueries($request);
             
             return $response;
         } catch (\Exception $e) {
-            // 记录数据库相关错误
+            
             $this->logDatabaseError($e, $request);
             throw $e;
         }
@@ -64,7 +68,7 @@ class DatabaseSecurity
         foreach ($queries as $query) {
             $sql = strtolower($query['query']);
             
-            // 检测SQL注入尝试
+            
             $injectionPatterns = [
                 '/union\s+select/i',
                 '/drop\s+table/i',
@@ -93,7 +97,7 @@ class DatabaseSecurity
                 }
             }
             
-            // 检测异常查询时间
+            
             if ($query['time'] > 5000) { // 超过5秒
                 $suspicious[] = [
                     'query' => $query['query'],
@@ -124,7 +128,7 @@ class DatabaseSecurity
             'queries' => DB::getQueryLog()
         ];
 
-        // 根据错误类型记录不同级别的日志
+        
         if ($e instanceof \Illuminate\Database\QueryException) {
             Log::error('Product Module Database Query Exception', $errorData);
         } elseif ($e instanceof \Illuminate\Database\ConnectionException) {
