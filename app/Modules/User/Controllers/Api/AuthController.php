@@ -24,7 +24,10 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $token,
-            'user' => $user
+            'user' => $user,
+            'redirect' => $user && (bool) data_get($user, 'is_admin')
+                ? route('admin.dashboard')
+                : route('home'),
         ]);
     }
 

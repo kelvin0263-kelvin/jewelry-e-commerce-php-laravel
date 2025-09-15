@@ -57,7 +57,7 @@ class SelfServiceController extends Controller
      */
     public function trackOrder(Request $request)
     {
-        // Accept numeric order ID (reuse 'order_number' key for compatibility)
+        
         $request->validate([
             'order_number' => ['required', 'integer'],
         ]);
@@ -67,7 +67,6 @@ class SelfServiceController extends Controller
             $useApi = filter_var($request->query('use_api', false), FILTER_VALIDATE_BOOLEAN);
 
             if ($useApi) {
-                // Consume existing REST API endpoint with current user's Sanctum token (if any)
                 if (!Auth::check()) {
                     throw new \Exception('Unauthorized to access order via API');
                 }
@@ -88,7 +87,7 @@ class SelfServiceController extends Controller
                 ]);
             }
 
-            // Internal consumption of the API controller; no direct Order model usage here
+            // Internal consumption of the API controller
             $controller = app(OrderApiController::class);
             $apiResponse = $controller->getTracking($orderId);
 

@@ -47,6 +47,9 @@ class UserApiController extends Controller
             'message' => 'Login successful',
             'user' => $user,
             'token' => $token,
+            'redirect' => $user && (bool) data_get($user, 'is_admin')
+                ? route('admin.dashboard')
+                : route('home'),
         ]);
     }
 

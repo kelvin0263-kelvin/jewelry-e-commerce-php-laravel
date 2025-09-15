@@ -32,11 +32,11 @@ class AuthenticatedSessionController extends Controller
 
         // If admin, send to admin dashboard
         if ($user && (bool) data_get($user, 'is_admin')) {
-            return redirect()->intended('/admin/dashboard');
+            return redirect()->intended(route('admin.dashboard'));
         }
 
         // Otherwise, send to home page
-        return redirect()->intended('/');
+        return redirect()->intended(route('home'));
     }
 
     /**
