@@ -578,7 +578,7 @@
 
 
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-    <script src="app1.js"></script>
+    {{-- <script src="app1.js"></script> --}}
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {

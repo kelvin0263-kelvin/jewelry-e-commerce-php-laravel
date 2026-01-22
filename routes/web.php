@@ -401,7 +401,7 @@ Route::post('verify-code', [PasswordResetLinkController::class, 'verifyCode'])
 Route::get('reset-password', [NewPasswordController::class, 'create'])
     ->name('password.reset');
 Route::post('reset-password', [NewPasswordController::class, 'store'])
-    ->name('password.update');
+    ->name('password.store');
 
 // Optional: custom update (if you want separate form handler)
 Route::post('reset-password/custom', [NewPasswordController::class, 'customUpdate'])
