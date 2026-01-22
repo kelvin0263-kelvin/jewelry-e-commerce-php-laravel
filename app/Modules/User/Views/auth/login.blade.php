@@ -19,9 +19,19 @@ Date: 2025-09-15
             </p>
 
             {{-- Status Message --}}
-            <div id="login-status"></div>
+            @if ($errors->any())
+                <div class="p-3 mb-3 text-sm text-red-800 bg-red-100 rounded-lg">
+                    {{ $errors->first() }}
+                </div>
+            @endif
 
-            <form id="login-form" class="space-y-6" novalidate>
+            @if (session('status'))
+                <div class="p-3 mb-3 text-sm text-green-800 bg-green-100 rounded-lg">
+                    {{ session('status') }}
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('login') }}" class="space-y-6">
                 @csrf
 
                 {{-- Email --}}
@@ -75,90 +85,12 @@ Date: 2025-09-15
 
             {{-- Footer --}}
             <p class="mt-8 text-center text-sm text-gray-600">
-                Don’t have an account?
+                Don't have an account?
                 <a href="{{ route('register') }}" class="font-medium text-black hover:underline">
                     Register Now!
                 </a>
             </p>
         </div>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const loginForm = document.getElementById('login-form');
-            const loginStatus = document.getElementById('login-status');
-
-            const externalApi = "http://127.0.0.1:8000/api/login"; // external first
-            const internalApi = "/api/login"; // fallback
-
-            loginForm.addEventListener('submit', function (e) {
-                e.preventDefault();
-
-                const formData = {
-                    email: document.getElementById('email').value,
-                    password: document.getElementById('password').value,
-                    remember: document.getElementById('remember_me').checked,
-                };
-
-                loginStatus.innerHTML = `<div class="p-3 mb-3 text-sm text-gray-600 bg-gray-100 rounded-lg">⏳ Logging in...</div>`;
-
-                // Try external API first
-                fetch(externalApi, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    },
-                    body: JSON.stringify(formData),
-                })
-                    .then(res => {
-                        if (!res.ok) throw new Error("External login failed");
-                        return res.json();
-                    })
-                    .then(response => {
-                        loginStatus.innerHTML = `<div class="p-3 mb-3 text-sm text-green-800 bg-green-100 rounded-lg">✅ ${response.message || 'Login successful!'}</div>`;
-                        console.log("External login success:", response);
-                        // redirect after login based on role
-                        const redirectUrl = (response && response.redirect)
-                            ? response.redirect
-                            : ((response && response.user && response.user.is_admin)
-                                ? "{{ route('admin.dashboard') }}"
-                                : "{{ route('home') }}");
-                        window.location.href = redirectUrl || "{{ route('home') }}";
-                    })
-                    .catch(err => {
-                        loginStatus.innerHTML = `<div class="p-3 mb-3 text-sm text-yellow-800 bg-yellow-50 rounded-lg">⚠️ External login failed, trying internal...</div>`;
-                        console.warn("External failed:", err.message);
-
-                        // Try internal API
-                        fetch(internalApi, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            },
-                            body: JSON.stringify(formData),
-                        })
-                            .then(res => {
-                                if (!res.ok) throw new Error("Internal login failed");
-                                return res.json();
-                            })
-                            .then(response => {
-                                loginStatus.innerHTML = `<div class="p-3 mb-3 text-sm text-green-800 bg-green-100 rounded-lg">✅ ${response.message || 'Login successful!'}</div>`;
-                                console.log("Internal login success:", response);
-                                const redirectUrl = (response && response.redirect)
-                                    ? response.redirect
-                                    : ((response && response.user && response.user.is_admin)
-                                        ? "{{ route('admin.dashboard') }}"
-                                        : "{{ route('home') }}");
-                                window.location.href = redirectUrl || "{{ route('home') }}";
-                            })
-                            .catch(err2 => {
-                                loginStatus.innerHTML = `<div class="p-3 mb-3 text-sm text-red-800 bg-red-100 rounded-lg">❌ Login failed: ${err2.message}</div>`;
-                                console.error("Both logins failed:", err2);
-                            });
-                    });
-            });
-        });
-    </script>
 @endsection
+
