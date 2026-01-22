@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use App\Modules\User\Services\UserService;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -55,6 +56,10 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinute(120)->by($key),
             ];
         });
+
+        if (app()->environment('production')) {
+        URL::forceScheme('https');
+        }
     }
 
 
