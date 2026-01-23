@@ -114,7 +114,16 @@ class Ticket extends Model
 
     public function scopeByPriority($query)
     {
-        return $query->orderByRaw("FIELD(priority, 'urgent', 'high', 'normal', 'low')");
+        // Use portable CASE expression instead of MySQL-specific FIELD()
+        return $query->orderByRaw("
+            CASE priority
+                WHEN 'urgent' THEN 1
+                WHEN 'high' THEN 2
+                WHEN 'normal' THEN 3
+                WHEN 'low' THEN 4
+                ELSE 5
+            END
+        ");
     }
 
     public function scopeUnassigned($query)
