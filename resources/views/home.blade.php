@@ -31,61 +31,112 @@
         </symbol>
     </svg>
 
-    <header id="mainNav" class="fixed top-0 left-0 w-full z-50 transition-colors duration-300 ease-in-out bg-white">
-
+    <header id="mainNav"
+        class="fixed top-0 left-0 w-full z-50 transition-colors duration-300 ease-in-out bg-transparent">
         <div class="max-w-7xl mx-auto flex flex-col items-center relative">
-            {{-- Logo --}}
-            <div class="py-4">
-                <a id="logoText" href="{{ url('/') }}"
-                    class="text-3xl font-serif tracking-widest transition-colors duration-300 text-white inline-block relative px-2 pb-1 after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black after:transition-all after:duration-300 hover:after:w-full">
-                    TIFFANY REPLICA
-                </a>
+            {{-- Logo + mobile top bar --}}
+            <div
+                class="w-full items-center px-4 sm:px-6 py-4 md:py-6 gap-4 grid grid-cols-[auto_1fr_auto] md:flex md:justify-center">
+                <div class="flex items-center md:hidden">
+                    <button id="mobileMenuButton"
+                        class="p-2 rounded-md border border-white/60 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 transition"
+                        aria-label="Open navigation menu">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                            aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
 
+                <div class="flex justify-center md:justify-center">
+                    <a id="logoText" href="{{ url('/') }}"
+                        class="text-2xl sm:text-3xl font-serif tracking-widest transition-colors duration-300 text-white inline-block relative px-2 pb-1 after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black after:transition-all after:duration-300 hover:after:w-full">
+                        TIFFANY REPLICA
+                    </a>
+                </div>
+
+                @php
+                    // Derive cart count for the authenticated user (supports both implementations)
+                    $cartCount = 0;
+                    try {
+                        $cartCount += \App\Modules\Cart\Models\CartItem::where('user_id', auth()->id())->sum('quantity');
+                    } catch (\Throwable $e) {
+                    }
+                @endphp
+
+                {{-- Mobile quick actions --}}
+                <div class="flex items-center justify-end space-x-2 md:hidden">
+                    <a id="mobileWishlist" href="{{ route('wishlist.index') }}" aria-label="Wishlist"
+                        class="inline-flex items-center p-2 text-white hover:text-white/90 transition">
+                        <svg class="h-5 w-5 fill-current" aria-hidden="true" focusable="false">
+                            <use href="#icon-heart"></use>
+                        </svg>
+                    </a>
+                    <a id="mobileBag" href="{{ route('cart.index') }}" aria-label="Shopping Bag"
+                        class="inline-flex items-center p-2 text-white hover:text-white/90 transition relative">
+                        <svg class="h-5 w-5 fill-current" aria-hidden="true" focusable="false">
+                            <use href="#icon-bag"></use>
+                        </svg>
+                        @if (($cartCount ?? 0) > 0)
+                            <span
+                                class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-400 text-white text-[10px] leading-4 text-center">
+                                {{ $cartCount }}
+                            </span>
+                        @endif
+                    </a>
+                    @guest
+                        <a id="mobileAccount" href="{{ route('login') }}" aria-label="Account"
+                            class="inline-flex items-center p-2 text-white hover:text-white/90 transition">
+                            <svg class="h-5 w-5 fill-current" aria-hidden="true" focusable="false">
+                                <use href="#icon-account"></use>
+                            </svg>
+                        </a>
+                    @endguest
+                    @auth
+                        <a id="mobileAccount" href="{{ route('profile.show') }}" aria-label="Account"
+                            class="inline-flex items-center p-2 text-white hover:text-white/90 transition">
+                            <svg class="h-5 w-5 fill-current" aria-hidden="true" focusable="false">
+                                <use href="#icon-account"></use>
+                            </svg>
+                        </a>
+                    @endauth
+                </div>
             </div>
 
-            {{-- Navigation Row --}}
-            <div class="w-full relative grid grid-cols-3 items-center">
+            {{-- Navigation Row (desktop) --}}
+            <div class="w-full relative hidden md:grid grid-cols-3 items-center">
                 <div class="w-20 justify-self-start flex items-center">
-                     @php
-                        // Derive cart count for the authenticated user (supports both implementations)
-                        $cartCount = 0;
-                        try {
-                            $cartCount += \App\Modules\Cart\Models\CartItem::where('user_id', auth()->id())->sum(
-                                'quantity',
-                            );
-                        } catch (\Throwable $e) {
-                        }
-                    @endphp
-                        <a id="wishlistLink" href="{{ route('wishlist.index') }}" aria-label="Wishlist"
-                            class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
+                    <a id="wishlistLink" href="{{ route('wishlist.index') }}" aria-label="Wishlist"
+                        class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
                             text-white after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
                             after:transition-all after:duration-300 hover:after:w-full 
                             focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
-                            <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
-                                aria-hidden="true" focusable="false">
-                                <use href="#icon-heart"></use>
-                            </svg>
-                        </a>
-                        <a id="bagLink" href="{{ route('cart.index') }}" aria-label="Shopping Bag"
-                            class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
+                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                            aria-hidden="true" focusable="false">
+                            <use href="#icon-heart"></use>
+                        </svg>
+                    </a>
+                    <a id="bagLink" href="{{ route('cart.index') }}" aria-label="Shopping Bag"
+                        class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
                        text-white after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
                        after:transition-all after:duration-300 hover:after:w-full 
                        focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
-                            <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
-                                aria-hidden="true" focusable="false">
-                                <use href="#icon-bag"></use>
-                            </svg>
-                            @if (($cartCount ?? 0) > 0)
-                                <span
-                                    class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-400 text-white text-[10px] leading-4 text-center">
-                                    {{ $cartCount }}
-                                </span>
-                            @endif
-                        </a>
+                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                            aria-hidden="true" focusable="false">
+                            <use href="#icon-bag"></use>
+                        </svg>
+                        @if (($cartCount ?? 0) > 0)
+                            <span
+                                class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-400 text-white text-[10px] leading-4 text-center">
+                                {{ $cartCount }}
+                            </span>
+                        @endif
+                    </a>
                 </div>
 
                 {{-- Main Navigation --}}
-                <ul id="navLinks" class="relative flex space-x-10 text-sm font-medium text-white transition-colors duration-300 justify-self-center whitespace-nowrap">
+                <ul id="navLinks"
+                    class="relative flex space-x-10 text-sm font-medium text-white transition-colors duration-300 justify-self-center whitespace-nowrap">
 
                     <li class="group relative">
                         <a href="{{ route('home') }}"
@@ -108,7 +159,7 @@
 
                         {{-- Full-width dropdown (fixed to viewport) --}}
                         <div class="fixed inset-x-0 hidden bg-white shadow-xl border-t border-gray-200 group-hover:block animate-fadeSlide z-40 pt-10 pb-12 mt-[10px]"
-                            style="top: var(--navH, 86px); min-height: calc(100vh - var(--navH, 86px));">
+                            style="top: var(--navH, 100px); min-height: calc(100vh - var(--navH, 86px));">
 
                             {{-- Inner container keeps content centered --}}
                             <div class="max-w-7xl mx-auto px-8 py-10">
@@ -239,7 +290,7 @@
                     </li>
 
                     <li class="group relative">
-                        <a  href="{{ route('faq.index') }}"
+                        <a href="{{ route('faq.index') }}"
                             class="inline-block px-2 pb-3 relative transition
                             after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
                             after:transition-all after:duration-300 group-hover:after:w-full">
@@ -248,7 +299,7 @@
 
                         {{-- Full-width dropdown (like Products) --}}
                         <div class="fixed inset-x-0 hidden bg-white shadow-xl border-t border-gray-200 group-hover:block animate-fadeSlide z-40 pt-10 pb-12 mt-[10px]"
-                            style="top: var(--navH, 86px); min-height: calc(100vh - var(--navH, 86px));">
+                            style="top: var(--navH, 100px); min-height: calc(100vh - var(--navH, 86px));">
 
                             {{-- Inner container keeps content centered --}}
                             <div class="max-w-7xl mx-auto px-8 py-10">
@@ -321,20 +372,20 @@
                 </ul>
 
                 @guest
-                <div class="w-28 flex items-center justify-end space-x-3 justify-self-end">
-                    <a id="customerTrigger" href="{{ route('login') }}" aria-label="Account"
-                        class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
+                    <div class="w-28 flex items-center justify-end space-x-3 justify-self-end">
+                        <a id="customerTrigger" href="{{ route('login') }}" aria-label="Account"
+                            class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
                   text-white after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
                   after:transition-all after:duration-300 hover:after:w-full 
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 rounded-sm">
 
-                        <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
-                            aria-hidden="true" focusable="false">
-                            <use href="#icon-account"></use>
-                        </svg>
-                    </a>
-                </div>
-            @endguest
+                            <svg class="h-5 w-5 transition-transform duration-200 will-change-transform fill-current"
+                                aria-hidden="true" focusable="false">
+                                <use href="#icon-account"></use>
+                            </svg>
+                        </a>
+                    </div>
+                @endguest
 
 
                 @auth
@@ -376,12 +427,65 @@
                 @endauth
             </div>
         </div>
+
+        {{-- Mobile slide-out --}}
+        <div id="mobileDrawer"
+            class="fixed inset-0 z-50 md:hidden pointer-events-none opacity-0 transition-opacity duration-200">
+            <button id="mobileOverlay" class="absolute inset-0 bg-black/50"></button>
+            <div id="mobileDrawerPanel"
+                class="absolute right-0 top-0 h-full w-80 max-w-[80vw] bg-white shadow-2xl p-6 overflow-y-auto transform translate-x-full transition-transform duration-200">
+                <div class="flex items-center justify-between mb-6">
+                    <span class="text-lg font-semibold text-gray-900">Menu</span>
+                    <button id="mobileCloseButton" type="button"
+                        class="p-2 rounded-md border border-gray-200 text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
+                        aria-label="Close navigation menu">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                            aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <nav class="space-y-4 text-gray-800">
+                    <a href="{{ route('home') }}" class="block text-base font-medium hover:text-black">Home</a>
+                    <a href="{{ route('products.index') }}" class="block text-base font-medium hover:text-black">Products</a>
+                    <a href="{{ route('aboutus') }}" class="block text-base font-medium hover:text-black">About Us</a>
+                    <a href="{{ route('faq.index') }}" class="block text-base font-medium hover:text-black">Support</a>
+
+                    <div class="pt-4 mt-4 border-t border-gray-200 space-y-3">
+                        <a href="{{ route('wishlist.index') }}" class="flex items-center justify-between">
+                            <span>Wishlist</span>
+                        </a>
+                        <a href="{{ route('cart.index') }}" class="flex items-center justify-between">
+                            <span>Cart</span>
+                            @if (($cartCount ?? 0) > 0)
+                                <span
+                                    class="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-teal-500 text-white text-xs px-2">
+                                    {{ $cartCount }}
+                                </span>
+                            @endif
+                        </a>
+
+                        @auth
+                            <a href="{{ route('profile.show') }}" class="block">Profile</a>
+                            <a href="{{ route('orders.index') }}" class="block">Orders</a>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="block w-full text-left text-red-600">Log Out</button>
+                            </form>
+                        @else
+                            <a href="{{ route('login') }}" class="block">Login / Account</a>
+                        @endauth
+                    </div>
+                </nav>
+            </div>
+        </div>
     </header>
 
 
 
     <div class="homepage-container-1" id="homepage">
-        <div class="homepage-container-1-1">
+        <div class="homepage-container-1-1 hidden md:block">
             <br>
             <h1>Enchanting time with the métiers d'art</h1>
             <p>Craftsmen breathe life into a story.
@@ -588,6 +692,14 @@
             const customer = document.getElementById("customerTrigger");
             const bag = document.getElementById("bagLink");
             const wishlist = document.getElementById("wishlistLink");
+            const mobileMenuButton = document.getElementById("mobileMenuButton");
+            const mobileWishlist = document.getElementById("mobileWishlist");
+            const mobileBag = document.getElementById("mobileBag");
+            const mobileAccount = document.getElementById("mobileAccount");
+            const mobileDrawer = document.getElementById("mobileDrawer");
+            const mobileDrawerPanel = document.getElementById("mobileDrawerPanel");
+            const mobileOverlay = document.getElementById("mobileOverlay");
+            const mobileCloseButton = document.getElementById("mobileCloseButton");
 
             function setSolid() {
                 nav?.classList.add("bg-white", "shadow-md");
@@ -605,6 +717,13 @@
                 bag?.classList.remove("text-white");
                 wishlist?.classList.add("text-gray-800");
                 wishlist?.classList.remove("text-white");
+
+                mobileMenuButton?.classList.add("border-gray-200", "text-gray-800");
+                mobileMenuButton?.classList.remove("border-white/60", "text-white");
+                [mobileWishlist, mobileBag, mobileAccount].forEach((el) => {
+                    el?.classList.add("text-gray-800");
+                    el?.classList.remove("text-white");
+                });
             }
 
             function setTransparent() {
@@ -623,6 +742,13 @@
                 bag?.classList.remove("text-gray-800");
                 wishlist?.classList.add("text-white");
                 wishlist?.classList.remove("text-gray-800");
+
+                mobileMenuButton?.classList.add("border-white/60", "text-white");
+                mobileMenuButton?.classList.remove("border-gray-200", "text-gray-800");
+                [mobileWishlist, mobileBag, mobileAccount].forEach((el) => {
+                    el?.classList.add("text-white");
+                    el?.classList.remove("text-gray-800");
+                });
             }
 
             function handleScroll() {
@@ -640,11 +766,34 @@
             handleScroll();
 
             // 🔹 Hover entire nav bar
-            nav.addEventListener("mouseenter", setSolid);
-            nav.addEventListener("mouseleave", () => {
+            nav?.addEventListener("mouseenter", setSolid);
+            nav?.addEventListener("mouseleave", () => {
                 if (window.scrollY <= 50) {
                     setTransparent();
                 }
+            });
+
+            // Mobile drawer controls
+            function openMobileMenu() {
+                if (!mobileDrawer || !mobileDrawerPanel) return;
+                mobileDrawer.classList.remove("pointer-events-none", "opacity-0");
+                mobileDrawer.classList.add("opacity-100");
+                requestAnimationFrame(() => mobileDrawerPanel.classList.remove("translate-x-full"));
+            }
+
+            function closeMobileMenu() {
+                if (!mobileDrawer || !mobileDrawerPanel) return;
+                mobileDrawerPanel.classList.add("translate-x-full");
+                mobileDrawer.classList.add("opacity-0");
+                mobileDrawer.classList.remove("opacity-100");
+                setTimeout(() => mobileDrawer.classList.add("pointer-events-none"), 200);
+            }
+
+            mobileMenuButton?.addEventListener("click", openMobileMenu);
+            mobileCloseButton?.addEventListener("click", closeMobileMenu);
+            mobileOverlay?.addEventListener("click", closeMobileMenu);
+            document.addEventListener("keyup", (e) => {
+                if (e.key === "Escape") closeMobileMenu();
             });
         });
     </script>

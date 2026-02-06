@@ -2,7 +2,7 @@
 set -e
 
 # Render 会给你 PORT（默认 10000），你的 Web server 必须 bind 到它 :contentReference[oaicite:3]{index=3}
-APACHE_PORT="${PORT:-10000}"
+APACHE_PORT="${PORT:-80}"
 
 # 让 Apache 监听正确端口
 sed -i "s/Listen 80/Listen ${APACHE_PORT}/" /etc/apache2/ports.conf
@@ -15,6 +15,10 @@ php artisan view:cache || true
 
 # 迁移：你想自动跑就保留，不想就注释掉下一行
 # php artisan migrate --force || true
+
+
+# Start Reverb WebSocket server in background
+php artisan reverb:start &
 
 # 启动 Apache
 apache2-foreground

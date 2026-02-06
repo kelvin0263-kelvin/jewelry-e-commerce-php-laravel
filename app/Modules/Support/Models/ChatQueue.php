@@ -129,11 +129,16 @@ class ChatQueue extends Model
 
     public function assignToAgent($agentId)
     {
+    	$diff = $this->queued_at
+        	? now()->diffInSeconds($this->queued_at, false) // signed
+        	: 0;
+
+    	$waitSeconds = max(0, (int) $diff);
         $this->update([
             'status' => 'assigned',
             'assigned_agent_id' => $agentId,
             'assigned_at' => now(),
-            'wait_time_seconds' => now()->diffInSeconds($this->queued_at)
+            'wait_time_seconds' => $waitSeconds
         ]);
 
         // Update conversation
@@ -141,7 +146,7 @@ class ChatQueue extends Model
             'status' => 'active',
             'assigned_agent_id' => $agentId,
             'started_at' => now(),
-            'queue_wait_time' => $this->wait_time_seconds
+            'queue_wait_time' => $waitSeconds
         ]);
 
         // Update agent status

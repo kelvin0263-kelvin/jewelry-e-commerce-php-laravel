@@ -1,4 +1,13 @@
-<header class="w-full bg-white shadow-md relative">
+<header x-data="{ mobileOpen: false }" @keydown.window.escape="mobileOpen = false"
+    class="w-full bg-white shadow-md relative">
+    @php
+        // Derive cart count for guests and logged-in users (supports both cart implementations)
+        $cartCount = 0;
+        try {
+            $cartCount += \App\Modules\Cart\Models\CartItem::where('user_id', auth()->id())->sum('quantity');
+        } catch (\Throwable $e) {
+        }
+    @endphp
     <!-- Inline SVG sprite for icons -->
     <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"
         focusable="false">
@@ -17,29 +26,71 @@
         </symbol>
     </svg>
     <div class="max-w-7xl mx-auto flex flex-col items-center relative">
-        {{-- Logo --}}
-        <div class="py-4">
-            <a href="{{ url('/') }}"
-                class="text-3xl font-serif tracking-widest text-gray-800 inline-block relative px-2 pb-1
-                      after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
-                      after:transition-all after:duration-300 hover:after:w-full">
-                TIFFANY REPLICA
-            </a>
+        {{-- Logo + mobile top bar --}}
+        <div
+            class="w-full items-center px-4 sm:px-6 py-4 md:py-6 gap-4 grid grid-cols-[auto_1fr_auto] md:flex md:justify-center">
+            <div class="flex items-center md:hidden">
+                <button type="button"
+                    class="p-2 rounded-md border border-gray-200 text-gray-700"
+                    aria-label="Open navigation menu" @click="mobileOpen = true">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="flex justify-center md:justify-center">
+                <a href="{{ url('/') }}"
+                    class="text-2xl sm:text-3xl font-serif tracking-widest text-gray-800 inline-block relative px-2 pb-1
+                          after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black
+                          after:transition-all after:duration-300 hover:after:w-full">
+                    TIFFANY REPLICA
+                </a>
+            </div>
+
+            {{-- Mobile quick actions --}}
+            <div class="flex items-center justify-end space-x-2 md:hidden">
+                <a href="{{ route('wishlist.index') }}" aria-label="Wishlist"
+                    class="inline-flex items-center p-2 text-gray-800 hover:text-black">
+                    <svg class="h-5 w-5 fill-current" aria-hidden="true" focusable="false">
+                        <use href="#icon-heart"></use>
+                    </svg>
+                </a>
+                <a href="{{ route('cart.index') }}" aria-label="Shopping Bag"
+                    class="inline-flex items-center p-2 text-gray-800 hover:text-black relative">
+                    <svg class="h-5 w-5 fill-current" aria-hidden="true" focusable="false">
+                        <use href="#icon-bag"></use>
+                    </svg>
+                    @if (($cartCount ?? 0) > 0)
+                        <span
+                            class="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-400 text-white text-[10px] leading-4 text-center">
+                            {{ $cartCount }}
+                        </span>
+                    @endif
+                </a>
+                @guest
+                    <a href="{{ route('login') }}" aria-label="Account"
+                        class="inline-flex items-center p-2 text-gray-800 hover:text-black">
+                        <svg class="h-5 w-5 fill-current" aria-hidden="true" focusable="false">
+                            <use href="#icon-account"></use>
+                        </svg>
+                    </a>
+                @endguest
+                @auth
+                    <a href="{{ route('profile.show') }}" aria-label="Account"
+                        class="inline-flex items-center p-2 text-gray-800 hover:text-black">
+                        <svg class="h-5 w-5 fill-current" aria-hidden="true" focusable="false">
+                            <use href="#icon-account"></use>
+                        </svg>
+                    </a>
+                @endauth
+            </div>
         </div>
 
-        {{-- Navigation Row --}}
-        <div class="w-full relative grid grid-cols-3 items-center">
+        {{-- Navigation Row (desktop) --}}
+        <div class="hidden md:grid w-full relative grid-cols-3 items-center">
             <div class="w-20 justify-self-start flex items-center">
-                @php
-                    // Derive cart count for guests and logged-in users (supports both cart implementations)
-                    $cartCount = 0;
-                    try {
-                        $cartCount += \App\Modules\Cart\Models\CartItem::where('user_id', auth()->id())->sum(
-                            'quantity',
-                        );
-                    } catch (\Throwable $e) {
-                    }
-                @endphp
                 <a href="{{ route('wishlist.index') }}" aria-label="Wishlist"
                     class="inline-flex items-center px-2 pb-3 relative text-sm font-medium transition 
                             text-black after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-black 
@@ -92,7 +143,7 @@
 
                     {{-- Full-width dropdown (fixed to viewport) --}}
                     <div class="fixed inset-x-0 hidden bg-white shadow-xl border-t border-gray-200 group-hover:block animate-fadeSlide z-40 pt-10 pb-12 mt-[10px]"
-                        style="top: var(--navH, 86px); min-height: calc(100vh - var(--navH, 86px));">
+                        style="top: var(--navH, 100px); min-height: calc(100vh - var(--navH, 86px));">
 
                         {{-- Inner container keeps content centered --}}
                         <div class="max-w-7xl mx-auto px-8 py-10">
@@ -230,7 +281,7 @@
 
                     {{-- Full-width dropdown (like Products) --}}
                     <div class="fixed inset-x-0 hidden bg-white shadow-xl border-t border-gray-200 group-hover:block animate-fadeSlide z-40 pt-10 pb-12 mt-[10px]"
-                        style="top: var(--navH, 86px); min-height: calc(100vh - var(--navH, 86px));">
+                        style="top: var(--navH, 100px); min-height: calc(100vh - var(--navH, 86px));">
 
                         {{-- Inner container keeps content centered --}}
                         <div class="max-w-7xl mx-auto px-8 py-10">
@@ -357,4 +408,59 @@
             @endauth
         </div>
     </div>
+
+    {{-- Mobile slide-out --}}
+    <div x-show="mobileOpen" x-transition.opacity class="fixed inset-0 z-50 md:hidden" x-cloak>
+        <button class="absolute inset-0 bg-black/50" aria-label="Close navigation menu" @click="mobileOpen = false"></button>
+        <div x-show="mobileOpen" x-transition:enter="transition transform ease-out duration-200"
+            x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
+            x-transition:leave="transition transform ease-in duration-150" x-transition:leave-start="translate-x-0"
+            x-transition:leave-end="translate-x-full"
+            class="absolute right-0 top-0 h-full w-80 max-w-[80vw] bg-white shadow-2xl p-6 overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <span class="text-lg font-semibold text-gray-900">Menu</span>
+                <button type="button" class="p-2 rounded-md border border-gray-200 text-gray-700"
+                    aria-label="Close navigation menu" @click="mobileOpen = false">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="space-y-4 text-gray-800">
+                <a href="{{ url('/') }}" class="block text-base font-medium hover:text-black">Home</a>
+                <a href="{{ route('products.index') }}" class="block text-base font-medium hover:text-black">Products</a>
+                <a href="{{ route('aboutus') }}" class="block text-base font-medium hover:text-black">About Us</a>
+                <a href="{{ route('faq.index') }}" class="block text-base font-medium hover:text-black">Support</a>
+
+                <div class="pt-4 mt-4 border-t border-gray-200 space-y-3">
+                    <a href="{{ route('wishlist.index') }}" class="flex items-center justify-between">
+                        <span>Wishlist</span>
+                    </a>
+                    <a href="{{ route('cart.index') }}" class="flex items-center justify-between">
+                        <span>Cart</span>
+                        @if (($cartCount ?? 0) > 0)
+                            <span
+                                class="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-teal-500 text-white text-xs px-2">
+                                {{ $cartCount }}
+                            </span>
+                        @endif
+                    </a>
+
+                    @auth
+                        <a href="{{ route('profile.show') }}" class="block">Profile</a>
+                        <a href="{{ route('orders.index') }}" class="block">Orders</a>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="block w-full text-left text-red-600">Log Out</button>
+                        </form>
+                    @else
+                        <a href="{{ route('login') }}" class="block">Login / Account</a>
+                    @endauth
+                </div>
+            </nav>
+        </div>
+    </div>
 </header>
+
