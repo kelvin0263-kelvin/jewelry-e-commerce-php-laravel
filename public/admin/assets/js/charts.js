@@ -168,7 +168,7 @@ const chartElement = document.querySelector("#chart-line");
           ticks: {
             display: true,
             padding: 10,
-            color: '#fbfbfb',
+            color: '#64748b',
             font: {
               size: 11,
               family: "Open Sans",
@@ -187,7 +187,7 @@ const chartElement = document.querySelector("#chart-line");
           },
           ticks: {
             display: true,
-            color: '#ccc',
+            color: '#64748b',
             padding: 20,
             font: {
               size: 11,

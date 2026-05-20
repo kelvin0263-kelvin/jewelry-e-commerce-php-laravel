@@ -45,6 +45,61 @@
             color: #64748b !important;
         }
 
+        html.admin-force-light main,
+        html.admin-force-light main p,
+        html.admin-force-light main span,
+        html.admin-force-light main h1,
+        html.admin-force-light main h2,
+        html.admin-force-light main h3,
+        html.admin-force-light main h4,
+        html.admin-force-light main h5,
+        html.admin-force-light main h6,
+        html.admin-force-light main label,
+        html.admin-force-light main td,
+        html.admin-force-light main th {
+            color: #344767 !important;
+            opacity: 1 !important;
+        }
+
+        html.admin-force-light main .text-white {
+            color: #ffffff !important;
+        }
+
+        html.admin-force-light main .text-emerald-500 {
+            color: #10b981 !important;
+            opacity: 1 !important;
+        }
+
+        html.admin-force-light main .text-red-600 {
+            color: #dc2626 !important;
+            opacity: 1 !important;
+        }
+
+        html.admin-force-light main .text-blue-500 {
+            color: #3b82f6 !important;
+            opacity: 1 !important;
+        }
+
+        html.admin-force-light main .text-orange-500 {
+            color: #f97316 !important;
+            opacity: 1 !important;
+        }
+
+        html.admin-force-light main .text-purple-500 {
+            color: #a855f7 !important;
+            opacity: 1 !important;
+        }
+
+        html.admin-force-light main .text-cyan-500 {
+            color: #06b6d4 !important;
+            opacity: 1 !important;
+        }
+
+        html.admin-force-light main .bg-white,
+        html.admin-force-light main [class*="dark:bg-slate"] {
+            background-color: #ffffff !important;
+        }
+
         html.admin-force-light aside a,
         html.admin-force-light aside button {
             color: #344767 !important;
