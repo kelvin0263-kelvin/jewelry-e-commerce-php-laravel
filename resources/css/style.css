@@ -211,6 +211,12 @@ body {
 }
 
 
+.homepage-container-1 {
+	position: relative;
+	background: #111;
+	overflow: hidden;
+}
+
 .homepage-container-1-1{
     position: absolute;
     top: 40%;
@@ -223,6 +229,7 @@ body {
     color: white;
     line-height: 2;
 	padding-left: 50%;
+	z-index: 1;
 }
 
 .homepage-container-1-1 h1{
@@ -235,6 +242,10 @@ body {
 
 .homepage-container-1 video{
 	width: 100%;
+	height: min(100vh, 900px);
+	min-height: 560px;
+	display: block;
+	object-fit: cover;
 }
 
 
@@ -498,7 +509,5 @@ body {
   /*-----------------------------------------             Footer End      --------------------------------------------*/
   /*------------------------------------------------------------------------------------------------------------------*/
   
-
-
 
 

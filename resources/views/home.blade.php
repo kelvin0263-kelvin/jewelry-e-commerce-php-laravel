@@ -492,7 +492,14 @@
             </p>
             <br><br>
         </div>
-        <video src="{{ asset('videos/hero-video.mp4') }}" autoplay muted loop playsinline preload="auto"></video>
+        <video
+            src="{{ asset('videos/hero-video-optimized.mp4') }}"
+            poster="{{ asset('images/hero-poster.webp') }}"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="metadata"></video>
     </div>
     <!-- Engagement Rings wide image with caption -->
     <section id="engagement-rings" class="py-12 md:py-16 bg-white">
