@@ -4,13 +4,18 @@ import Pusher from 'pusher-js';
 window.Pusher = Pusher;
 
 // Configure Echo with Reverb for real-time chat
+const reverbKey = import.meta.env.VITE_REVERB_APP_KEY || 'reverb-key';
+const reverbHost = import.meta.env.VITE_REVERB_HOST || window.location.hostname;
+const reverbPort = Number(import.meta.env.VITE_REVERB_PORT || 8081);
+const reverbScheme = import.meta.env.VITE_REVERB_SCHEME || 'http';
+
 window.Echo = new Echo({
     broadcaster: 'reverb',
-    key: 'reverb-key',
-    wsHost: window.location.hostname,
-    wsPort: 8081,
-    wssPort: 8081,
-    forceTLS: false,
+    key: reverbKey,
+    wsHost: reverbHost,
+    wsPort: reverbPort,
+    wssPort: reverbPort,
+    forceTLS: reverbScheme === 'https',
     enabledTransports: ['ws', 'wss'],
     withCredentials: true,
     // Add error handling
@@ -63,7 +68,7 @@ window.Echo.connector.pusher.connection.bind('auth_error', function(error) {
 // Log Echo initialization
 console.log('🚀 Laravel Echo initialized with Reverb configuration:', {
     broadcaster: 'reverb',
-    wsHost: window.location.hostname,
-    wsPort: 8081,
+    wsHost: reverbHost,
+    wsPort: reverbPort,
     authEndpoint: '/broadcasting/auth'
 });

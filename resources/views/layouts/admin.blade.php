@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html class="admin-force-light">
 
 <head>
     <meta charset="UTF-8" />
@@ -9,6 +9,16 @@
     <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('img/apple-icon.png') }}" />
     <link rel="shortcut icon" href="{{ asset('images/smallIcon.jpg') }}" type="image/x-icon">
     <title>@yield('title')</title>
+    <meta name="color-scheme" content="light">
+    <script>
+        document.documentElement.classList.remove('dark');
+        new MutationObserver(() => {
+            document.documentElement.classList.remove('dark');
+        }).observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+    </script>
     <!--     Fonts and icons     -->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
     <!-- Font Awesome Icons -->
@@ -24,11 +34,33 @@
     <!-- Vite Assets for Echo and real-time functionality -->
     @vite(['resources/js/app.js', 'resources/css/app.css'])
 
+    <style>
+        html.admin-force-light,
+        html.admin-force-light body {
+            color-scheme: light;
+            background-color: #f8f9fa !important;
+        }
+
+        html.admin-force-light body {
+            color: #64748b !important;
+        }
+
+        html.admin-force-light aside a,
+        html.admin-force-light aside button {
+            color: #344767 !important;
+        }
+
+        html.admin-force-light aside a span,
+        html.admin-force-light aside button span {
+            color: #344767 !important;
+            opacity: 1 !important;
+        }
+    </style>
+
     @stack('styles')
 </head>
 
-<body
-    class="m-0 font-sans text-base antialiased font-normal dark:bg-slate-900 leading-default bg-gray-50 text-slate-500">
+<body class="m-0 font-sans text-base antialiased font-normal leading-default bg-gray-50 text-slate-500">
     <!-- <div class="absolute w-full bg-blue-500 dark:hidden min-h-75"></div> -->
     <!-- sidenav  -->
     <aside

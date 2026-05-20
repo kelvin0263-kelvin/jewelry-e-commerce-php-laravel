@@ -1013,123 +1013,144 @@
             //在执行这行代码时，Laravel Echo 会自动向你的 Laravel 后端服务器发送一个认证请求，请求的地址通常是 /broadcasting/auth
             // use Echo subscribe a private channel where other authenticated user can listen to it 
             const channel = window.Echo.private(channelName);
+            let handlersBound = false;
 
-            channel.subscribed(() => {
-                console.log('✅ Successfully subscribed to channel:', channelName);
-                console.log('🔧 Echo connector state:', window.Echo.connector.pusher.connection
-                    .state);
-                console.log('🔧 Channel subscription:', channel.subscription);
+            const startFallbackPolling = () => {
+                if (window.messageRefreshInterval) {
+                    return;
+                }
 
-                // Don't start fallback refresh - rely on real-time only
-                // Remove any existing fallback refresh since real-time should work
+                console.log('🔄 [CUSTOMER] Starting fallback polling for chat messages');
+                window.messageRefreshInterval = setInterval(() => {
+                    if (window.conversationId) {
+                        window.fetchMessages();
+                    }
+                }, 3000);
+            };
+
+            const stopFallbackPolling = () => {
                 if (window.messageRefreshInterval) {
                     clearInterval(window.messageRefreshInterval);
                     window.messageRefreshInterval = null;
-                    console.log(
-                    '🎯 [CUSTOMER] Cleared fallback refresh on successful subscription');
+                    console.log('🎯 [CUSTOMER] Stopped fallback polling after realtime binding');
                 }
-            })
+            };
 
-            // (Step 9.3) - Message Reception Handler
-            // FIXED: Use direct Pusher binding like admin side - Echo .listen() stopped working
-            if (channel.subscription) {
+            const handleMessageSent = (data) => {
+                console.log('🎉 [CUSTOMER] Real-time message received');
+                console.log('📨 [CUSTOMER] Message data:', data);
+
+                const currentUserId = {!! json_encode(auth()->id()) !!};
+                console.log('👤 Current user ID:', currentUserId);
+
+                if (data.message) {
+                    // Check for duplicate messages (if already have message id skip it)
+                    if (window.receivedMessageIds.has(data.message.id)) {
+                        console.log('🔄 [CUSTOMER] Skipping duplicate message ID:', data.message
+                            .id);
+                        return;
+                    }
+
+                    // Mark message as received
+                    window.receivedMessageIds.add(data.message.id);
+
+                    console.log('📝 Message details:', {
+                        messageId: data.message.id,
+                        messageUserId: data.message.user ? data.message.user.id :
+                            'no user',
+                        messageType: data.message.message_type || 'normal',
+                        messageBody: data.message.body,
+                        isFromCurrentUser: data.message.user ? (data.message.user.id ===
+                            currentUserId) : false,
+                        userObject: data.message.user
+                    });
+
+                    if (data.message.user && data.message.user.id !== currentUserId) {
+                        console.log(
+                            '✅ [CUSTOMER] Adding agent message to chat - INSTANT DELIVERY');
+                        console.log('🔄 [CUSTOMER] Message user ID:', data.message.user.id,
+                            'vs Current user ID:', currentUserId);
+
+                        // Add message immediately without any delays
+                        window.addMessageToBox(data.message);
+
+                        // Force scroll to bottom immediately
+                        const chatMessages = document.getElementById('chat-messages');
+                        if (chatMessages) {
+                            setTimeout(() => {
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            }, 50);
+                        }
+
+                    } else if (data.message.message_type === 'system') {
+                        console.log('✅ [CUSTOMER] Adding system message to chat');
+                        addSystemMessageToBox(data.message);
+                    } else {
+                        console.log('🔄 [CUSTOMER] Ignoring own message or empty message');
+                        console.log('🔄 [CUSTOMER] Reason - User match:', data.message.user ? (
+                            data.message.user.id === currentUserId) : 'no user object');
+                    }
+                } else {
+                    console.log('⚠️ [CUSTOMER] No message in event:', data);
+                }
+            };
+
+            const handleConversationTerminatedEvent = (data) => {
+                console.log('🚫 [CUSTOMER] Received ConversationTerminated event:', data);
+
+                // Handle termination from any source (admin or customer)
+                handleConversationTerminated(data, data.terminatedBy || 'unknown');
+            };
+
+            const bindRealtimeHandlers = () => {
+                if (handlersBound || !channel.subscription) {
+                    return handlersBound;
+                }
+
                 console.log('🔗 Setting up direct Pusher bindings for channel subscription');
-
-                // Ensure no fallback polling is running when real-time works
-                if (window.messageRefreshInterval) {
-                    console.log('🛑 Clearing fallback polling - real-time is working');
-                    clearInterval(window.messageRefreshInterval);
-                    window.messageRefreshInterval = null;
-                }
 
                 // Track received messages to prevent duplicates （if not process will process it )
                 if (!window.receivedMessageIds) {
                     window.receivedMessageIds = new Set();
                 }
 
-
                 // Listen for new messages(MessageSent) if the backend server broadcast this event the code inside will execute using direct Pusher bind
-                channel.subscription.bind('MessageSent', (data) => {
-                    console.log('🎉 [CUSTOMER] Real-time message received via direct Pusher bind');
-                    console.log('📨 [CUSTOMER] Message data:', data);
+                channel.subscription.bind('MessageSent', handleMessageSent);
+                channel.subscription.bind('ConversationTerminated', handleConversationTerminatedEvent);
 
-                    const currentUserId = {!! json_encode(auth()->id()) !!};
-                    console.log('👤 Current user ID:', currentUserId);
+                handlersBound = true;
+                stopFallbackPolling();
+                return true;
+            };
 
-                    if (data.message) {
-                        // Check for duplicate messages (if already have message id skip it)
-                        if (window.receivedMessageIds.has(data.message.id)) {
-                            console.log('🔄 [CUSTOMER] Skipping duplicate message ID:', data.message
-                                .id);
-                            return;
-                        }
+            channel.subscribed(() => {
+                console.log('✅ Successfully subscribed to channel:', channelName);
+                console.log('🔧 Echo connector state:', window.Echo.connector.pusher.connection
+                    .state);
+                console.log('🔧 Channel subscription:', channel.subscription);
+                bindRealtimeHandlers();
+            })
 
-                        // Mark message as received
-                        window.receivedMessageIds.add(data.message.id);
-
-                        console.log('📝 Message details:', {
-                            messageId: data.message.id,
-                            messageUserId: data.message.user ? data.message.user.id :
-                                'no user',
-                            messageType: data.message.message_type || 'normal',
-                            messageBody: data.message.body,
-                            isFromCurrentUser: data.message.user ? (data.message.user.id ===
-                                currentUserId) : false,
-                            userObject: data.message.user
-                        });
-
-                        if (data.message.user && data.message.user.id !== currentUserId) {
-                            console.log(
-                                '✅ [CUSTOMER] Adding agent message to chat - INSTANT DELIVERY');
-                            console.log('🔄 [CUSTOMER] Message user ID:', data.message.user.id,
-                                'vs Current user ID:', currentUserId);
-
-                            // Add message immediately without any delays
-                            window.addMessageToBox(data.message);
-
-                            // Force scroll to bottom immediately
-                            const chatMessages = document.getElementById('chat-messages');
-                            if (chatMessages) {
-                                setTimeout(() => {
-                                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                                }, 50);
-                            }
-
-                        } else if (data.message.message_type === 'system') {
-                            console.log('✅ [CUSTOMER] Adding system message to chat');
-                            addSystemMessageToBox(data.message);
-                        } else {
-                            console.log('🔄 [CUSTOMER] Ignoring own message or empty message');
-                            console.log('🔄 [CUSTOMER] Reason - User match:', data.message.user ? (
-                                data.message.user.id === currentUserId) : 'no user object');
-                        }
-                    } else {
-                        console.log('⚠️ [CUSTOMER] No message in event:', data);
+            // (Step 9.3) - Message Reception Handler
+            // FIXED: Use direct Pusher binding like admin side - Echo .listen() stopped working
+            if (!bindRealtimeHandlers()) {
+                // Echo may create channel.subscription asynchronously. Retry briefly and
+                // keep polling as a fallback so admin replies still appear for customers.
+                startFallbackPolling();
+                let bindAttempts = 0;
+                const bindRetry = setInterval(() => {
+                    bindAttempts += 1;
+                    if (bindRealtimeHandlers() || bindAttempts >= 20) {
+                        clearInterval(bindRetry);
                     }
-                });
-
-                // (Step 9.6) - Conversation Termination Handler
-                // Listen for conversation termination using direct Pusher bind (listen for ConversationTerminated event)
-                channel.subscription.bind('ConversationTerminated', (data) => {
-                    console.log('🚫 [CUSTOMER] Received ConversationTerminated event:', data);
-
-                    // Handle termination from any source (admin or customer)
-                    handleConversationTerminated(data, data.terminatedBy || 'unknown');
-                });
+                }, 250);
             }
             // (Step 9.7) - Error Handling and Fallback      
             channel.error((error) => {
                 console.error('❌ [CUSTOMER] Echo channel error:', error);
 
                 // Start fallback polling if Echo fails
-                if (!window.messageRefreshInterval) {
-                    console.log('🔄 [CUSTOMER] Starting fallback polling due to Echo error');
-                    window.messageRefreshInterval = setInterval(() => {
-                        if (window.conversationId) {
-                            window.fetchMessages();
-                        }
-                    }, 3000); // Poll every 3 seconds
-                }
+                startFallbackPolling();
 
                 // Try to resubscribe immediately if there's an error
                 setTimeout(() => {
