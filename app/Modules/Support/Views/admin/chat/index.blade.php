@@ -7,7 +7,7 @@ Date: 2025-09-15
 @section('title', 'Chat Management')
 
 @section('content')
-<div class="container mx-auto px-4 py-6">
+<div class="container mx-auto max-w-full overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6">
     <!-- Header -->
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Chat Management</h1>
@@ -15,7 +15,7 @@ Date: 2025-09-15
     </div>
 
     <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 xl:grid-cols-4">
         <div class="bg-white rounded-lg shadow-md p-4">
             <div class="flex items-center">
                 <div class="p-2 bg-blue-100 rounded-lg">
@@ -74,13 +74,13 @@ Date: 2025-09-15
     </div>
 
     <!-- Main Chat Interface -->
-    <div class="bg-white rounded-lg shadow-md">
-        <div class="flex h-96">
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="flex min-h-[620px] flex-col lg:h-[32rem] lg:min-h-0 lg:flex-row">
             <!-- Conversations List -->
-            <div class="w-1/3 border-r border-gray-200">
-                <div class="p-4 border-b border-gray-100 bg-gray-50">
+            <div class="flex h-64 w-full flex-col border-b border-gray-200 lg:h-full lg:w-1/3 lg:border-b-0 lg:border-r">
+                <div class="p-3 border-b border-gray-100 bg-gray-50 sm:p-4">
                     <div class="flex justify-between items-center">
-                        <h2 class="font-semibold text-gray-700">Conversations</h2>
+                        <h2 class="font-semibold text-gray-700 truncate">Conversations</h2>
                         <button onclick="loadConversations()" class="text-blue-600 hover:text-blue-800 text-sm">
                             <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -89,7 +89,7 @@ Date: 2025-09-15
                         </button>
                     </div>
                 </div>
-                <div class="overflow-y-auto" style="height: calc(100% - 60px);" id="conversations-list">
+                <div class="flex-1 overflow-y-auto" id="conversations-list">
                     <div class="p-4 text-center text-gray-500">
                         Loading conversations...
                     </div>
@@ -97,11 +97,11 @@ Date: 2025-09-15
             </div>
 
             <!-- Messages Display -->
-            <div class="w-2/3 flex flex-col">
-                <div class="p-4 border-b border-gray-100 bg-gray-50">
-                    <h2 class="font-semibold text-gray-700" id="chat-header">Select a conversation</h2>
+            <div class="flex min-h-0 w-full flex-1 flex-col lg:w-2/3" id="chat-panel">
+                <div class="p-3 border-b border-gray-100 bg-gray-50 sm:p-4">
+                    <h2 class="font-semibold text-gray-700 truncate" id="chat-header">Select a conversation</h2>
                 </div>
-                <div class="flex-1 overflow-y-auto p-4 bg-gray-50" id="messages-container">
+                <div class="min-h-0 flex-1 overflow-y-auto bg-gray-50 p-3 sm:p-4" id="messages-container">
                     <div class="text-center text-gray-500 mt-20">
                         <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
@@ -111,19 +111,19 @@ Date: 2025-09-15
                     </div>
                 </div>
                 <!-- Admin Reply Form -->
-                <div class="p-4 border-t border-gray-200 bg-white" id="reply-form-container" style="display: none;">
-                    <div class="flex justify-between items-center mb-2">
+                <div class="border-t border-gray-200 bg-white p-3 sm:p-4" id="reply-form-container" style="display: none;">
+                    <div class="flex flex-col gap-2 mb-2 sm:flex-row sm:items-center sm:justify-between">
                         <span class="text-sm text-gray-600" id="conversation-status" style="display: none;"></span>
                         <button type="button" id="terminate-conversation-btn" onclick="terminateConversation()" 
-                                class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 text-sm transition-colors" style="display: none;">
+                                class="w-full bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 text-sm transition-colors sm:w-auto sm:py-1" style="display: none;">
                             End Chat
                         </button>
                     </div>
-                    <form id="admin-reply-form" class="flex gap-2">
+                    <form id="admin-reply-form" class="flex flex-col gap-2 sm:flex-row">
                         <input type="hidden" id="current-conversation-id" value="">
                         <input type="text" id="admin-message-input" placeholder="Type your reply..." 
-                               class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled>
-                        <button type="submit" id="send-message-btn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors" style="display: none;">
+                               class="min-w-0 w-full flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled>
+                        <button type="submit" id="send-message-btn" class="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors sm:w-auto" style="display: none;">
                             Send
                         </button>
                     </form>
@@ -241,18 +241,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 // Add different styling based on conversation status
-                let statusClass = 'p-4 border-b border-gray-100 cursor-pointer hover:bg-blue-50 transition-colors duration-200';
+                let statusClass = 'p-3 sm:p-4 border-b border-gray-100 cursor-pointer hover:bg-blue-50 transition-colors duration-200';
                 let statusColor = 'text-green-600';
                 let statusText = 'Active';
                 let statusBgColor = 'bg-green-100';
                 
                 if (conversation.status === 'completed' || conversation.ended_at) {
-                    statusClass = 'p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-200';
+                    statusClass = 'p-3 sm:p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-200';
                     statusColor = 'text-gray-600';
                     statusText = 'Completed';
                     statusBgColor = 'bg-gray-100';
                 } else if (conversation.status === 'abandoned') {
-                    statusClass = 'p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-200';
+                    statusClass = 'p-3 sm:p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-200';
                     statusColor = 'text-gray-600';
                     statusText = 'Abandoned';
                     statusBgColor = 'bg-gray-100';
@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 conversationElement.className = statusClass;
                 conversationElement.setAttribute('data-conversation-id', conversation.id);
                 conversationElement.innerHTML = `
-                    <div class="flex justify-between items-start">
+                    <div class="flex min-w-0 justify-between items-start">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center mb-1">
                                 <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
@@ -283,9 +283,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="text-sm text-gray-500 truncate">${conversation.user.email}</div>
                                 </div>
                             </div>
-                            <div class="flex justify-between items-center">
+                            <div class="flex flex-wrap justify-between gap-2 items-center">
                                 <div class="text-xs text-gray-400">#${conversation.id}</div>
-                                <div class="flex items-center space-x-2">
+                                <div class="flex min-w-0 items-center gap-2">
                                     <span class="inline-flex items-center justify-center px-2 h-5 rounded-full ${unread > 0 ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'} text-xs font-semibold">
                                         ${unread}
                                     </span>
@@ -630,6 +630,13 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Scroll to bottom
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            if (window.innerWidth < 1024) {
+                document.getElementById('chat-panel')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
             
             // Listen for real-time messages
             listenForRealTimeMessages(conversationId);
@@ -808,7 +815,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (message.message_type === 'system' || !message.user) {
             messageElement.className = 'mb-4 text-center';
             messageElement.innerHTML = `
-                <div class="inline-block px-4 py-2 rounded-lg bg-yellow-100 text-yellow-800 border border-yellow-300">
+                <div class="inline-block max-w-[90%] break-words whitespace-pre-wrap px-4 py-2 rounded-lg bg-yellow-100 text-yellow-800 border border-yellow-300">
                     <div class="font-medium text-sm">System Message</div>
                     <div class="mt-1">${message.body}</div>
                     <div class="text-xs mt-1 opacity-75">${new Date(message.created_at).toLocaleString()}</div>
@@ -819,7 +826,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             messageElement.className = `mb-4 ${isAdmin ? 'text-right' : 'text-left'}`;
             messageElement.innerHTML = `
-                <div class="inline-block max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isAdmin ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}">
+                <div class="inline-block max-w-[85%] break-words whitespace-pre-wrap px-4 py-2 rounded-lg sm:max-w-xs lg:max-w-md ${isAdmin ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}">
                     <div class="font-medium text-sm">${message.user.name}</div>
                     <div class="mt-1">${message.body}</div>
                     <div class="text-xs mt-1 opacity-75">${new Date(message.created_at).toLocaleString()}</div>
