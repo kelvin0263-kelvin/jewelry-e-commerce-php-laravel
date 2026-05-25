@@ -242,6 +242,7 @@
         window.conversationId = null;
         let isShowingSelfService = false;
         let isPanelOpen = false;
+        let leaveQueueCountdownApplied = false;
 
         // Check for URL parameter to open specific chat
         const urlParams = new URLSearchParams(window.location.search);
@@ -316,6 +317,7 @@
         const chatState = { starting: false, conversationId: null };
         async function startQueueChat() {
             const chatMessages = document.getElementById('chat-messages');
+            leaveQueueCountdownApplied = false;
 
             // Safety check
             if (!chatMessages) {
@@ -502,6 +504,22 @@
         // (Step 4) - Queue Status Display Layer
         function showQueueStatus(queueStatus) {
             if (queueStatus.in_queue) {
+                const existingQueueStatus = document.getElementById('queue-status');
+                if (existingQueueStatus) {
+                    const queuePosition = document.getElementById('queue-position');
+                    const queueEstimatedWait = document.getElementById('queue-estimated-wait');
+
+                    if (queuePosition) {
+                        queuePosition.textContent = `Position: #${queueStatus.position}`;
+                    }
+
+                    if (queueEstimatedWait) {
+                        queueEstimatedWait.textContent = `Estimated wait: ${queueStatus.estimated_wait} minutes`;
+                    }
+
+                    return;
+                }
+
                 // Show queue status but allow messaging
                 const queueStatusDiv = `
                 <div id="queue-status" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
@@ -509,10 +527,10 @@
                     <div style="font-size: 16px; margin-bottom: 8px; color: #1d4ed8;">
                         🎫 You're in the queue
                     </div>
-                    <div style="font-size: 20px; font-weight: bold; color: #2563eb;">
+                    <div id="queue-position" style="font-size: 20px; font-weight: bold; color: #2563eb;">
                         Position: #${queueStatus.position}
                     </div>
-                    <div style="margin: 8px 0; color: #6b7280; font-size: 14px;">
+                    <div id="queue-estimated-wait" style="margin: 8px 0; color: #6b7280; font-size: 14px;">
                         Estimated wait: ${queueStatus.estimated_wait} minutes
                     </div>
                     <div style="margin-top: 10px;">
@@ -532,7 +550,10 @@
                 chatMessages.innerHTML = queueStatusDiv + '<div id="queue-messages"></div>';
                 const btn = document.getElementById('leave-btn');
 
-                disableButtonCountdown(btn, 3, 'Leave Queue');
+                if (!leaveQueueCountdownApplied) {
+                    leaveQueueCountdownApplied = true;
+                    disableButtonCountdown(btn, 3, 'Leave Queue');
+                }
 
 
                 // Enable messaging while in queue
@@ -702,6 +723,7 @@
 
                         // Clear stored conversation data
                         window.conversationId = null;
+                        leaveQueueCountdownApplied = false;
                         if (typeof chatState !== 'undefined') {
                             chatState.conversationId = null;
                             chatState.starting = false;

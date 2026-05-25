@@ -30,6 +30,7 @@ use App\Modules\Support\Controllers\AdminTicketController;
 use App\Modules\Support\Controllers\ChatQueueController;
 use App\Modules\Support\Controllers\FaqController;
 use App\Modules\Support\Controllers\SelfServiceController;
+use App\Modules\Support\Models\Conversation;
 use App\Modules\User\Controllers\ProfileController;
 
 
@@ -59,7 +60,7 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::view('/', 'home')->name('home');
+Route::view('/', 'home')->name('home');  // <a href="{{ route('home') }}">Home</a> == <a href="/">Home</a>
 Route::view('/about-us', 'aboutus')->name('aboutus');
 Route::view('/privacy-policy', 'privacy')->name('privacy');
 
@@ -190,14 +191,26 @@ Route::post('/broadcasting/auth', function (Request $request) {
         Log::info('Processing private channel: ' . $channelNameShort);
 
         if (preg_match('/^conversation\.(\d+)$/', $channelNameShort, $matches)) {
-            $conversationId = $matches[1];
+            $conversationId = (int) $matches[1];
             Log::info('Authorizing conversation channel', [
                 'conversation_id' => $conversationId,
                 'user_id' => $user->id,
             ]);
 
-            // For now: allow all authenticated users
-            $authorized = true;
+            $conversation = Conversation::find($conversationId);
+
+            if (!$conversation) {
+                Log::warning('Custom broadcast auth failed: conversation not found', [
+                    'conversation_id' => $conversationId,
+                    'user_id' => $user->id,
+                ]);
+
+                return response()->json(['error' => 'Conversation not found'], 404);
+            }
+
+            $authorized = $user->is_admin
+                ? (int) $conversation->assigned_agent_id === (int) $user->id
+                : (int) $conversation->user_id === (int) $user->id;
 
             if ($authorized) {
                 $authString = $socketId . ':' . $channelName;
@@ -213,7 +226,13 @@ Route::post('/broadcasting/auth', function (Request $request) {
                 return response()->json(['auth' => $authResult]);
             }
 
-            Log::error('Channel authorization failed');
+            Log::warning('Channel authorization failed', [
+                'conversation_id' => $conversationId,
+                'user_id' => $user->id,
+                'is_admin' => (bool) $user->is_admin,
+                'conversation_user_id' => $conversation->user_id,
+                'assigned_agent_id' => $conversation->assigned_agent_id,
+            ]);
             return response()->json(['error' => 'Unauthorized'], 403);
         }
     }
