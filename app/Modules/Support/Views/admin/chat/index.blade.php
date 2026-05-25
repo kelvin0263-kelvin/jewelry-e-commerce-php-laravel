@@ -6,8 +6,69 @@ Date: 2025-09-15
 
 @section('title', 'Chat Management')
 
+@push('styles')
+<style>
+    .admin-chat-page,
+    .admin-chat-card,
+    .admin-chat-interface,
+    .admin-chat-conversations,
+    .admin-chat-panel {
+        max-width: 100%;
+    }
+
+    .admin-message-bubble {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        white-space: pre-wrap;
+    }
+
+    @media (max-width: 1023px) {
+        .admin-chat-interface {
+            display: flex !important;
+            flex-direction: column !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 0 !important;
+        }
+
+        .admin-chat-conversations {
+            width: 100% !important;
+            height: 18rem !important;
+            flex: 0 0 auto !important;
+            border-right: 0 !important;
+            border-bottom: 1px solid #e5e7eb !important;
+        }
+
+        .admin-chat-panel {
+            width: 100% !important;
+            min-width: 0 !important;
+            min-height: 34rem !important;
+            flex: 0 0 auto !important;
+        }
+
+        .admin-chat-messages {
+            min-height: 22rem !important;
+            max-height: 58vh !important;
+        }
+
+        .admin-reply-form {
+            display: flex !important;
+            flex-direction: column !important;
+            width: 100% !important;
+        }
+
+        .admin-reply-form input,
+        .admin-reply-form button,
+        #terminate-conversation-btn {
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="container mx-auto max-w-full overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6">
+<div class="admin-chat-page container mx-auto max-w-full overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6">
     <!-- Header -->
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Chat Management</h1>
@@ -74,10 +135,10 @@ Date: 2025-09-15
     </div>
 
     <!-- Main Chat Interface -->
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <div class="flex min-h-[620px] flex-col lg:h-[32rem] lg:min-h-0 lg:flex-row">
+    <div class="admin-chat-card bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="admin-chat-interface flex min-h-[620px] flex-col lg:h-[32rem] lg:min-h-0 lg:flex-row">
             <!-- Conversations List -->
-            <div class="flex h-64 w-full flex-col border-b border-gray-200 lg:h-full lg:w-1/3 lg:border-b-0 lg:border-r">
+            <div class="admin-chat-conversations flex h-64 w-full flex-col border-b border-gray-200 lg:h-full lg:w-1/3 lg:border-b-0 lg:border-r">
                 <div class="p-3 border-b border-gray-100 bg-gray-50 sm:p-4">
                     <div class="flex justify-between items-center">
                         <h2 class="font-semibold text-gray-700 truncate">Conversations</h2>
@@ -97,11 +158,11 @@ Date: 2025-09-15
             </div>
 
             <!-- Messages Display -->
-            <div class="flex min-h-0 w-full flex-1 flex-col lg:w-2/3" id="chat-panel">
+            <div class="admin-chat-panel flex min-h-0 w-full flex-1 flex-col lg:w-2/3" id="chat-panel">
                 <div class="p-3 border-b border-gray-100 bg-gray-50 sm:p-4">
                     <h2 class="font-semibold text-gray-700 truncate" id="chat-header">Select a conversation</h2>
                 </div>
-                <div class="min-h-0 flex-1 overflow-y-auto bg-gray-50 p-3 sm:p-4" id="messages-container">
+                <div class="admin-chat-messages min-h-0 flex-1 overflow-y-auto bg-gray-50 p-3 sm:p-4" id="messages-container">
                     <div class="text-center text-gray-500 mt-20">
                         <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
@@ -119,7 +180,7 @@ Date: 2025-09-15
                             End Chat
                         </button>
                     </div>
-                    <form id="admin-reply-form" class="flex flex-col gap-2 sm:flex-row">
+                    <form id="admin-reply-form" class="admin-reply-form flex flex-col gap-2 sm:flex-row">
                         <input type="hidden" id="current-conversation-id" value="">
                         <input type="text" id="admin-message-input" placeholder="Type your reply..." 
                                class="min-w-0 w-full flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled>
@@ -815,7 +876,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (message.message_type === 'system' || !message.user) {
             messageElement.className = 'mb-4 text-center';
             messageElement.innerHTML = `
-                <div class="inline-block max-w-[90%] break-words whitespace-pre-wrap px-4 py-2 rounded-lg bg-yellow-100 text-yellow-800 border border-yellow-300">
+                <div class="admin-message-bubble inline-block max-w-[90%] break-words whitespace-pre-wrap px-4 py-2 rounded-lg bg-yellow-100 text-yellow-800 border border-yellow-300">
                     <div class="font-medium text-sm">System Message</div>
                     <div class="mt-1">${message.body}</div>
                     <div class="text-xs mt-1 opacity-75">${new Date(message.created_at).toLocaleString()}</div>
@@ -826,7 +887,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             messageElement.className = `mb-4 ${isAdmin ? 'text-right' : 'text-left'}`;
             messageElement.innerHTML = `
-                <div class="inline-block max-w-[85%] break-words whitespace-pre-wrap px-4 py-2 rounded-lg sm:max-w-xs lg:max-w-md ${isAdmin ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}">
+                <div class="admin-message-bubble inline-block max-w-[85%] break-words whitespace-pre-wrap px-4 py-2 rounded-lg sm:max-w-xs lg:max-w-md ${isAdmin ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}">
                     <div class="font-medium text-sm">${message.user.name}</div>
                     <div class="mt-1">${message.body}</div>
                     <div class="text-xs mt-1 opacity-75">${new Date(message.created_at).toLocaleString()}</div>
