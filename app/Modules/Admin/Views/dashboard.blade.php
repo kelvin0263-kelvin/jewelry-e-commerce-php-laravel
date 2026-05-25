@@ -9,18 +9,18 @@ Date: 2025-09-15
 @section('content')
 
     <!-- Header -->
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
+    <div class="mb-4 md:mb-6">
+        <h1 class="text-xl font-bold text-gray-800 md:text-2xl">Dashboard</h1>
     </div>
 
 
 
     <!-- cards -->
-    <div class="w-full px-6 py-6 mx-auto">
+    <div class="w-full px-0 py-2 mx-auto md:px-6 md:py-6">
         <!-- row 1 -->
-        <div class="flex flex-wrap -mx-3">
+        <div class="flex flex-wrap -mx-2 md:-mx-3">
             <!-- card1 -->
-            <div class="w-full max-w-full px-3 mb-6 sm:w-1/2 sm:flex-none xl:mb-0 xl:w-1/4">
+            <div class="w-full max-w-full px-2 mb-4 sm:w-1/2 sm:flex-none md:px-3 xl:mb-0 xl:w-1/4">
                 <div
                     class="relative flex flex-col min-w-0 break-words bg-white shadow-xl dark:bg-slate-850 dark:shadow-dark-xl rounded-2xl bg-clip-border">
                     <div class="flex-auto p-4">
@@ -49,7 +49,7 @@ Date: 2025-09-15
             </div>
 
             <!-- card2 -->
-            <div class="w-full max-w-full px-3 mb-6 sm:w-1/2 sm:flex-none xl:mb-0 xl:w-1/4">
+            <div class="w-full max-w-full px-2 mb-4 sm:w-1/2 sm:flex-none md:px-3 xl:mb-0 xl:w-1/4">
                 <div
                     class="relative flex flex-col min-w-0 break-words bg-white shadow-xl dark:bg-slate-850 dark:shadow-dark-xl rounded-2xl bg-clip-border">
                     <div class="flex-auto p-4">
@@ -78,7 +78,7 @@ Date: 2025-09-15
             </div>
 
             <!-- card3 -->
-            <div class="w-full max-w-full px-3 mb-6 sm:w-1/2 sm:flex-none xl:mb-0 xl:w-1/4">
+            <div class="w-full max-w-full px-2 mb-4 sm:w-1/2 sm:flex-none md:px-3 xl:mb-0 xl:w-1/4">
                 <div
                     class="relative flex flex-col min-w-0 break-words bg-white shadow-xl dark:bg-slate-850 dark:shadow-dark-xl rounded-2xl bg-clip-border">
                     <div class="flex-auto p-4">
@@ -107,7 +107,7 @@ Date: 2025-09-15
             </div>
 
             <!-- card4 (Total Customers) -->
-            <div class="w-full max-w-full px-3 sm:w-1/2 sm:flex-none xl:w-1/4">
+            <div class="w-full max-w-full px-2 mb-4 sm:w-1/2 sm:flex-none md:px-3 xl:mb-0 xl:w-1/4">
                 <div
                     class="relative flex flex-col min-w-0 break-words bg-white shadow-xl dark:bg-slate-850 dark:shadow-dark-xl rounded-2xl bg-clip-border">
                     <div class="flex-auto p-4">
@@ -137,19 +137,19 @@ Date: 2025-09-15
         </div>
 
         <!-- cards row 2 -->
-        <div class="flex flex-wrap mt-6 -mx-3">
-            <div class="w-full max-w-full px-3 mt-0 lg:flex-none">
+        <div class="flex flex-wrap mt-2 -mx-2 md:mt-6 md:-mx-3">
+            <div class="w-full max-w-full px-2 mt-0 md:px-3 lg:flex-none">
                 <div class="border-black/12.5 dark:bg-slate-850 dark:shadow-dark-xl shadow-xl relative z-20 flex min-w-0 flex-col break-words rounded-2xl border-0 border-solid bg-white bg-clip-border">
-                    <div class="border-black/12.5 mb-0 rounded-t-2xl border-b-0 border-solid p-6 pt-4 pb-0">
+                    <div class="border-black/12.5 mb-0 rounded-t-2xl border-b-0 border-solid p-4 pb-0 md:p-6 md:pt-4">
                         <h6 class="capitalize dark:text-white">Sales overview <i class="fa fa-arrow-up text-emerald-500"></i></h6>
                         <p id="sales-overview-subtitle" class="mb-0 text-sm leading-normal dark:text-white dark:opacity-60">
                             
                             {{-- <span class="font-semibold">4</span>  --}}
                         </p>
                     </div>
-                    <div class="flex-auto p-4">
+                    <div class="flex-auto p-3 md:p-4">
                         <div>
-                            <canvas class="w-full" id="chart-line" height="400" data-labels='@json($labels)'
+                            <canvas class="w-full" id="chart-line" height="320" data-labels='@json($labels)'
                                 data-data='@json($data)' data-label-name="Daily Revenue (RM)">
 
                             </canvas>
@@ -160,5 +160,4 @@ Date: 2025-09-15
         </div>
     </div>
 @endsection
-
 

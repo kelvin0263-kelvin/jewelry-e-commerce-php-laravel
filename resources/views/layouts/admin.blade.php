@@ -43,6 +43,7 @@
 
         html.admin-force-light body {
             color: #64748b !important;
+            overflow-x: hidden;
         }
 
         html.admin-force-light main,
@@ -110,27 +111,53 @@
             color: #344767 !important;
             opacity: 1 !important;
         }
+
+        body.admin-sidebar-open {
+            overflow: hidden;
+        }
     </style>
 
     @stack('styles')
 </head>
 
 <body class="m-0 font-sans text-base antialiased font-normal leading-default bg-gray-50 text-slate-500">
+    <div id="admin-sidebar-backdrop" class="fixed inset-0 z-[1030] hidden bg-slate-900/50 xl:hidden"></div>
+
+    <header
+        class="fixed inset-x-0 top-0 z-[1020] flex h-16 items-center justify-between bg-white/95 px-4 shadow-sm backdrop-blur xl:hidden">
+        <button type="button" id="admin-sidebar-open"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm"
+            aria-controls="admin-sidebar" aria-expanded="false" aria-label="Open admin navigation">
+            <i class="fas fa-bars text-base"></i>
+        </button>
+        <div class="min-w-0 flex-1 px-4 text-center">
+            <span class="block truncate text-sm font-semibold text-slate-800">@yield('title', 'Admin')</span>
+        </div>
+        <a href="{{ route('admin.dashboard') }}" class="inline-flex h-10 w-10 items-center justify-center">
+            <img src="{{ asset('images/smallIcon.jpg') }}" class="h-8 w-8 rounded-full object-cover" alt="Admin" />
+        </a>
+    </header>
+
     <!-- <div class="absolute w-full bg-blue-500 dark:hidden min-h-75"></div> -->
     <!-- sidenav  -->
-    <aside
-        class="fixed top-0 left-0 h-screen w-64 bg-white shadow-xl rounded-2xl 
-         overflow-y-auto transition-transform duration-200 -translate-x-full 
-         xl:translate-x-0 ease-nav-brand z-990"
+    <aside id="admin-sidebar"
+        class="fixed top-0 left-0 h-dvh w-72 max-w-[86vw] bg-white shadow-xl rounded-r-2xl xl:rounded-2xl
+         overflow-y-auto transition-transform duration-200 -translate-x-full
+         xl:w-64 xl:translate-x-0 ease-nav-brand z-[1040]"
         aria-expanded="false">
         <div class="flex flex-col h-full">
 
-            <div class="h-19">
+            <div class="flex h-19 items-center justify-between px-4 xl:block xl:px-0">
 
 
                 <img src="{{ asset('images/logo.png') }}"
-                    class="w-full h-full object-contain transition-all duration-200 ease-nav-brand" alt="Logo" />
+                    class="h-full max-w-[12rem] object-contain transition-all duration-200 ease-nav-brand xl:w-full xl:max-w-none" alt="Logo" />
 
+                <button type="button" id="admin-sidebar-close"
+                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 xl:hidden"
+                    aria-label="Close admin navigation">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
 
             </div>
 
@@ -282,13 +309,68 @@
 
     <!-- end sidenav -->
     <main
-        class="relative h-full max-h-screen transition-all duration-200 ease-in-out xl:ml-68 rounded-xl ps ps--active-y">
-        <div class="w-full px-6 py-6 mx-auto">
+        class="relative min-h-screen pt-16 transition-all duration-200 ease-in-out xl:ml-68 xl:pt-0 rounded-xl ps ps--active-y">
+        <div class="w-full max-w-full px-4 py-4 mx-auto md:px-6 md:py-6">
             @yield('content')
 
         </div>
     </main>
 
+    <script>
+        (() => {
+            const sidebar = document.getElementById('admin-sidebar');
+            const backdrop = document.getElementById('admin-sidebar-backdrop');
+            const openButton = document.getElementById('admin-sidebar-open');
+            const closeButton = document.getElementById('admin-sidebar-close');
+            const mobileQuery = window.matchMedia('(max-width: 1279px)');
+
+            if (!sidebar || !backdrop || !openButton || !closeButton) {
+                return;
+            }
+
+            const openSidebar = () => {
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+                document.body.classList.add('admin-sidebar-open');
+                openButton.setAttribute('aria-expanded', 'true');
+                sidebar.setAttribute('aria-expanded', 'true');
+            };
+
+            const closeSidebar = () => {
+                if (!mobileQuery.matches) {
+                    return;
+                }
+
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+                document.body.classList.remove('admin-sidebar-open');
+                openButton.setAttribute('aria-expanded', 'false');
+                sidebar.setAttribute('aria-expanded', 'false');
+            };
+
+            openButton.addEventListener('click', openSidebar);
+            closeButton.addEventListener('click', closeSidebar);
+            backdrop.addEventListener('click', closeSidebar);
+            sidebar.querySelectorAll('a').forEach((link) => {
+                link.addEventListener('click', closeSidebar);
+            });
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeSidebar();
+                }
+            });
+            mobileQuery.addEventListener('change', (event) => {
+                if (!event.matches) {
+                    backdrop.classList.add('hidden');
+                    document.body.classList.remove('admin-sidebar-open');
+                    openButton.setAttribute('aria-expanded', 'false');
+                    sidebar.setAttribute('aria-expanded', 'true');
+                } else {
+                    closeSidebar();
+                }
+            });
+        })();
+    </script>
 
 </body>
 <!-- plugin for charts  -->
