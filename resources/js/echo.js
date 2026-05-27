@@ -8,6 +8,13 @@ const reverbKey = import.meta.env.VITE_REVERB_APP_KEY || 'reverb-key';
 const reverbHost = import.meta.env.VITE_REVERB_HOST || window.location.hostname;
 const reverbPort = Number(import.meta.env.VITE_REVERB_PORT || 8081);
 const reverbScheme = import.meta.env.VITE_REVERB_SCHEME || 'http';
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+const xsrfToken = decodeURIComponent(
+    document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('XSRF-TOKEN='))
+        ?.split('=')[1] || ''
+);
 
 window.Echo = new Echo({
     broadcaster: 'reverb',
@@ -21,7 +28,8 @@ window.Echo = new Echo({
     // Add error handling
     auth: {
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            'X-CSRF-TOKEN': csrfToken,
+            'X-XSRF-TOKEN': xsrfToken,
             'X-Requested-With': 'XMLHttpRequest'
         }
     },

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Modules\Support\Events\MessageSent; 
 use App\Modules\Support\Events\ConversationTerminated;
 use App\Modules\Support\Services\ChatEventManager;
+use App\Jobs\SendRagBotReply;
 use Illuminate\Support\Facades\Broadcast;
 
 class ChatController extends Controller
@@ -117,6 +118,11 @@ class ChatController extends Controller
 
         //new2
         $this->emitMessageSent($message->load('user'), $message->conversation);
+
+        if (! Auth::user()?->is_admin) {
+            SendRagBotReply::dispatch($message->id)
+                ->delay(now()->addSeconds(config('rag.bot.reply_delay_seconds')));
+        }
 
         // Use Observer pattern to handle message sent event
         // $this->emitMessageSent($message->load('user'), $message->conversation);

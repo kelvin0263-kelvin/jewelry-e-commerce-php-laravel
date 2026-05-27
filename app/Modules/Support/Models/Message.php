@@ -67,4 +67,9 @@ class Message extends Model
     {
         return $query->where('message_type', 'system');
     }
+
+    public function scopeBotMessages($query)
+    {
+        return $query->where('message_type', 'bot');
+    }
 }

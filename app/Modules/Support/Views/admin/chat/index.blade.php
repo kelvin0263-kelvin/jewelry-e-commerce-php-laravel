@@ -19,6 +19,9 @@ Date: 2025-09-15
     .admin-message-bubble {
         overflow-wrap: anywhere;
         word-break: break-word;
+    }
+
+    .admin-message-body {
         white-space: pre-wrap;
     }
 
@@ -873,12 +876,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const messageElement = document.createElement('div');
         
         // Check if it's a system message
-        if (message.message_type === 'system' || !message.user) {
+        if (message.message_type === 'bot') {
+            messageElement.className = 'mb-4 text-left';
+            messageElement.innerHTML = `
+                <div class="admin-message-bubble inline-block max-w-[85%] break-words px-4 py-2 rounded-lg bg-purple-50 text-purple-950 border border-purple-200 sm:max-w-xs lg:max-w-md">
+                    <div class="font-medium text-sm">Tiffany Assistant</div>
+                    <div class="admin-message-body mt-1">${message.body}</div>
+                    <div class="text-xs mt-1 opacity-75">${new Date(message.created_at).toLocaleString()}</div>
+                </div>
+            `;
+        } else if (message.message_type === 'system' || !message.user) {
             messageElement.className = 'mb-4 text-center';
             messageElement.innerHTML = `
-                <div class="admin-message-bubble inline-block max-w-[90%] break-words whitespace-pre-wrap px-4 py-2 rounded-lg bg-yellow-100 text-yellow-800 border border-yellow-300">
+                <div class="admin-message-bubble inline-block max-w-[90%] break-words px-4 py-2 rounded-lg bg-yellow-100 text-yellow-800 border border-yellow-300">
                     <div class="font-medium text-sm">System Message</div>
-                    <div class="mt-1">${message.body}</div>
+                    <div class="admin-message-body mt-1">${message.body}</div>
                     <div class="text-xs mt-1 opacity-75">${new Date(message.created_at).toLocaleString()}</div>
                 </div>
             `;
@@ -887,9 +899,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             messageElement.className = `mb-4 ${isAdmin ? 'text-right' : 'text-left'}`;
             messageElement.innerHTML = `
-                <div class="admin-message-bubble inline-block max-w-[85%] break-words whitespace-pre-wrap px-4 py-2 rounded-lg sm:max-w-xs lg:max-w-md ${isAdmin ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}">
+                <div class="admin-message-bubble inline-block max-w-[85%] break-words px-4 py-2 rounded-lg sm:max-w-xs lg:max-w-md ${isAdmin ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}">
                     <div class="font-medium text-sm">${message.user.name}</div>
-                    <div class="mt-1">${message.body}</div>
+                    <div class="admin-message-body mt-1">${message.body}</div>
                     <div class="text-xs mt-1 opacity-75">${new Date(message.created_at).toLocaleString()}</div>
                 </div>
             `;

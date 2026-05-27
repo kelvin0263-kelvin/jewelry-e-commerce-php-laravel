@@ -50,4 +50,30 @@ class MessageSent implements ShouldBroadcastNow
     {
         return 'MessageSent';
     }
+
+    /**
+     * Send a stable payload to Echo/Reverb instead of relying on model serialization.
+     */
+    public function broadcastWith(): array
+    {
+        $message = $this->message->loadMissing('user');
+
+        return [
+            'message' => [
+                'id' => $message->id,
+                'conversation_id' => $message->conversation_id,
+                'user_id' => $message->user_id,
+                'body' => $message->body,
+                'message_type' => $message->message_type,
+                'created_at' => optional($message->created_at)->toISOString(),
+                'updated_at' => optional($message->updated_at)->toISOString(),
+                'user' => $message->user ? [
+                    'id' => $message->user->id,
+                    'name' => $message->user->name,
+                    'email' => $message->user->email,
+                    'is_admin' => (bool) $message->user->is_admin,
+                ] : null,
+            ],
+        ];
+    }
 }

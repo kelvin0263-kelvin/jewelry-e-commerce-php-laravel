@@ -133,6 +133,45 @@
     @endauth
 </div>
 
+<style>
+    .chat-typing-indicator {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 6px;
+        color: #6b7280;
+        font-size: 12px;
+    }
+
+    .chat-typing-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: #8b5cf6;
+        animation: chatTypingPulse 1.1s infinite ease-in-out;
+    }
+
+    .chat-typing-dot:nth-child(2) {
+        animation-delay: 0.16s;
+    }
+
+    .chat-typing-dot:nth-child(3) {
+        animation-delay: 0.32s;
+    }
+
+    @keyframes chatTypingPulse {
+        0%, 80%, 100% {
+            transform: translateY(0);
+            opacity: 0.35;
+        }
+
+        40% {
+            transform: translateY(-4px);
+            opacity: 1;
+        }
+    }
+</style>
+
 <script>
     // Sanctum CSRF helpers for API calls
     async function sanctumBoot() {
@@ -140,6 +179,7 @@
             await fetch('/sanctum/csrf-cookie', { credentials: 'include' });
         }
     }
+
     function xsrf() {
         const m = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
         return m ? decodeURIComponent(m[1]) : '';
@@ -195,13 +235,13 @@
         if (chatMessages) {
             const mo = new MutationObserver(() => {
                 const rejoin = chatMessages.querySelector('button[onclick="startQueueChat()"]');
-                if (rejoin && !rejoin.dataset.countdownApplied) {
-                    rejoin.dataset.countdownApplied = '1';
-                    rejoin.id = 'join-queue-btn';
-                    disableButtonCountdown(rejoin, 3, 'Join Queue Again');
+                if (rejoin && !rejoin.dataset.countdownApplied) { // if find the button and havent applly countdown
+                    rejoin.dataset.countdownApplied = '1'; // mark as applied to avoid duplicate countdowns
+                    rejoin.id = 'join-queue-btn'; // add id for easier targeting in disableButtonCountdown
+                    disableButtonCountdown(rejoin, 3, 'Join Queue Again'); // button, seconds,  label after countdown
                 }
             });
-            mo.observe(chatMessages, { childList: true, subtree: true });
+            mo.observe(chatMessages, { childList: true, subtree: true }); // observe changes in chatMessages to find the re-join button when it appears
         }
 
         // Ensure all required elements exist before proceeding
@@ -243,6 +283,49 @@
         let isShowingSelfService = false;
         let isPanelOpen = false;
         let leaveQueueCountdownApplied = false;
+        let isAgentConnected = false;
+        let botTypingTimeout = null;
+
+        function hideBotTypingIndicator() {
+            if (botTypingTimeout) {
+                clearTimeout(botTypingTimeout);
+                botTypingTimeout = null;
+            }
+
+            document.getElementById('bot-typing-indicator')?.remove();
+        }
+
+        function showBotTypingIndicator() {
+            if (isAgentConnected) return;
+
+            const chatMessages = document.getElementById('chat-messages');
+            if (!chatMessages) return;
+
+            hideBotTypingIndicator();
+
+            const indicator = document.createElement('div');
+            indicator.id = 'bot-typing-indicator';
+            indicator.style.marginBottom = '10px';
+            indicator.style.textAlign = 'left';
+            indicator.innerHTML = `
+                <div style="display:inline-block; max-width:85%; padding:8px 12px; border-radius:10px; background:#f5f3ff; color:#111827;">
+                    <strong>Tiffany Assistant:</strong>
+                    <div class="chat-typing-indicator" aria-label="Tiffany Assistant is typing">
+                        <span>typing</span>
+                        <span class="chat-typing-dot"></span>
+                        <span class="chat-typing-dot"></span>
+                        <span class="chat-typing-dot"></span>
+                    </div>
+                </div>
+            `;
+
+            const queueMessagesContainer = document.getElementById('queue-messages');
+            const targetContainer = queueMessagesContainer || chatMessages;
+            targetContainer.appendChild(indicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            botTypingTimeout = setTimeout(hideBotTypingIndicator, 20000);
+        }
 
         // Check for URL parameter to open specific chat
         const urlParams = new URLSearchParams(window.location.search);
@@ -260,60 +343,46 @@
         chatToggle.addEventListener('click', () => {
             if (!isPanelOpen) {
                 // Open widget with self-service panel
-                openPanel(selfServiceBox, '500px');
-                closePanel(chatBox);
+                window.openPanel(selfServiceBox, '500px');
+                window.closePanel(chatBox);
                 isShowingSelfService = true;
                 isPanelOpen = true;
             } else {
                 // Close any open panel
-                closePanel(selfServiceBox);
-                closePanel(chatBox);
+                window.closePanel(selfServiceBox);
+                window.closePanel(chatBox);
                 isShowingSelfService = false;
                 isPanelOpen = false;
             }
         });
 
 
-        // (Step 2) - Chat Initialization Layer
-        // User clicks "Chat with an Agent" button
-        // Function to initialize chat (get or create conversation)
-        window.initializeChat = async function initializeChat() {
-            try {
-                await sanctumBoot();
-                // (Step 2.1) - HTTP Request to Backend
-                // Frontend calls /api/support/chat/start endpoint to create/get conversation
-                const response = await fetch('/api/support/chat/start', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-XSRF-TOKEN': xsrf(),
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        escalation_context: window.chatEscalationContext || null,
-                        initial_message: 'Hello, I need assistance.'
-                    })
-                });
-                const data = await response.json();
-                window.conversationId = data.conversation_id;
+        //(Step 2)
+        function startLiveChat(existingConversationId = null) {
+            const selfServiceBox = document.getElementById('self-service-box');
+            const chatBox = document.getElementById('chat-box');
+            const chatMessages = document.getElementById('chat-messages');
 
-
-                // (Step 2.2) - Message Fetching Layer
-                // Fetch existing messages
-                fetchMessages();
-
-                // (Step 2.3) - Real-time Setup Layer
-                // Frontend sets up WebSocket connection for real-time messaging
-                // Listen for new messages on the private channel
-                window.listenForMessages();
-            } catch (error) {
-                chatMessages.innerHTML = '<p style="color: red;">Could not start chat.</p>';
+            // Safety check - ensure chat widget is loaded
+            if (!chatBox || !chatMessages) {
+                console.error('Chat widget not fully loaded. Retrying...');
+                setTimeout(() => startLiveChat(existingConversationId), 100);
+                return;
             }
+
+            window.closePanel(selfServiceBox);
+            window.openPanel(chatBox, '400px');
+            // Track panel state for the header toggle behavior
+            try { isPanelOpen = true; } catch (e) {}
+            try { isShowingSelfService = false; } catch (e) {}
+
+            // Always start with queue-based chat instead of trying to resume old conversations
+            // The /chat/start endpoint will handle checking for existing active conversations
+            startQueueChat();
         }
 
-        // (Step 3) - Queue Management Layer
-        // Enhanced chat initialization with queue system
+        // Current chat entry flow:
+        // startLiveChat() opens the panel, then startQueueChat() creates or resumes the queue item.
         const chatState = { starting: false, conversationId: null };
         async function startQueueChat() {
             const chatMessages = document.getElementById('chat-messages');
@@ -418,6 +487,7 @@
                 window.conversationId = data.conversation_id;
                 chatState.conversationId = data.conversation_id;
                 chatState.starting = false;
+                isAgentConnected = false;
                 localStorage.setItem('activeConversationId', data.conversation_id);
 
                 // (Step 3.2) - Queue Status Handling
@@ -434,6 +504,7 @@
                 `;
 
                     showTerminateButton();
+                    enableActiveChatMessaging();
 
                     setTimeout(() => {
                         window.fetchMessages();
@@ -575,6 +646,7 @@
 
                 // Show terminate button when connected to agent
                 showTerminateButton();
+                enableActiveChatMessaging();
 
                 // Load messages and listen for new ones
                 setTimeout(() => {
@@ -590,9 +662,26 @@
             const chatInput = document.getElementById('chat-input');
             const chatForm = document.getElementById('chat-form');
 
+            isAgentConnected = false;
             if (chatInput && chatForm) {
                 chatInput.disabled = false;
                 chatInput.placeholder = 'You can send messages while waiting...';
+                chatForm.style.opacity = '1';
+                chatForm.style.pointerEvents = 'auto';
+            }
+        }
+
+        function enableActiveChatMessaging() {
+            const chatInput = document.getElementById('chat-input');
+            const chatForm = document.getElementById('chat-form');
+
+            isAgentConnected = true;
+            hideBotTypingIndicator();
+
+            if (chatInput && chatForm) {
+                chatInput.disabled = false;
+                chatInput.placeholder = 'Type your message...';
+                chatInput.style.backgroundColor = '';
                 chatForm.style.opacity = '1';
                 chatForm.style.pointerEvents = 'auto';
             }
@@ -650,6 +739,7 @@
 
                         // Show terminate button when connected to agent
                         showTerminateButton();
+                        enableActiveChatMessaging();
 
                         // (Step 5.3) - Real-time Setup After Assignment
                         // Load chat interface and setup WebSocket connection
@@ -702,11 +792,6 @@
                             window.Echo.leaveChannel(window.currentEchoChannel);
                             window.currentEchoChannel = null;
                         }
-                        if (window.messageRefreshInterval) {
-                            clearInterval(window.messageRefreshInterval);
-                            window.messageRefreshInterval = null;
-                        }
-
                         // Show left queue message
                         const chatMessages = document.getElementById('chat-messages');
                         if (chatMessages) {
@@ -723,6 +808,7 @@
 
                         // Clear stored conversation data
                         window.conversationId = null;
+                        isAgentConnected = false;
                         leaveQueueCountdownApplied = false;
                         if (typeof chatState !== 'undefined') {
                             chatState.conversationId = null;
@@ -743,11 +829,7 @@
             }
         }
 
-        // Make functions globally available
-        window.initializeChat = initializeChat;
-        window.startQueueChat = startQueueChat;
-        window.leaveQueue = leaveQueue;
-        window.createTicket = createTicket;
+
 
 
         //done
@@ -797,6 +879,7 @@
                     }
 
                     messages.forEach(message => window.addMessageToBox(message));
+                    hideBotTypingIndicator();
 
                     // Scroll to bottom after loading messages
                     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -821,17 +904,28 @@
                 return;
             }
 
+            const currentUserId = Number({!! json_encode(auth()->id()) !!});
+            const messageUserId = message.user ? Number(message.user.id) : Number(message.user_id || 0);
+
+            if (message.message_type === 'bot' || (messageUserId && messageUserId !== currentUserId)) {
+                hideBotTypingIndicator();
+            }
+
             const messageElement = document.createElement('div');
-            const isMe = message.user && message.user.id === {!! json_encode(auth()->id()) !!};
+            const isMe = messageUserId === currentUserId;
+            const isBot = message.message_type === 'bot';
             messageElement.style.marginBottom = '10px';
             messageElement.style.textAlign = isMe ? 'right' : 'left';
 
             // Handle both 'body' and 'content' fields
             const messageContent = message.body || message.content || '';
+            const senderName = isMe ? 'You' : (isBot ? 'Tiffany Assistant' : (message.user ? message.user.name : (messageUserId ? 'Agent' : 'System')));
+            const bubbleBg = isMe ? '#3182ce' : (isBot ? '#f5f3ff' : '#e2e8f0');
+            const bubbleColor = isMe ? 'white' : '#111827';
 
             messageElement.innerHTML = `
-            <div style="display: inline-block; padding: 8px 12px; border-radius: 10px; background-color: ${isMe ? '#3182ce' : '#e2e8f0'}; color: ${isMe ? 'white' : 'black'};">
-                <strong>${isMe ? 'You' : (message.user ? message.user.name : 'System')}:</strong>
+            <div style="display: inline-block; max-width: 85%; padding: 8px 12px; border-radius: 10px; background-color: ${bubbleBg}; color: ${bubbleColor}; overflow-wrap: anywhere;">
+                <strong>${senderName}:</strong>
                 <p>${messageContent}</p>
             </div>
         `;
@@ -872,12 +966,12 @@
                     const response = await fetch('/api/support/chat/messages', {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
-                            'X-XSRF-TOKEN': xsrf(),
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'Content-Type': 'application/json', // tell backend we're sending JSON
+                            'X-XSRF-TOKEN': xsrf(), // Laravel 的 CSRF / XSRF protection
+                            'X-Requested-With': 'XMLHttpRequest' // this is ajax request （so know that this is not from browser navigation or something else instead is api call)
                         },
                         credentials: 'include',
-                        body: JSON.stringify({
+                        body: JSON.stringify({ // convert to JSON string
                             conversation_id: window.conversationId,
                             body: messageText
                         })
@@ -946,7 +1040,13 @@
                             content: data.body, // Also set content for compatibility
                             user: data.user // Use the user object from response
                         });
+                        if (!isAgentConnected) {
+                            showBotTypingIndicator();
+                        } else {
+                            hideBotTypingIndicator();
+                        }
                     } else {
+                        hideBotTypingIndicator();
                         console.error('Failed to send message:', data.message);
                         if (data.message && data.message.includes('terminated')) {
                             // Conversation was terminated - disable interface
@@ -969,6 +1069,7 @@
                         }
                     }
                 } catch (error) {
+                    hideBotTypingIndicator();
                     console.error('Failed to send message:', error);
                     chatInput.value = messageText; // Restore message if failed
                     const err = document.createElement('div');
@@ -1001,13 +1102,6 @@
 
             console.log('🎧 Setting up Echo message listening for conversation:', window.conversationId);
 
-            // Clear any existing fallback polling first
-            if (window.messageRefreshInterval) {
-                console.log('🔄 Clearing existing fallback polling before setting up real-time');
-                clearInterval(window.messageRefreshInterval);
-                window.messageRefreshInterval = null;
-            }
-
             // Clear message duplication tracking for new conversation
             if (window.receivedMessageIds) {
                 console.log('🔄 Clearing received message IDs for new conversation');
@@ -1037,26 +1131,9 @@
             const channel = window.Echo.private(channelName);
             let handlersBound = false;
 
-            const startFallbackPolling = () => {
-                if (window.messageRefreshInterval) {
-                    return;
-                }
-
-                console.log('🔄 [CUSTOMER] Starting fallback polling for chat messages');
-                window.messageRefreshInterval = setInterval(() => {
-                    if (window.conversationId) {
-                        window.fetchMessages();
-                    }
-                }, 3000);
-            };
-
-            const stopFallbackPolling = () => {
-                if (window.messageRefreshInterval) {
-                    clearInterval(window.messageRefreshInterval);
-                    window.messageRefreshInterval = null;
-                    console.log('🎯 [CUSTOMER] Stopped fallback polling after realtime binding');
-                }
-            };
+            if (!window.receivedMessageIds) {
+                window.receivedMessageIds = new Set();
+            }
 
             const handleMessageSent = (data) => {
                 console.log('🎉 [CUSTOMER] Real-time message received');
@@ -1078,19 +1155,26 @@
 
                     console.log('📝 Message details:', {
                         messageId: data.message.id,
-                        messageUserId: data.message.user ? data.message.user.id :
-                            'no user',
+                        messageUserId: data.message.user ? data.message.user.id : data.message.user_id,
                         messageType: data.message.message_type || 'normal',
                         messageBody: data.message.body,
-                        isFromCurrentUser: data.message.user ? (data.message.user.id ===
-                            currentUserId) : false,
+                        isFromCurrentUser: (data.message.user ? Number(data.message.user.id) : Number(data.message.user_id || 0)) === Number(currentUserId),
                         userObject: data.message.user
                     });
 
-                    if (data.message.user && data.message.user.id !== currentUserId) {
+                    const messageUserId = data.message.user ? Number(data.message.user.id) : Number(data.message.user_id || 0);
+                    const isFromCurrentUser = messageUserId === Number(currentUserId);
+
+                    if (data.message.message_type === 'bot') {
+                        console.log('✅ [CUSTOMER] Adding bot message to chat');
+                        window.addMessageToBox(data.message);
+                    } else if (data.message.message_type === 'system') {
+                        console.log('✅ [CUSTOMER] Adding system message to chat');
+                        addSystemMessageToBox(data.message);
+                    } else if (!isFromCurrentUser) {
                         console.log(
                             '✅ [CUSTOMER] Adding agent message to chat - INSTANT DELIVERY');
-                        console.log('🔄 [CUSTOMER] Message user ID:', data.message.user.id,
+                        console.log('🔄 [CUSTOMER] Message user ID:', messageUserId || 'no user id',
                             'vs Current user ID:', currentUserId);
 
                         // Add message immediately without any delays
@@ -1104,13 +1188,9 @@
                             }, 50);
                         }
 
-                    } else if (data.message.message_type === 'system') {
-                        console.log('✅ [CUSTOMER] Adding system message to chat');
-                        addSystemMessageToBox(data.message);
                     } else {
                         console.log('🔄 [CUSTOMER] Ignoring own message or empty message');
-                        console.log('🔄 [CUSTOMER] Reason - User match:', data.message.user ? (
-                            data.message.user.id === currentUserId) : 'no user object');
+                        console.log('🔄 [CUSTOMER] Reason - User match:', isFromCurrentUser);
                     }
                 } else {
                     console.log('⚠️ [CUSTOMER] No message in event:', data);
@@ -1124,6 +1204,9 @@
                 handleConversationTerminated(data, data.terminatedBy || 'unknown');
             };
 
+            channel.listen('.MessageSent', handleMessageSent);
+            channel.listen('.ConversationTerminated', handleConversationTerminatedEvent);
+
             const bindRealtimeHandlers = () => {
                 if (handlersBound || !channel.subscription) {
                     return handlersBound;
@@ -1131,17 +1214,11 @@
 
                 console.log('🔗 Setting up direct Pusher bindings for channel subscription');
 
-                // Track received messages to prevent duplicates （if not process will process it )
-                if (!window.receivedMessageIds) {
-                    window.receivedMessageIds = new Set();
-                }
-
-                // Listen for new messages(MessageSent) if the backend server broadcast this event the code inside will execute using direct Pusher bind
+                // Direct Pusher bindings mirror the admin side. Echo listen above is the primary binding.
                 channel.subscription.bind('MessageSent', handleMessageSent);
                 channel.subscription.bind('ConversationTerminated', handleConversationTerminatedEvent);
 
                 handlersBound = true;
-                stopFallbackPolling();
                 return true;
             };
 
@@ -1156,9 +1233,7 @@
             // (Step 9.3) - Message Reception Handler
             // FIXED: Use direct Pusher binding like admin side - Echo .listen() stopped working
             if (!bindRealtimeHandlers()) {
-                // Echo may create channel.subscription asynchronously. Retry briefly and
-                // keep polling as a fallback so admin replies still appear for customers.
-                startFallbackPolling();
+                // Echo may create channel.subscription asynchronously. Retry briefly.
                 let bindAttempts = 0;
                 const bindRetry = setInterval(() => {
                     bindAttempts += 1;
@@ -1167,12 +1242,10 @@
                     }
                 }, 250);
             }
-            // (Step 9.7) - Error Handling and Fallback      
+
+            // (Step 9.7) - Error Handling and Resubscribe
             channel.error((error) => {
                 console.error('❌ [CUSTOMER] Echo channel error:', error);
-
-                // Start fallback polling if Echo fails
-                startFallbackPolling();
 
                 // Try to resubscribe immediately if there's an error
                 setTimeout(() => {
@@ -1184,6 +1257,14 @@
             console.log('🎯 [CUSTOMER] Echo listener setup complete for:', channelName);
         }
 
+
+
+        // Make chat actions available to inline button handlers after the widget DOM is ready.
+        window.startLiveChat = startLiveChat;
+        window.startQueueChat = startQueueChat;
+        window.leaveQueue = leaveQueue;
+        window.createTicket = createTicket;
+        window.enableActiveChatMessaging = enableActiveChatMessaging;
 
     });
 
@@ -1200,7 +1281,7 @@
 
         if (confirm(solution + '\n\nClick OK to chat with an agent, or Cancel to browse more help.')) {
             @auth
-            startLiveChat();
+            window.startLiveChat();
         @else
             window.location.href = '{{ route('login') }}';
         @endauth
@@ -1214,37 +1295,10 @@
     }
 
     @auth
-    // Make conversationId and functions globally available
-    window.conversationId = null;
-    window.queueCheckInterval = null;
-    window.currentEchoChannel = null; // Track current Echo channel for cleanup
-    window.messageRefreshInterval = null; // Fallback message refresh interval
 
 
-    //done
-    //(Step 2)
-    function startLiveChat(existingConversationId = null) {
-        const selfServiceBox = document.getElementById('self-service-box');
-        const chatBox = document.getElementById('chat-box');
-        const chatMessages = document.getElementById('chat-messages');
 
-        // Safety check - ensure chat widget is loaded
-        if (!chatBox || !chatMessages) {
-            console.error('Chat widget not fully loaded. Retrying...');
-            setTimeout(() => startLiveChat(existingConversationId), 100);
-            return;
-        }
 
-        closePanel(selfServiceBox);
-        openPanel(chatBox, '400px');
-        // Track panel state for the header toggle behavior
-        try { isPanelOpen = true; } catch (e) {}
-        try { isShowingSelfService = false; } catch (e) {}
-
-        // Always start with queue-based chat instead of trying to resume old conversations
-        // The /chat/start endpoint will handle checking for existing active conversations
-        startQueueChat();
-    }
 
     async function resumeExistingChat(conversationId) {
         const chatMessages = document.getElementById('chat-messages');
@@ -1288,6 +1342,9 @@
             if (conversation.status === 'active' && conversation.assigned_agent_id) {
                 // Show terminate button for active conversation
                 showTerminateButton();
+                if (typeof window.enableActiveChatMessaging === 'function') {
+                    window.enableActiveChatMessaging();
+                }
 
                 // Clear the resuming message and load messages immediately
                 chatMessages.innerHTML = '';
@@ -1346,8 +1403,8 @@
         const chatBox = document.getElementById('chat-box');
         const selfServiceBox = document.getElementById('self-service-box');
 
-        closePanel(chatBox);
-        openPanel(selfServiceBox, '500px');
+        window.closePanel(chatBox);
+        window.openPanel(selfServiceBox, '500px');
         try { isPanelOpen = true; } catch (e) {}
         try { isShowingSelfService = true; } catch (e) {}
 
@@ -1411,11 +1468,6 @@
                             window.Echo.leaveChannel(window.currentEchoChannel);
                             window.currentEchoChannel = null;
                         }
-                        if (window.messageRefreshInterval) {
-                            clearInterval(window.messageRefreshInterval);
-                            window.messageRefreshInterval = null;
-                        }
-
                         // Hide terminate button
                         if (terminateBtn) terminateBtn.style.display = 'none';
 
@@ -1542,10 +1594,6 @@
             }
             window.currentEchoChannel = null;
         }
-        if (window.messageRefreshInterval) {
-            clearInterval(window.messageRefreshInterval);
-            window.messageRefreshInterval = null;
-        }
         if (window.queueCheckInterval) {
             clearInterval(window.queueCheckInterval);
             window.queueCheckInterval = null;
@@ -1608,8 +1656,14 @@
         }
     }
 
+
+    // Make conversationId and functions globally available
+    window.conversationId = null;
+    window.queueCheckInterval = null;
+    window.currentEchoChannel = null; // Track current Echo channel for cleanup
+
     // Make functions globally available
-    window.startLiveChat = startLiveChat;
+    window.resumeExistingChat = resumeExistingChat;
     window.backToSelfService = backToSelfService;
     window.createTicket = createTicket;
     window.terminateChat = terminateChat;
