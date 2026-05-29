@@ -384,6 +384,69 @@
         // Current chat entry flow:
         // startLiveChat() opens the panel, then startQueueChat() creates or resumes the queue item.
         const chatState = { starting: false, conversationId: null };
+
+        function showChatComposer() {
+            const chatInput = document.getElementById('chat-input');
+            const chatForm = document.getElementById('chat-form');
+
+            if (chatForm) {
+                chatForm.style.display = 'flex';
+                chatForm.style.opacity = '1';
+                chatForm.style.pointerEvents = 'auto';
+            }
+
+            if (chatInput) {
+                chatInput.disabled = false;
+                chatInput.style.backgroundColor = '';
+            }
+        }
+
+        function hideChatComposer(placeholder = 'This conversation has ended') {
+            const chatInput = document.getElementById('chat-input');
+            const chatForm = document.getElementById('chat-form');
+
+            if (chatInput) {
+                chatInput.disabled = true;
+                chatInput.placeholder = placeholder;
+                chatInput.style.backgroundColor = '#f9fafb';
+            }
+
+            if (chatForm) {
+                chatForm.style.display = 'none';
+                chatForm.style.opacity = '0.5';
+                chatForm.style.pointerEvents = 'none';
+            }
+        }
+
+        function resetEndedConversationState() {
+            localStorage.removeItem('activeConversationId');
+            window.conversationId = null;
+            chatState.conversationId = null;
+            chatState.starting = false;
+            isAgentConnected = false;
+            leaveQueueCountdownApplied = false;
+
+            if (window.queueCheckInterval) {
+                clearInterval(window.queueCheckInterval);
+                window.queueCheckInterval = null;
+            }
+        }
+
+        function endedQueueMarkup(title, message, buttonLabel = 'Join Queue Again') {
+            return `
+                <div style="min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 28px 18px; color: #5f6675; text-align: center;">
+                    <div style="max-width: 280px; width: 100%;">
+                        <div style="font-size: 24px; margin-bottom: 12px;">📋</div>
+                        <div style="font-size: 20px; font-weight: 600; color: #5f6675; margin-bottom: 12px;">${title}</div>
+                        <div style="font-size: 15px; line-height: 1.45; color: #6b7280; margin-bottom: 18px;">${message}</div>
+                        <button id="join-queue-btn" onclick="startQueueChat()" style="display: inline-flex; align-items: center; justify-content: center; min-width: 168px; background: #2563eb; color: white; border: none; padding: 11px 18px; border-radius: 7px; cursor: pointer; font-size: 15px; font-weight: 600;">
+                            ${buttonLabel}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
         async function startQueueChat() {
             const chatMessages = document.getElementById('chat-messages');
             leaveQueueCountdownApplied = false;
@@ -532,8 +595,8 @@
                 } else if (data.existing_conversation && (data.status === 'completed' || data.status ===
                         'abandoned' || data.ended_at)) {
                     // Existing conversation is terminated - clear it and start fresh
-                    localStorage.removeItem('activeConversationId');
-                    window.conversationId = null;
+                    resetEndedConversationState();
+                    hideChatComposer();
 
                     chatMessages.innerHTML = `
                     <div style="text-align: center; padding: 20px; color: #6b7280;">
@@ -663,6 +726,7 @@
             const chatForm = document.getElementById('chat-form');
 
             isAgentConnected = false;
+            showChatComposer();
             if (chatInput && chatForm) {
                 chatInput.disabled = false;
                 chatInput.placeholder = 'You can send messages while waiting...';
@@ -677,6 +741,7 @@
 
             isAgentConnected = true;
             hideBotTypingIndicator();
+            showChatComposer();
 
             if (chatInput && chatForm) {
                 chatInput.disabled = false;
@@ -722,7 +787,20 @@
                         return;
                     }
 
-                    if (!queueStatus.in_queue) {
+                    if (!queueStatus.in_queue && queueStatus.is_terminated) {
+                        resetEndedConversationState();
+                        hideChatComposer();
+
+                        const chatMessages = document.getElementById('chat-messages');
+                        if (chatMessages) {
+                            chatMessages.innerHTML = endedQueueMarkup(
+                                'Conversation Ended',
+                                'This chat was removed from the queue by support.'
+                            );
+                        }
+
+                        hideTerminateButton();
+                    } else if (!queueStatus.in_queue && queueStatus.is_assigned) {
                         // (Step 5.2) - Agent Assignment Detection
                         // Chat has been assigned to an agent
                         clearInterval(window.queueCheckInterval);
@@ -747,6 +825,19 @@
                             window.fetchMessages();
                             window.listenForMessages();
                         }, 2000);
+                    } else if (!queueStatus.in_queue) {
+                        resetEndedConversationState();
+                        hideChatComposer('This queue entry has ended');
+
+                        const chatMessages = document.getElementById('chat-messages');
+                        if (chatMessages) {
+                            chatMessages.innerHTML = endedQueueMarkup(
+                                'Queue Ended',
+                                'This queue entry is no longer active.'
+                            );
+                        }
+
+                        hideTerminateButton();
                     } else {
                         // Update queue position if still in queue
                         const positionElement = document.querySelector('#queue-status');

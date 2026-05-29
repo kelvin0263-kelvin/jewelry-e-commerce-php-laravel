@@ -211,7 +211,9 @@ Date: 2025-09-15
                                                             <button onclick="assignToAgent({{ $chat->id }})" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
                                                                 Assign to Agent
                                                             </button>
-                                                            
+                                                            <button onclick="abandonChat({{ $chat->id }})" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left">
+                                                                Remove from Queue
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -493,7 +495,9 @@ function updatePendingQueue(chats) {
                                     <button onclick="assignToAgent(${chat.id})" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
                                         Assign to Agent
                                     </button>
-                                    
+                                    <button onclick="abandonChat(${chat.id})" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left">
+                                        Remove from Queue
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -668,7 +672,49 @@ function submitAssignment() {
     });
 }
 
-// (abandonChat removed by request)
+function abandonChat(queueId) {
+    if (!confirm('Remove this customer from the queue? This will close the conversation as abandoned.')) {
+        return;
+    }
+
+    const removeBtn = document.querySelector(`[onclick="abandonChat(${queueId})"]`);
+    if (removeBtn) {
+        removeBtn.disabled = true;
+        removeBtn.textContent = 'Removing...';
+        removeBtn.classList.add('opacity-50');
+    }
+
+    fetch(`/admin/chat-queue/${queueId}/abandon`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showStatusMessage('Chat removed from queue.', 'success');
+            refreshQueue();
+        } else {
+            showStatusMessage('Failed to remove chat: ' + data.message, 'error');
+            if (removeBtn) {
+                removeBtn.disabled = false;
+                removeBtn.textContent = 'Remove from Queue';
+                removeBtn.classList.remove('opacity-50');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showStatusMessage('Failed to remove chat from queue.', 'error');
+        if (removeBtn) {
+            removeBtn.disabled = false;
+            removeBtn.textContent = 'Remove from Queue';
+            removeBtn.classList.remove('opacity-50');
+        }
+    });
+}
 
 
 //done button trigger

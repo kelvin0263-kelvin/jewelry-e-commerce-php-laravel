@@ -28,6 +28,10 @@ class RagChatBotService
         $conversation = $customerMessage->conversation->fresh();
         $answer = $this->fixedAnswer($customerMessage->body);
 
+        if ($answer === null && $this->isUnclearQuestion($customerMessage->body)) {
+            $answer = $this->clarificationAnswer();
+        }
+
         if ($answer === null) {
             $results = $this->search->search($customerMessage->body);
             $answer = $this->answer($customerMessage->body, $results);
@@ -113,6 +117,41 @@ class RagChatBotService
         }
 
         return null;
+    }
+
+    private function isUnclearQuestion(string $question): bool
+    {
+        $text = mb_strtolower(trim($question));
+
+        if ($text === '') {
+            return true;
+        }
+
+        if (preg_match('/^[\d\W_]+$/u', $text)) {
+            return true;
+        }
+
+        if ($this->containsSupportKeyword($text)) {
+            return false;
+        }
+
+        $words = preg_split('/\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if (count($words) <= 2 && mb_strlen($text) < 8) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function containsSupportKeyword(string $text): bool
+    {
+        return (bool) preg_match('/\b(order|refund|return|exchange|shipping|delivery|payment|pay|warranty|damage|damaged|defect|track|tracking|cancel|size|care|clean|admin|agent|help)\b/u', $text);
+    }
+
+    private function clarificationAnswer(): string
+    {
+        return "I'm not sure what you mean yet. Could you describe your question in more detail? If this is order-related, you can provide your order number, and an admin will join soon.";
     }
 
     private function answer(string $question, array $results): ?string

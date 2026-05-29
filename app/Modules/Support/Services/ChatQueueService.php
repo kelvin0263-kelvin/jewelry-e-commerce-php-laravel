@@ -144,15 +144,29 @@ class ChatQueueService
      */
     public function getQueueStatus(int $conversationId): array
     {
+        $conversation = Conversation::find($conversationId);
         $queueItem = ChatQueue::where('conversation_id', $conversationId)
-            ->where('status', 'waiting')
+            ->latest('id')
             ->first();
 
-        if (!$queueItem) {
+        $baseStatus = [
+            'in_queue' => false,
+            'position' => 0,
+            'estimated_wait' => 0,
+            'is_assigned' => (bool) $conversation?->assigned_agent_id && $conversation?->status === 'active',
+            'is_terminated' => in_array($conversation?->status, ['completed', 'abandoned'], true),
+            'conversation_status' => $conversation?->status,
+            'queue_status' => $queueItem?->status,
+            'assigned_agent_id' => $conversation?->assigned_agent_id,
+            'ended_at' => $conversation?->ended_at,
+            'end_reason' => $conversation?->end_reason,
+        ];
+
+        if (!$queueItem || $queueItem->status !== 'waiting') {
             return [
-                'in_queue' => false,
-                'position' => 0,
-                'estimated_wait' => 0
+                ...$baseStatus,
+                'is_assigned' => $queueItem?->status === 'assigned'
+                    || ((bool) $conversation?->assigned_agent_id && $conversation?->status === 'active'),
             ];
         }
 
@@ -160,9 +174,12 @@ class ChatQueueService
         $estimatedWait = ChatQueue::getEstimatedWaitTime($position);
 
         return [
+            ...$baseStatus,
             'in_queue' => true,
             'position' => $position,
             'estimated_wait' => $estimatedWait,
+            'is_assigned' => false,
+            'is_terminated' => false,
             'wait_time' => $queueItem->wait_time,
             'queued_at' => $queueItem->queued_at
         ];
