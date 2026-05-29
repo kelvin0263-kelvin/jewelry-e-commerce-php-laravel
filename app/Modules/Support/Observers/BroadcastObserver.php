@@ -56,7 +56,7 @@ class BroadcastObserver implements ChatObserverInterface
         if (isset($data['message'])) {
             // Only broadcast if we have a proper Message model instance
             if ($data['message'] instanceof \App\Modules\Support\Models\Message) {
-                broadcast(new MessageSent($data['message']));
+                broadcast(new MessageSent($data['message'])); // handle by the MessageSent broadcast on 
                 Log::info('BroadcastObserver: Message broadcast sent', [
                     'message_id' => $data['message']->id,
                     'conversation_id' => $data['message']->conversation_id

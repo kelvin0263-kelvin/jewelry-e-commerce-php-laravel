@@ -32,6 +32,18 @@ return [
         'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
     ],
 
+    'openrouter' => [
+        'key' => env('OPENROUTER_API_KEY'),
+        'base_url' => env('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'),
+        'referer' => env('OPENROUTER_SITE_URL', env('APP_URL', 'http://localhost')),
+        'title' => env('OPENROUTER_APP_NAME', env('APP_NAME', 'Jewelry E-commerce')),
+    ],
+
+    'nvidia' => [
+        'key' => env('NVIDIA_API_KEY'),
+        'base_url' => env('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1'),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

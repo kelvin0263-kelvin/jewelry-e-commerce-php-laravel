@@ -16,6 +16,7 @@ class RagChatBotService
     ) {
     }
 
+    // main function to sent the bot reply for the customer message
     public function sendReplyForMessage(Message $customerMessage): ?Message
     {
         $customerMessage = $customerMessage->fresh(['user', 'conversation']);

@@ -11,10 +11,13 @@ return [
     'ai' => [
         'enabled' => (bool) env('RAG_AI_ENABLED', true),
         'provider' => env('AI_PROVIDER', 'gemini'),
-        'chat_model' => env('RAG_CHAT_MODEL', env('GEMINI_CHAT_MODEL', 'gemini-2.5-flash')),
+        'chat_provider' => env('AI_CHAT_PROVIDER', env('AI_PROVIDER', 'gemini')),
+        'embedding_provider' => env('AI_EMBEDDING_PROVIDER', env('AI_PROVIDER', 'gemini')),
+        'chat_model' => env('RAG_CHAT_MODEL', env('OPENROUTER_CHAT_MODEL', env('GEMINI_CHAT_MODEL', 'gemini-2.5-flash'))),
         'embedding_model' => env('RAG_EMBEDDING_MODEL', env('GEMINI_EMBEDDING_MODEL', 'gemini-embedding-001')),
         'temperature' => (float) env('RAG_CHAT_TEMPERATURE', 0.2),
         'max_tokens' => (int) env('RAG_CHAT_MAX_TOKENS', 220),
+        'gemini_thinking_budget' => env('GEMINI_THINKING_BUDGET', 0) === '' ? null : (int) env('GEMINI_THINKING_BUDGET', 0),
     ],
 
     'retrieval' => [

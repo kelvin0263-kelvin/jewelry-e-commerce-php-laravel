@@ -9,9 +9,11 @@ class AiClientService
 {
     public function isConfigured(): bool
     {
-        return match ($this->provider()) {
+        return match ($this->chatProvider()) {
             'gemini' => filled(config('services.gemini.key')),
             'openai' => filled(config('services.openai.key')),
+            'openrouter' => filled(config('services.openrouter.key')),
+            'nvidia' => filled(config('services.nvidia.key')),
             default => false,
         };
     }
@@ -22,9 +24,11 @@ class AiClientService
             return null;
         }
 
-        return match ($this->provider()) {
+        return match ($this->embeddingProvider()) {
             'gemini' => $this->geminiEmbedding($input),
             'openai' => $this->openAiEmbedding($input),
+            'openrouter' => null,
+            'nvidia' => null,
             default => null,
         };
     }
@@ -35,9 +39,11 @@ class AiClientService
             return null;
         }
 
-        return match ($this->provider()) {
+        return match ($this->chatProvider()) {
             'gemini' => $this->geminiChat($messages),
             'openai' => $this->openAiChat($messages),
+            'openrouter' => $this->openRouterChat($messages),
+            'nvidia' => $this->nvidiaChat($messages),
             default => null,
         };
     }
@@ -55,6 +61,16 @@ class AiClientService
     private function provider(): string
     {
         return strtolower((string) config('rag.ai.provider', 'gemini'));
+    }
+
+    private function chatProvider(): string
+    {
+        return strtolower((string) config('rag.ai.chat_provider', $this->provider()));
+    }
+
+    private function embeddingProvider(): string
+    {
+        return strtolower((string) config('rag.ai.embedding_provider', $this->provider()));
     }
 
     private function geminiEmbedding(string $input): ?array
@@ -116,6 +132,12 @@ class AiClientService
                 ],
             ];
 
+            if (config('rag.ai.gemini_thinking_budget') !== null) {
+                $payload['generationConfig']['thinkingConfig'] = [
+                    'thinkingBudget' => (int) config('rag.ai.gemini_thinking_budget'),
+                ];
+            }
+
             if ($system !== '') {
                 $payload['systemInstruction'] = [
                     'parts' => [
@@ -138,6 +160,15 @@ class AiClientService
 
                 return null;
             }
+
+            Log::info('Gemini chat response received', [
+                'model' => $model,
+                'finish_reason' => $response->json('candidates.0.finishReason'),
+                'prompt_tokens' => $response->json('usageMetadata.promptTokenCount'),
+                'candidate_tokens' => $response->json('usageMetadata.candidatesTokenCount'),
+                'total_tokens' => $response->json('usageMetadata.totalTokenCount'),
+                'response_preview' => \Illuminate\Support\Str::limit((string) $response->json('candidates.0.content.parts.0.text'), 180),
+            ]);
 
             return trim((string) $response->json('candidates.0.content.parts.0.text'));
         } catch (\Throwable $e) {
@@ -197,6 +228,102 @@ class AiClientService
         }
     }
 
+    private function openRouterChat(array $messages): ?string
+    {
+        try {
+            $model = $this->chatModel();
+            $response = $this->openRouterClient()
+                ->timeout(30)
+                ->post('/chat/completions', [
+                    'model' => $model,
+                    'messages' => $messages,
+                    'temperature' => config('rag.ai.temperature'),
+                    'max_tokens' => config('rag.ai.max_tokens'),
+                ]);
+
+            if (! $response->successful()) {
+                $this->logFailure('OpenRouter chat request failed', $response->status(), $response->body());
+
+                return null;
+            }
+
+            Log::info('OpenRouter chat response received', [
+                'model' => $model,
+                'finish_reason' => $response->json('choices.0.finish_reason'),
+                'native_finish_reason' => $response->json('choices.0.native_finish_reason'),
+                'prompt_tokens' => $response->json('usage.prompt_tokens'),
+                'completion_tokens' => $response->json('usage.completion_tokens'),
+                'total_tokens' => $response->json('usage.total_tokens'),
+                'response_preview' => \Illuminate\Support\Str::limit((string) $response->json('choices.0.message.content'), 180),
+            ]);
+
+            return trim((string) $response->json('choices.0.message.content'));
+        } catch (\Throwable $e) {
+            Log::warning('OpenRouter chat request error', ['error' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
+
+//     [
+//     [
+//         'role' => 'system',
+//         'content' => 'You are a helpful assistant.',
+//     ],
+//     [
+//         'role' => 'user',
+//         'content' => 'Help me polish this sentence.',
+//     ],
+// ]
+    private function nvidiaChat(array $messages): ?string
+    {
+        try {
+            $model = $this->chatModel(); // get the current chat model from .env like meta/llama-3.3-70b-instruct
+            $response = $this->nvidiaClient() //https://integrate.api.nvidia.com/v1/chat/completions
+                ->timeout(30)
+                ->post('/chat/completions', [ // body
+                    'model' => $model,
+                    'messages' => $messages,
+                    'temperature' => config('rag.ai.temperature'), //0.1 - 0.3 = 比较稳定，适合客服 / RAG    0.7 - 1.0 = 比较 creative
+                    'max_tokens' => config('rag.ai.max_tokens'), // 控制 AI 最多输出多少 token。
+                ]);
+
+            if (! $response->successful()) {
+                $this->logFailure('NVIDIA chat request failed', $response->status(), $response->body());
+
+                return null;
+            }
+
+            Log::info('NVIDIA chat response received', [
+                'model' => $model,
+                'finish_reason' => $response->json('choices.0.finish_reason'),
+                'prompt_tokens' => $response->json('usage.prompt_tokens'),
+                'completion_tokens' => $response->json('usage.completion_tokens'),
+                'total_tokens' => $response->json('usage.total_tokens'),
+                'response_preview' => \Illuminate\Support\Str::limit((string) $response->json('choices.0.message.content'), 180),
+            ]);
+
+            return trim((string) $response->json('choices.0.message.content'));
+            //             {
+            // "choices": [
+            //     {
+            //     "message": {
+            //         "content": "Sure, here is the polished sentence..."
+            //     },
+            //     "finish_reason": "stop"
+            //     }
+            // ]
+            // }
+            // so choices.0.message.content
+        } catch (\Throwable $e) {
+            Log::warning('NVIDIA chat request error', ['error' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
+
     private function geminiClient()
     {
         return Http::withHeaders([
@@ -211,12 +338,20 @@ class AiClientService
     {
         $model = (string) config('rag.ai.chat_model');
 
-        if ($this->provider() === 'gemini' && str_starts_with($model, 'gpt-')) {
+        if ($this->chatProvider() === 'gemini' && str_starts_with($model, 'gpt-')) {
             return (string) env('GEMINI_CHAT_MODEL', 'gemini-2.5-flash');
         }
 
-        if ($this->provider() === 'openai' && str_starts_with($model, 'gemini-')) {
+        if ($this->chatProvider() === 'openai' && str_starts_with($model, 'gemini-')) {
             return (string) env('OPENAI_CHAT_MODEL', 'gpt-4o-mini');
+        }
+
+        if ($this->chatProvider() === 'openrouter' && ! str_contains($model, '/')) {
+            return (string) env('OPENROUTER_CHAT_MODEL', 'google/gemini-2.5-flash');
+        }
+
+        if ($this->chatProvider() === 'nvidia' && ! str_contains($model, '/')) {
+            return (string) env('NVIDIA_CHAT_MODEL', 'meta/llama-3.3-70b-instruct');
         }
 
         return $model;
@@ -226,11 +361,11 @@ class AiClientService
     {
         $model = (string) config('rag.ai.embedding_model');
 
-        if ($this->provider() === 'gemini' && str_starts_with($model, 'text-embedding-')) {
+        if ($this->embeddingProvider() === 'gemini' && str_starts_with($model, 'text-embedding-')) {
             return (string) env('GEMINI_EMBEDDING_MODEL', 'gemini-embedding-001');
         }
 
-        if ($this->provider() === 'openai' && str_starts_with($model, 'gemini-')) {
+        if ($this->embeddingProvider() === 'openai' && str_starts_with($model, 'gemini-')) {
             return (string) env('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small');
         }
 
@@ -245,10 +380,32 @@ class AiClientService
             ->asJson();
     }
 
+    private function openRouterClient()
+    {
+        return Http::withToken(config('services.openrouter.key'))
+            ->withHeaders([
+                'HTTP-Referer' => config('services.openrouter.referer'),
+                'X-OpenRouter-Title' => config('services.openrouter.title'),
+            ])
+            ->baseUrl(rtrim((string) config('services.openrouter.base_url'), '/'))
+            ->acceptJson()
+            ->asJson();
+    }
+
+    private function nvidiaClient()
+    {
+        return Http::withToken(config('services.nvidia.key'))
+            ->baseUrl(rtrim((string) config('services.nvidia.base_url'), '/'))
+            ->acceptJson()
+            ->asJson();
+    }
+
     private function logFailure(string $message, int $status, string $body): void
     {
         Log::warning($message, [
             'provider' => $this->provider(),
+            'chat_provider' => $this->chatProvider(),
+            'embedding_provider' => $this->embeddingProvider(),
             'status' => $status,
             'body' => $body,
         ]);

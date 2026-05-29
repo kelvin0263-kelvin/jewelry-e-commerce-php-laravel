@@ -1,8 +1,4 @@
 <?php
-use Tests\TestCase;
-
-uses(TestCase::class)->in('Feature', 'Unit');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -18,6 +14,8 @@ uses(TestCase::class)->in('Feature', 'Unit');
 pest()->extend(Tests\TestCase::class)
     ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');
+
+uses(PHPUnit\Framework\TestCase::class)->in('Unit');
 
 /*
 |--------------------------------------------------------------------------

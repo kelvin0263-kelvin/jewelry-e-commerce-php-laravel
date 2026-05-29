@@ -317,6 +317,12 @@ Route::prefix('inventory')->name('admin.inventory.')->controller(InventoryContro
     Route::get('/chat/conversations/{id}', [ChatController::class, 'show'])->name('admin.chat.show');
     Route::get('/chat/conversations/{id}/messages', [ChatController::class, 'messages'])->name('admin.chat.messages');
     Route::post('/chat/conversations/{id}/mark-read', [ChatController::class, 'markAsRead'])->name('admin.chat.mark-read');
+    Route::post('/chat/conversations/{id}/ai-reply', [ChatController::class, 'generateAiReply'])
+        ->middleware('throttle:admin-chat')
+        ->name('admin.chat.ai-reply');
+    Route::post('/chat/conversations/{id}/polish-reply', [ChatController::class, 'polishAiReply'])
+        ->middleware('throttle:admin-chat')
+        ->name('admin.chat.polish-reply');
     Route::post('/chat/messages', [ChatController::class, 'store'])
         ->middleware('throttle:admin-chat')
         ->name('admin.chat.store');

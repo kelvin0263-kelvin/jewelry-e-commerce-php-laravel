@@ -12,6 +12,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
+use Database\Factories\UserFactory;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -62,5 +63,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(\App\Modules\Order\Models\Order::class);
     }
 
-}
+    protected static function newFactory(): UserFactory
+    {
+        return UserFactory::new();
+    }
 
+}

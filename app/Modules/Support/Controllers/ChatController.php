@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Modules\Support\Events\MessageSent; 
 use App\Modules\Support\Events\ConversationTerminated;
+use App\Modules\Support\Services\AdminAiReplyGeneratorService;
 use App\Modules\Support\Services\ChatEventManager;
 use App\Jobs\SendRagBotReply;
 use Illuminate\Support\Facades\Broadcast;
@@ -88,7 +89,7 @@ class ChatController extends Controller
     }
 
     /**
-     * 发送新消息
+     *  Call when click "send" button to send message
      * line 38
      */
     public function sendMessage(Request $request)
@@ -120,7 +121,7 @@ class ChatController extends Controller
         $this->emitMessageSent($message->load('user'), $message->conversation);
 
         if (! Auth::user()?->is_admin) {
-            SendRagBotReply::dispatch($message->id)
+            SendRagBotReply::dispatch($message->id) // go to app/Jobs/SendRagBotReply.php to handle the job (handle function)
                 ->delay(now()->addSeconds(config('rag.bot.reply_delay_seconds')));
         }
 
@@ -160,6 +161,62 @@ class ChatController extends Controller
             ->update(['read_at' => now()]);
 
         return response()->json(['success' => true]);
+    }
+    //$generator 是 Laravel 根据 AdminAiReplyGeneratorService type hint 自动从 Service Container 注入
+    // generateAiReply (function call when the generate button is clicked)
+    public function generateAiReply(Request $request, $id, AdminAiReplyGeneratorService $generator)
+    {
+        $validated = $request->validate([
+            'tone' => 'nullable|in:friendly,professional,concise',
+        ]);
+
+        $conversation = Conversation::with('user')->findOrFail($id);
+
+        if (in_array($conversation->status, ['completed', 'abandoned'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot generate a reply for a terminated conversation',
+            ], 400);
+        }
+
+        $draft = $generator->generate($conversation, $validated['tone'] ?? 'friendly');
+
+        return response()->json([
+            'success' => true,
+            'reply' => $draft['reply'],
+            'source' => $draft['source'],
+            'fallback_reason' => $draft['fallback_reason'],
+            'tone' => $draft['tone'],
+            'sources' => $draft['sources'],
+        ]);
+    }
+
+    // function call when the polish button is clicked
+    public function polishAiReply(Request $request, $id, AdminAiReplyGeneratorService $generator)
+    {
+        $validated = $request->validate([
+            'text' => 'required|string|min:2|max:2000',
+            'mode' => 'nullable|in:grammar,polish,professional,shorten',
+        ]);
+
+        $conversation = Conversation::with('user')->findOrFail($id);
+
+        if (in_array($conversation->status, ['completed', 'abandoned'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot polish a reply for a terminated conversation',
+            ], 400);
+        }
+
+        $draft = $generator->polish($conversation, $validated['text'], $validated['mode'] ?? 'polish');
+
+        return response()->json([
+            'success' => true,
+            'reply' => $draft['reply'],
+            'source' => $draft['source'],
+            'fallback_reason' => $draft['fallback_reason'],
+            'mode' => $draft['mode'],
+        ]);
     }
 
     //D:\Desktop\jewelry-e-commerce-php-laravel\app\Modules\Support\Views\admin\chat\index.blade.php sent message (also use observe pattern)

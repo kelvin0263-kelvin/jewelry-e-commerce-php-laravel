@@ -941,7 +941,7 @@
             }
         }
 
-        //done
+        //done (sent message)
         // (Step 8) - Message Sending Layer
         // Handles form submission to send new messages
         // Function to handle form submission

@@ -61,7 +61,11 @@ Date: 2025-09-15
         }
 
         .admin-reply-form input,
+        .admin-reply-form textarea,
+        .admin-ai-reply-toolbar select,
         .admin-reply-form button,
+        #generate-ai-reply-btn,
+        #polish-ai-reply-btn,
         #terminate-conversation-btn {
             width: 100% !important;
             min-width: 0 !important;
@@ -183,10 +187,35 @@ Date: 2025-09-15
                             End Chat
                         </button>
                     </div>
+                    <div id="admin-ai-reply-toolbar" class="admin-ai-reply-toolbar mb-2 hidden flex-col gap-2 rounded-md border border-slate-200 bg-slate-50 p-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                            <label for="ai-reply-tone" class="text-xs font-semibold uppercase tracking-wide text-slate-500">AI Draft</label>
+                            <select id="ai-reply-tone" class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                                <option value="friendly">Friendly</option>
+                                <option value="professional">Professional</option>
+                                <option value="concise">Concise</option>
+                            </select>
+                            <select id="ai-polish-mode" class="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                                <option value="polish">Polish</option>
+                                <option value="grammar">Grammar</option>
+                                <option value="professional">Professional</option>
+                                <option value="shorten">Shorten</option>
+                            </select>
+                        </div>
+                        <div class="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                            <span id="ai-reply-status" class="min-h-5 text-xs text-slate-500"></span>
+                            <button type="button" id="polish-ai-reply-btn" class="inline-flex items-center justify-center rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50" disabled>
+                                Polish
+                            </button>
+                            <button type="button" id="generate-ai-reply-btn" class="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50" disabled>
+                                Generate
+                            </button>
+                        </div>
+                    </div>
                     <form id="admin-reply-form" class="admin-reply-form flex flex-col gap-2 sm:flex-row">
                         <input type="hidden" id="current-conversation-id" value="">
-                        <input type="text" id="admin-message-input" placeholder="Type your reply..." 
-                               class="min-w-0 w-full flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled>
+                        <textarea id="admin-message-input" rows="2" placeholder="Type your reply..."
+                                  class="min-h-[44px] min-w-0 w-full flex-1 resize-none border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled></textarea>
                         <button type="submit" id="send-message-btn" class="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors sm:w-auto" style="display: none;">
                             Send
                         </button>
@@ -206,6 +235,70 @@ document.addEventListener('DOMContentLoaded', function() {
     let autoRefreshIntervalId = null; // Auto refresh timer id
     const AUTO_REFRESH_MS = 10000; // 10s auto refresh interval
     const CURRENT_USER_ID = Number({{ auth()->id() }});
+
+    function setAiReplyControlsEnabled(enabled) {
+        const toolbar = document.getElementById('admin-ai-reply-toolbar');
+        const button = document.getElementById('generate-ai-reply-btn');
+        const polishButton = document.getElementById('polish-ai-reply-btn');
+        const status = document.getElementById('ai-reply-status');
+        const shouldShow = Boolean(currentConversationId) && enabled;
+
+        if (toolbar) {
+            toolbar.classList.toggle('hidden', !shouldShow);
+            toolbar.classList.toggle('flex', shouldShow);
+        }
+
+        if (button) {
+            button.disabled = !enabled;
+            button.textContent = 'Generate';
+        }
+
+        if (polishButton) {
+            const messageInput = document.getElementById('admin-message-input');
+            polishButton.disabled = !enabled || !messageInput || messageInput.value.trim() === '';
+            polishButton.textContent = 'Polish';
+        }
+
+        if (status && !enabled) {
+            status.textContent = '';
+            status.className = 'min-h-5 text-xs text-slate-500';
+        }
+    }
+
+    function setAiReplyStatus(message, state = 'idle') {
+        const status = document.getElementById('ai-reply-status');
+
+        if (!status) return;
+
+        const colors = {
+            idle: 'text-slate-500',
+            loading: 'text-blue-600',
+            success: 'text-emerald-700',
+            error: 'text-red-600',
+        };
+
+        status.textContent = message;
+        status.className = `min-h-5 text-xs ${colors[state] || colors.idle}`;
+    }
+
+    function fallbackReasonLabel(reason) {
+        const labels = {
+            ai_disabled: 'AI disabled',
+            ai_empty: 'AI returned empty text',
+            ai_incomplete: 'AI returned incomplete text',
+        };
+
+        return labels[reason] || 'Fallback used';
+    }
+
+    function refreshPolishButtonState() {
+        const messageInput = document.getElementById('admin-message-input');
+        const polishButton = document.getElementById('polish-ai-reply-btn');
+
+        if (!messageInput || !polishButton) return;
+
+        polishButton.disabled = messageInput.disabled || messageInput.value.trim() === '';
+    }
 
     // Function to update conversation state
     function updateConversationState(conversationId, state) {
@@ -442,6 +535,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const messageInput = document.getElementById('admin-message-input');
             const sendButton = document.getElementById('send-message-btn');
             const terminateBtn = document.getElementById('terminate-conversation-btn');
+            setAiReplyControlsEnabled(false);
             
             // IMMEDIATELY clear default states to prevent flash
             if (statusElement) statusElement.textContent = '';
@@ -540,6 +634,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     terminateBtn.disabled = true;
                     console.log('✅ Terminate button hidden');
                 }
+                setAiReplyControlsEnabled(false);
                 
                 // Add a prominent termination notice
                 const terminationNotice = document.createElement('div');
@@ -623,6 +718,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     terminateBtn.textContent = 'End Chat';
                     console.log('✅ Terminate button shown');
                 }
+                setAiReplyControlsEnabled(true);
                 
                 console.log('✅ Active UI setup complete');
             }
@@ -673,6 +769,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     termBtn.style.display = 'none';
                     termBtn.disabled = true;
                 }
+                setAiReplyControlsEnabled(false);
                 
                 // Add termination notice if not already present
                 const replyContainer = document.getElementById('reply-form-container');
@@ -725,6 +822,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         termBtn.style.display = 'none';
                         termBtn.disabled = true;
                     }
+                    setAiReplyControlsEnabled(false);
                     if (sendBtn && sendBtn.style.display !== 'none') {
                         console.log('❌ Send button was shown! Force hiding...');
                         sendBtn.style.display = 'none';
@@ -909,6 +1007,91 @@ document.addEventListener('DOMContentLoaded', function() {
         
         messagesContainer.appendChild(messageElement);
     }
+
+    document.getElementById('generate-ai-reply-btn')?.addEventListener('click', async () => {
+        const button = document.getElementById('generate-ai-reply-btn');
+        const messageInput = document.getElementById('admin-message-input');
+        const tone = document.getElementById('ai-reply-tone')?.value || 'friendly';
+        const conversationId = document.getElementById('current-conversation-id').value;
+
+        if (!button || !messageInput || !conversationId || messageInput.disabled) return;
+
+        button.disabled = true;
+        button.textContent = 'Generating...';
+        setAiReplyStatus('Creating draft...', 'loading');
+
+        try {
+            const response = await fetch(`/admin/chat/conversations/${conversationId}/ai-reply`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ tone })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Unable to generate draft');
+            }
+
+            messageInput.value = data.reply || '';
+            messageInput.focus();
+            refreshPolishButtonState();
+            setAiReplyStatus(data.source === 'ai' ? 'Draft inserted' : `Fallback: ${fallbackReasonLabel(data.fallback_reason)}`, 'success');
+        } catch (error) {
+            console.error('Failed to generate AI reply:', error);
+            setAiReplyStatus(error.message || 'Failed to generate draft', 'error');
+        } finally {
+            button.disabled = false;
+            button.textContent = 'Generate';
+        }
+    });
+
+    document.getElementById('polish-ai-reply-btn')?.addEventListener('click', async () => {
+        const button = document.getElementById('polish-ai-reply-btn');
+        const messageInput = document.getElementById('admin-message-input');
+        const mode = document.getElementById('ai-polish-mode')?.value || 'polish';
+        const conversationId = document.getElementById('current-conversation-id').value;
+        const text = messageInput ? messageInput.value.trim() : '';
+
+        if (!button || !messageInput || !conversationId || messageInput.disabled || !text) return;
+
+        button.disabled = true;
+        button.textContent = 'Polishing...';
+        setAiReplyStatus('Polishing reply...', 'loading');
+
+        try {
+            const response = await fetch(`/admin/chat/conversations/${conversationId}/polish-reply`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ text, mode })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Unable to polish reply');
+            }
+
+            messageInput.value = data.reply || '';
+            messageInput.focus();
+            setAiReplyStatus(data.source === 'ai' ? 'Reply polished' : `Fallback: ${fallbackReasonLabel(data.fallback_reason)}`, 'success');
+        } catch (error) {
+            console.error('Failed to polish AI reply:', error);
+            setAiReplyStatus(error.message || 'Failed to polish reply', 'error');
+        } finally {
+            button.disabled = false;
+            button.textContent = 'Polish';
+            refreshPolishButtonState();
+        }
+    });
+
+    document.getElementById('admin-message-input')?.addEventListener('input', refreshPolishButtonState);
 
     // Handle admin reply form submission
     document.getElementById('admin-reply-form').addEventListener('submit', async (e) => {
